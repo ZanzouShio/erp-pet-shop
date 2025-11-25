@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 16 - Banco de dados principal
+  postgres:
+    image: postgres:16-alpine
+    container_name: erp-petshop-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: erp_admin
+      POSTGRES_PASSWORD: erp_pass_2024
+      POSTGRES_DB: erp_petshop
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=pt_BR.UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database-schema-erp.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    networks:
+      - erp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erp_admin -d erp_petshop"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin 4 - Interface visual para administração
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: erp-petshop-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@petshop.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - erp-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  erp-network:
+    driver: bridge
