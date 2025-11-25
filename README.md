@@ -1,103 +1,107 @@
 # 🐾 ERP Pet Shop
 
-Sistema completo de gestão para Pet Shop com PDV, controle de estoque, financeiro e emissão fiscal.
+Sistema ERP completo para gestão de Pet Shop e Casa de Rações.
 
-## 🚀 Tecnologias
+## 📊 Status do Projeto
 
-### Frontend (PDV Web)
-- React 18 + TypeScript + Vite
-- CSS Puro (sem frameworks)
-- Hot Module Replacement
+✅ **Fase Atual:** Integração Frontend-Backend (Fase 1 concluída)
 
-### Backend (Em desenvolvimento)
-- Node.js + TypeScript
-- PostgreSQL 16
-- Prisma ORM
-- Express
+- ✅ Frontend PDV React funcionando
+- ✅ Backend Express com PostgreSQL
+- ✅ 30 produtos cadastrados no banco
+- ⚠️ Backend em correção (bugs identificados)
 
-## 📦 Pré-requisitos
+---
 
-- Node.js 24.11.1 ou superior
-- Docker Desktop
-- Git
+## 🚀 Stack Tecnológica
 
-## 🐳 Configuração do Banco de Dados (Docker)
+### Frontend PDV
+- **React 18.2** + TypeScript
+- **Vite 7.2.4** (dev server + HMR)
+- **CSS puro** (sem frameworks)
+- Interface responsiva e otimizada
 
-### 1. Iniciar PostgreSQL + pgAdmin
+### Backend API
+- **Node.js 24.11.1**
+- **Express 4.18** (API REST)
+- **PostgreSQL 16** (Docker)
+- **pg** (PostgreSQL client)
+
+### Infraestrutura
+- **Docker + Docker Compose**
+- **pgAdmin 4** (interface de admin)
+
+---
+
+## 📁 Estrutura do Projeto
+
+```
+ERP Pet Shop/
+├── erp-petshop/              # Frontend React (PDV)
+│   ├── src/
+│   │   ├── components/       # Componentes reutilizáveis
+│   │   ├── types/            # TypeScript types
+│   │   └── data/             # Mock data
+│   └── package.json
+│
+├── backend/                  # Backend Express
+│   ├── src/
+│   │   ├── index.js          # Servidor principal
+│   │   └── db.js             # Conexão PostgreSQL
+│   ├── .env                  # Variáveis de ambiente
+│   └── package.json
+│
+├── database-schema-erp.sql   # Schema completo do banco
+├── database-seed-final.sql   # Seed com 30 produtos
+├── docker-compose.yml        # PostgreSQL + pgAdmin
+├── prd-erp-petshop.md        # Documentação de requisitos
+└── README.md                 # Este arquivo
+```
+
+---
+
+## ⚙️ Como Executar
+
+### 1. Pré-requisitos
+
+- Node.js 18+ instalado
+- Docker Desktop instalado e rodando
+
+### 2. Clone o Repositório
 
 ```bash
-# Na raiz do projeto
+git clone https://github.com/ZanzouShio/erp-pet-shop.git
+cd erp-pet-shop
+```
+
+### 3. Configurar Variáveis de Ambiente
+
+Copie o `.env.example` e configure:
+
+```bash
+cp .env.example backend/.env
+```
+
+### 4. Iniciar PostgreSQL (Docker)
+
+```bash
 docker-compose up -d
 ```
 
-Isso irá iniciar:
-- **PostgreSQL 16** na porta `5432`
-- **pgAdmin 4** em `http://localhost:5050`
+**Portas:**
+- PostgreSQL: `localhost:5432`
+- pgAdmin: `http://localhost:5050`
+  - Email: `admin@admin.com`
+  - Senha: `admin`
 
-### 2. Verificar se os containers estão rodando
-
-```bash
-docker ps
-```
-
-Você deve ver:
-- `erp-petshop-db` (PostgreSQL)
-- `erp-petshop-pgadmin` (pgAdmin)
-
-### 3. Acessar pgAdmin
-
-1. Abra `http://localhost:5050` no navegador
-2. Login:
-   - **Email:** `admin@petshop.com`
-   - **Senha:** `admin123`
-
-3. Conectar ao banco:
-   - Clique em "Add New Server"
-   - **Name:** ERP Pet Shop
-   - Aba "Connection":
-     - **Host:** `postgres` (nome do container)
-     - **Port:** `5432`
-     - **Database:** `erp_petshop`
-     - **Username:** `erp_admin`
-     - **Password:** `erp_pass_2024`
-   - Salvar
-
-### 4. Parar os containers
+### 5. Popular o Banco de Dados
 
 ```bash
-docker-compose down
+# Executar seed
+Get-Content database-seed-final.sql | docker exec -i erp-petshop-db psql -U erp_admin -d erp_petshop
 ```
 
-Para parar E remover os volumes (⚠️ apaga dados):
-```bash
-docker-compose down -v
-```
-
-## 💻 Frontend (PDV)
-
-### Instalar dependências
-
-```bash
-cd erp-petshop
-npm install
-```
-
-### Rodar em desenvolvimento
-
-```bash
-npm run dev
-```
-
-Acessar: `http://localhost:5173`
-
-### Build para produção
-
-```bash
-npm run build
-npm run preview
-```
-
-## 🔧 Backend (Em breve)
+### 6. Iniciar Backend
 
 ```bash
 cd backend
@@ -105,82 +109,101 @@ npm install
 npm run dev
 ```
 
-## 📊 Estrutura do Projeto
+Rodando em: `http://localhost:3001`
 
-```
-ERP Pet Shop/
-├── docker-compose.yml          # Configuração Docker
-├── database-schema-erp.sql     # Schema completo do banco
-├── prd-erp-petshop.md          # Documentação do produto
-├── .env.example                # Exemplo de variáveis de ambiente
-├── erp-petshop/                # Frontend React (PDV)
-│   ├── src/
-│   │   ├── components/         # Componentes React
-│   │   ├── data/               # Mock data
-│   │   ├── types/              # TypeScript types
-│   │   └── App.tsx             # App principal
-│   └── package.json
-└── backend/                    # Backend Node.js (em breve)
-    ├── src/
-    ├── prisma/
-    └── package.json
-```
-
-## 🎯 Funcionalidades Atuais
-
-### ✅ PDV Web (Concluído)
-- Busca de produtos
-- Filtros por categoria
-- Carrinho de compras
-- Múltiplas formas de pagamento
-- Cálculo automático de troco
-- Atalhos de teclado (F2, F4, ESC)
-
-### 🚧 Em Desenvolvimento
-- Backend API REST
-- Autenticação JWT
-- Integração com banco de dados
-- CRUD de produtos, clientes, vendas
-
-### 📋 Roadmap
-- Sistema de estoque em tempo real
-- Módulo financeiro
-- Emissão fiscal (NFC-e/NF-e)
-- Integração PIX
-- Programa de fidelidade
-- Relatórios gerenciais
-
-## 🔐 Credenciais Padrão
-
-### PostgreSQL
-- **Host:** localhost:5432
-- **Database:** erp_petshop
-- **User:** erp_admin
-- **Password:** erp_pass_2024
-
-### pgAdmin
-- **URL:** http://localhost:5050
-- **Email:** admin@petshop.com
-- **Password:** admin123
-
-⚠️ **IMPORTANTE:** Altere as senhas em produção!
-
-## 📝 Variáveis de Ambiente
-
-Copie `.env.example` para `.env` e configure:
+### 7. Iniciar Frontend
 
 ```bash
-cp .env.example .env
+cd erp-petshop
+npm install
+npm run dev
 ```
 
-## 🤝 Contribuindo
-
-Este é um projeto em desenvolvimento ativo. Contribuições são bem-vindas!
-
-## 📄 Licença
-
-Proprietary - Todos os direitos reservados
+Rodando em: `http://localhost:5173`
 
 ---
 
-**Desenvolvido com ❤️ para Pet Shops**
+## 🔌 Endpoints da API
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/health` | Health check |
+| GET | `/api/products` | Listar produtos |
+| GET | `/api/products/:id` | Detalhes do produto |
+| GET | `/api/categories` | Listar categorias |
+| POST | `/api/sales` | Registrar venda ⚠️ |
+| GET | `/api/sales` | Listar vendas |
+| POST | `/api/customers` | Cadastrar cliente |
+| GET | `/api/customers` | Buscar clientes |
+| GET | `/api/sales/reports/daily` | Relatório diário |
+
+⚠️ = Em correção
+
+---
+
+## 🐛 Bugs Conhecidos
+
+1. **JOIN de produtos** - Produtos aparecendo duplicados (identificado, correção pendente)
+2. **Schema de vendas** - Tabela `sale_payments` separada (correção pendente)
+
+---
+
+## 📋 Roadmap
+
+### ✅ Fase 1 - PDV Básico (Concluído)
+- Frontend PDV React
+- Backend Express simples
+- PostgreSQL via Docker
+- 30 produtos cadastrados
+
+### 🔄 Fase 2 - Correções e UX (Atual)
+- Corrigir bugs do backend
+- Toast notifications
+- Interface de clientes
+- Relatórios visuais
+
+### 📅 Fase 3 - Backend Robusto
+- Migrar para Prisma ORM
+- Autenticação JWT
+- CRUD completo
+- Websockets
+
+### 📅 Fase 4 - Módulos Avançados
+- Orçamentos
+- Histórico de vendas
+- Dashboard executivo
+- Produtos a granel
+
+### 📅 Fase 5 - Sistema Fiscal
+- Integração PIX
+- Emissão NFC-e
+- Certificado digital
+
+---
+
+## 🤝 Contribuindo
+
+Este é um projeto em desenvolvimento ativo. Sugestões e contribuições são bem-vindas!
+
+---
+
+## 📄 Licença
+
+MIT License - veja arquivo LICENSE para detalhes
+
+---
+
+## 👤 Autor
+
+**ZanzouShio**  
+GitHub: [@ZanzouShio](https://github.com/ZanzouShio)
+
+---
+
+## 📞 Suporte
+
+Para problemas ou dúvidas, abra uma issue no GitHub.
+
+---
+
+**Última atualização:** Novembro 2024
