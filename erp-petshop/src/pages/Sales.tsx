@@ -177,6 +177,32 @@ export default function Sales() {
         }
     };
 
+    const handleCancelSale = async () => {
+        if (!selectedSale) return;
+
+        if (!confirm('Tem certeza que deseja cancelar esta venda? O estoque será estornado.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_URL}/sales/${selectedSale.id}/cancel`, {
+                method: 'POST'
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Erro ao cancelar venda');
+            }
+
+            alert('Venda cancelada com sucesso!');
+            setSelectedSale(null);
+            loadSales(); // Recarregar lista
+        } catch (error) {
+            console.error('Erro ao cancelar venda:', error);
+            alert('Erro ao cancelar venda: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         if (status === 'completed') {
             return <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Concluída</span>;
@@ -479,7 +505,15 @@ export default function Sales() {
                                 </div>
                             </div>
                         </div>
-                        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-8 py-4 flex justify-end">
+                        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-8 py-4 flex justify-end gap-3">
+                            {selectedSale.status !== 'cancelled' && (
+                                <button
+                                    onClick={handleCancelSale}
+                                    className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                                >
+                                    Cancelar Venda
+                                </button>
+                            )}
                             <button onClick={() => setSelectedSale(null)} className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition">
                                 Fechar
                             </button>

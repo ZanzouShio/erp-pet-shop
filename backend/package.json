@@ -2,11 +2,11 @@
     "name": "erp-petshop-backend",
     "version": "1.0.0",
     "description": "Backend API para ERP Pet Shop",
-    "main": "src/index.js",
+    "main": "src/server.js",
     "type": "module",
     "scripts": {
-        "dev": "node --watch src/index.js",
-        "start": "node src/index.js"
+        "dev": "node --watch src/server.js",
+        "start": "node src/server.js"
     },
     "keywords": [
         "erp",
