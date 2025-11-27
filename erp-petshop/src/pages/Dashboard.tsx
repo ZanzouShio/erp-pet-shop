@@ -13,10 +13,14 @@ interface DashboardMetrics {
 interface Sale {
     id: string;
     sale_number: number;
-    final_amount: number;
-    payment_method: string;
-    status: string;
+    total_amount: number;
     created_at: string;
+}
+
+interface TopProduct {
+    product_name: string;
+    total_sold: number;
+    revenue: number;
 }
 
 export default function Dashboard() {
@@ -27,6 +31,7 @@ export default function Dashboard() {
         appointments: { value: 12 },
     });
     const [recentSales, setRecentSales] = useState<Sale[]>([]);
+    const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -37,33 +42,43 @@ export default function Dashboard() {
         try {
             setLoading(true);
 
-            // Buscar vendas de hoje
+            // 1. Buscar estatísticas do dia
+            const statsResponse = await fetch(`${API_URL}/statistics/summary`);
+            const stats = await statsResponse.json();
+
+            // 2. Buscar vendas recentes
             const today = new Date().toISOString().split('T')[0];
             const salesResponse = await fetch(`${API_URL}/sales?startDate=${today}&endDate=${today}&limit=5`);
             const salesData = await salesResponse.json();
 
-            // Calcular total de vendas hoje
-            const todayTotal = salesData.sales.reduce((sum: number, sale: Sale) => {
-                if (sale.status === 'completed') {
-                    return sum + parseFloat(String(sale.final_amount));
-                }
-                return sum;
-            }, 0);
+            // 3. Buscar top produtos
+            const topProductsResponse = await fetch(`${API_URL}/statistics/top-products?period=7`);
+            const topProductsData = await topProductsResponse.json();
 
-            // Buscar produtos com estoque baixo
-            const lowStockResponse = await fetch(`${API_URL}/products/low-stock`);
-            const lowStockData = await lowStockResponse.json();
-
+            // Atualizar métricas
             setMetrics({
-                salesToday: { value: todayTotal, change: 0 },
-                newCustomers: { value: 32, trend: 'Neste mês' },
-                lowStock: { value: lowStockData.length || 0 },
-                appointments: { value: 12 },
+                salesToday: {
+                    value: stats.sales_today.total,
+                    change: 5 // TODO: calcular vs ontem
+                },
+                newCustomers: {
+                    value: 32, // TODO: implementar endpoint
+                    trend: 'Neste mês'
+                },
+                lowStock: {
+                    value: stats.low_stock_count + stats.out_of_stock_count
+                },
+                appointments: {
+                    value: 12 // TODO: implementar
+                }
             });
 
-            setRecentSales(salesData.sales || []);
+            // Backend retorna array direto
+            setRecentSales(Array.isArray(salesData) ? salesData : []);
+            setTopProducts(topProductsData || []);
+
         } catch (error) {
-            console.error('Erro ao carregar dados do dashboard:', error);
+            console.error('Erro ao carregar dashboard:', error);
         } finally {
             setLoading(false);
         }
@@ -86,20 +101,6 @@ export default function Dashboard() {
         }).format(date);
     };
 
-    const paymentMethodLabels: Record<string, string> = {
-        CASH: 'Dinheiro',
-        DEBIT_CARD: 'Débito',
-        CREDIT_CARD: 'Crédito',
-        PIX: 'PIX'
-    };
-
-    const topProducts = [
-        { name: 'Ração Premium Cães Adultos', sold: 120, revenue: 180.00 },
-        { name: 'Brinquedo de Corda', sold: 95, revenue: 25.00 },
-        { name: 'Areia Higiênica 4kg', sold: 88, revenue: 22.00 },
-        { name: 'Antipulgas Advantage 4ml', sold: 71, revenue: 58.00 },
-    ];
-
     return (
         <div className="p-8 space-y-6">
             {/* Metrics Cards */}
@@ -110,7 +111,7 @@ export default function Dashboard() {
                         <div>
                             <p className="text-gray-500 text-sm mb-1">Vendas Hoje</p>
                             <h3 className="text-3xl font-bold text-gray-900">
-                                R$ {metrics.salesToday.value.toFixed(2)}
+                                {formatCurrency(metrics.salesToday.value)}
                             </h3>
                         </div>
                         <div className="bg-green-100 p-3 rounded-lg">
@@ -188,9 +189,7 @@ export default function Dashboard() {
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nº Venda</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hora</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pagamento</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
@@ -198,20 +197,8 @@ export default function Dashboard() {
                                         <tr key={sale.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 text-sm font-medium text-gray-900">#{sale.sale_number}</td>
                                             <td className="px-6 py-4 text-sm text-gray-500">{formatDate(sale.created_at)}</td>
-                                            <td className="px-6 py-4 text-sm text-gray-700">
-                                                {paymentMethodLabels[sale.payment_method] || sale.payment_method}
-                                            </td>
                                             <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                {formatCurrency(parseFloat(String(sale.final_amount)))}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${sale.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                                        sale.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                            'bg-red-100 text-red-700'
-                                                    }`}>
-                                                    {sale.status === 'completed' ? 'Concluída' :
-                                                        sale.status === 'cancelled' ? 'Cancelada' : sale.status}
-                                                </span>
+                                                {formatCurrency(sale.total_amount)}
                                             </td>
                                         </tr>
                                     ))}
@@ -225,20 +212,27 @@ export default function Dashboard() {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div className="p-6 border-b border-gray-200">
                         <h2 className="text-lg font-bold text-gray-800">Produtos Mais Vendidos</h2>
+                        <p className="text-xs text-gray-500 mt-1">Últimos 7 dias</p>
                     </div>
                     <div className="p-6 space-y-4">
-                        {topProducts.map((product, index) => (
-                            <div key={index} className="flex items-start gap-3">
-                                <div className="bg-gray-100 p-2 rounded-lg">
-                                    <Package size={20} className="text-gray-600" />
+                        {loading ? (
+                            <p className="text-center text-gray-500">Carregando...</p>
+                        ) : topProducts.length === 0 ? (
+                            <p className="text-center text-gray-500">Nenhuma venda nos últimos 7 dias</p>
+                        ) : (
+                            topProducts.map((product, index) => (
+                                <div key={index} className="flex items-start gap-3">
+                                    <div className="bg-gray-100 p-2 rounded-lg">
+                                        <Package size={20} className="text-gray-600" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-gray-900 text-sm truncate">{product.product_name}</p>
+                                        <p className="text-xs text-gray-500">{product.total_sold} vendidos</p>
+                                    </div>
+                                    <p className="font-bold text-sm text-gray-900">{formatCurrency(product.revenue)}</p>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-gray-900 text-sm truncate">{product.name}</p>
-                                    <p className="text-xs text-gray-500">{product.sold} vendidos</p>
-                                </div>
-                                <p className="font-bold text-sm text-gray-900">R$ {product.revenue.toFixed(2)}</p>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 </div>
             </div>
