@@ -691,6 +691,84 @@ app.get('/api/sales', async (req, res) => {
     }
 });
 
+// GET /api/sales/:id - Detalhes de uma venda
+app.get('/api/sales/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // 1. Buscar venda
+        const saleResult = await pool.query(`
+            SELECT 
+                s.id, s.sale_number, s.subtotal, s.discount, s.total,
+                s.status, s.created_at,
+                u.name as user_name
+            FROM sales s
+            LEFT JOIN users u ON s.user_id = u.id
+            WHERE s.id = $1
+        `, [id]);
+
+        if (saleResult.rowCount === 0) {
+            return res.status(404).json({ error: 'Venda não encontrada' });
+        }
+
+        const sale = saleResult.rows[0];
+
+        // 2. Buscar itens da venda
+        const itemsResult = await pool.query(`
+            SELECT 
+                si.id,
+                si.quantity,
+                si.unit_price,
+                si.discount,
+                si.total,
+                p.name as product_name,
+                p.sku
+            FROM sale_items si
+            JOIN products p ON si.product_id = p.id
+            WHERE si.sale_id = $1
+            ORDER BY si.id
+        `, [id]);
+
+        //3. Buscar pagamentos
+        const paymentsResult = await pool.query(`
+            SELECT 
+                payment_method,
+                amount
+            FROM sale_payments
+            WHERE sale_id = $1
+        `, [id]);
+
+        // 4. Montar resposta
+        res.json({
+            id: sale.id,
+            sale_number: sale.sale_number,
+            subtotal: parseFloat(sale.subtotal),
+            discount_amount: parseFloat(sale.discount),
+            total_amount: parseFloat(sale.total),
+            status: sale.status,
+            created_at: sale.created_at,
+            user_name: sale.user_name,
+            items: itemsResult.rows.map(item => ({
+                id: item.id,
+                product_name: item.product_name,
+                sku: item.sku,
+                quantity: parseInt(item.quantity),
+                unit_price: parseFloat(item.unit_price),
+                discount: parseFloat(item.discount) || 0,
+                total: parseFloat(item.total)
+            })),
+            payments: paymentsResult.rows.map(payment => ({
+                payment_method: payment.payment_method,
+                amount: parseFloat(payment.amount)
+            }))
+        });
+
+    } catch (error) {
+        console.error('❌ Erro ao buscar venda:', error);
+        res.status(500).json({ error: 'Erro ao buscar venda' });
+    }
+});
+
 // 404 Handler
 app.use((req, res) => {
     res.status(404).json({ error: 'Rota não encontrada' });

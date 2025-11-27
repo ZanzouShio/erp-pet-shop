@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
+import StockMovements from './pages/StockMovements';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function AdminRoutes() {
       <Routes>
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="inventory" element={<Inventory />} />
+        <Route path="stock-movements" element={<StockMovements />} />
         <Route path="sales" element={<Sales />} />
         <Route path="customers" element={<PlaceholderPage title="Clientes" />} />
         <Route path="financial" element={<PlaceholderPage title="Financeiro" />} />
