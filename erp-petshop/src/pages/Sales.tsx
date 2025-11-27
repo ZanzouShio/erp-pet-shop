@@ -15,6 +15,34 @@ interface Sale {
     item_count: number;
 }
 
+interface SaleItem {
+    id: string;
+    product_name: string;
+    sku: string;
+    quantity: number;
+    unit_price: number;
+    discount: number;
+    total: number;
+}
+
+interface SalePayment {
+    payment_method: string;
+    amount: number;
+}
+
+interface SaleDetails {
+    id: string;
+    sale_number: number;
+    subtotal: number;
+    discount_amount: number;
+    total_amount: number;
+    status: string;
+    created_at: string;
+    user_name: string;
+    items: SaleItem[];
+    payments: SalePayment[];
+}
+
 type DateFilter = 'today' | 'yesterday' | 'week' | 'month' | 'custom';
 
 const paymentMethodLabels: Record<string, string> = {
@@ -36,6 +64,10 @@ export default function Sales() {
     const [endDate, setEndDate] = useState('');
     const [paymentMethod, setPaymentMethod] = useState<string>('ALL');
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Modal de detalhes
+    const [selectedSale, setSelectedSale] = useState<SaleDetails | null>(null);
+    const [loadingDetails, setLoadingDetails] = useState(false);
 
     useEffect(() => {
         loadSales();
@@ -128,6 +160,21 @@ export default function Sales() {
             style: 'currency',
             currency: 'BRL'
         }).format(value);
+    };
+
+    const loadSaleDetails = async (saleId: string) => {
+        try {
+            setLoadingDetails(true);
+            const response = await fetch(`${API_URL}/sales/${saleId}`);
+            if (!response.ok) throw new Error('Erro ao carregar detalhes');
+            const data = await response.json();
+            setSelectedSale(data);
+        } catch (error) {
+            console.error('Erro ao carregar detalhes:', error);
+            alert('Erro ao carregar detalhes da venda');
+        } finally {
+            setLoadingDetails(false);
+        }
     };
 
     const getStatusBadge = (status: string) => {
@@ -315,7 +362,7 @@ export default function Sales() {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right">
                                                 <button
-                                                    onClick={() => alert(`Ver detalhes da venda #${sale.sale_number} - Em desenvolvimento`)}
+                                                    onClick={() => loadSaleDetails(sale.id)}
                                                     className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                                                 >
                                                     <Eye size={16} />
@@ -345,6 +392,101 @@ export default function Sales() {
                     </>
                 )}
             </div>
+
+            {/* Modal: Detalhes da Venda */}
+            {selectedSale && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 flex justify-between items-start">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900">Venda #{selectedSale.sale_number}</h2>
+                                <p className="text-gray-500 mt-1">
+                                    {formatDate(selectedSale.created_at)} • {selectedSale.user_name}
+                                </p>
+                            </div>
+                            <button onClick={() => setSelectedSale(null)} className="text-gray-400 hover:text-gray-600 transition">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="px-8 py-6 space-y-6">
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Itens da Venda</h3>
+                                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produto</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU</th>
+                                                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Qtd</th>
+                                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Preço Unit.</th>
+                                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Desconto</th>
+                                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200">
+                                            {selectedSale.items.map((item) => (
+                                                <tr key={item.id} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.product_name}</td>
+                                                    <td className="px-4 py-3 text-sm text-gray-500">{item.sku}</td>
+                                                    <td className="px-4 py-3 text-sm text-center text-gray-900">{item.quantity}</td>
+                                                    <td className="px-4 py-3 text-sm text-right text-gray-900">{formatCurrency(item.unit_price)}</td>
+                                                    <td className="px-4 py-3 text-sm text-right text-gray-500">
+                                                        {item.discount > 0 ? `-${formatCurrency(item.discount)}` : '-'}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-sm text-right font-medium text-gray-900">{formatCurrency(item.total)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-6">
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Pagamentos</h3>
+                                    <div className="space-y-2">
+                                        {selectedSale.payments.map((payment, index) => (
+                                            <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                                <span className="text-sm text-gray-700">
+                                                    {paymentMethodLabels[payment.payment_method] || payment.payment_method}
+                                                </span>
+                                                <span className="text-sm font-medium text-gray-900">
+                                                    {formatCurrency(payment.amount)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumo</h3>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                            <span className="text-sm text-gray-700">Subtotal</span>
+                                            <span className="text-sm font-medium text-gray-900">{formatCurrency(selectedSale.subtotal)}</span>
+                                        </div>
+                                        {selectedSale.discount_amount > 0 && (
+                                            <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
+                                                <span className="text-sm text-orange-700">Desconto</span>
+                                                <span className="text-sm font-medium text-orange-700">-{formatCurrency(selectedSale.discount_amount)}</span>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg border-2 border-green-200">
+                                            <span className="text-base font-semibold text-green-800">Total</span>
+                                            <span className="text-xl font-bold text-green-800">{formatCurrency(selectedSale.total_amount)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-8 py-4 flex justify-end">
+                            <button onClick={() => setSelectedSale(null)} className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition">
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
