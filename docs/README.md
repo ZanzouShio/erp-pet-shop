@@ -1,25 +1,79 @@
-# 📚 Documentação do Projeto
+# 🐾 ERP Pet Shop
 
-Esta pasta contém a documentação técnica do ERP Pet Shop.
+Sistema de gestão completo para Pet Shops, desenvolvido com tecnologias modernas para garantir performance e escalabilidade.
 
-## Arquivos
+## 🚀 Tecnologias
 
-### `DATABASE.md`
-Documentação completa da arquitetura do banco de dados:
-- Schema real consultado via SQL
-- 34 tabelas detalhadas
-- Relacionamentos
-- Views existentes
-- Campos a adicionar
+### Frontend
+- **React + Vite:** Performance e desenvolvimento ágil.
+- **Tailwind CSS:** Estilização moderna e responsiva.
+- **Lucide React:** Ícones vetoriais leves.
+- **React Router:** Navegação SPA.
 
-### `BUSINESS_LOGIC.md`
-Lógica de negócio implementada e planejada:
-- Fluxo de vendas (transações atômicas)
-- Entrada de estoque (custo médio ponderado)
-- Cancelamento com estorno
-- Fórmulas de margem e precificação
-- Endpoints implementados e pendentes
+### Backend
+- **Node.js + Express:** Servidor robusto e escalável.
+- **Arquitetura MVC:** Código organizado em Controllers e Routes.
+- **PostgreSQL:** Banco de dados relacional confiável.
+- **pg (node-postgres):** Driver de conexão otimizado.
 
----
+## ✨ Funcionalidades Principais
 
-**💡 Mantenha estes arquivos atualizados conforme o sistema evolui!**
+### 📦 Gestão de Estoque
+- **Movimentações:** Entrada e saída manual com histórico.
+- **Custo Médio:** Cálculo automático do custo médio ponderado.
+- **Alertas:** Notificação automática de margem de lucro baixa e estoque mínimo.
+
+### 💰 Gestão de Vendas
+- **PDV (Ponto de Venda):** Interface ágil para vendas rápidas.
+- **Histórico:** Listagem completa de vendas com filtros avançados.
+- **Detalhes:** Visualização detalhada de itens, pagamentos e descontos.
+- **Cancelamento:** Estorno automático de estoque ao cancelar venda.
+
+### 📊 Dashboard
+- **Resumo Diário:** Vendas do dia, ticket médio.
+- **Top Produtos:** Ranking dos produtos mais vendidos.
+- **Alertas:** Produtos com estoque baixo ou zerado.
+
+## 📂 Estrutura do Projeto
+
+```
+erp-petshop/
+├── backend/
+│   ├── src/
+│   │   ├── config/         # Configuração de DB
+│   │   ├── controllers/    # Lógica de Negócios
+│   │   ├── routes/         # Definição de Rotas
+│   │   ├── app.js          # Configuração do App
+│   │   └── server.js       # Entry Point
+│   └── package.json
+│
+├── erp-petshop/ (Frontend)
+│   ├── src/
+│   │   ├── components/     # Componentes Reutilizáveis
+│   │   ├── pages/          # Páginas da Aplicação
+│   │   └── ...
+│   └── package.json
+│
+└── docs/                   # Documentação Técnica
+```
+
+## 🛠️ Como Rodar
+
+### Backend
+```bash
+cd backend
+npm install
+npm run dev
+```
+Servidor rodando em: `http://localhost:3001`
+
+### Frontend
+```bash
+cd erp-petshop
+npm install
+npm run dev
+```
+Aplicação rodando em: `http://localhost:5173`
+
+## 📚 Documentação Técnica
+Para detalhes de arquitetura e banco de dados, consulte a pasta `docs/`.
