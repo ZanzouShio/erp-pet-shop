@@ -15,6 +15,7 @@ interface Sale {
     sale_number: number;
     total_amount: number;
     created_at: string;
+    status: string;
 }
 
 interface TopProduct {
@@ -47,7 +48,8 @@ export default function Dashboard() {
             const stats = await statsResponse.json();
 
             // 2. Buscar vendas recentes
-            const today = new Date().toISOString().split('T')[0];
+            // Usar data local para evitar problemas de fuso horário (UTC vs Local)
+            const today = new Date().toLocaleDateString('en-CA'); // Formato YYYY-MM-DD
             const salesResponse = await fetch(`${API_URL}/sales?startDate=${today}&endDate=${today}&limit=5`);
             const salesData = await salesResponse.json();
 
@@ -190,6 +192,7 @@ export default function Dashboard() {
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nº Venda</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hora</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
@@ -199,6 +202,15 @@ export default function Dashboard() {
                                             <td className="px-6 py-4 text-sm text-gray-500">{formatDate(sale.created_at)}</td>
                                             <td className="px-6 py-4 text-sm font-medium text-gray-900">
                                                 {formatCurrency(sale.total_amount)}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm">
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${sale.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                                        sale.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                                            'bg-yellow-100 text-yellow-800'
+                                                    }`}>
+                                                    {sale.status === 'completed' ? 'Concluída' :
+                                                        sale.status === 'cancelled' ? 'Cancelada' : 'Pendente'}
+                                                </span>
                                             </td>
                                         </tr>
                                     ))}

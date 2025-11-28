@@ -8,7 +8,7 @@ export const getSummary = async (req, res) => {
                 COUNT(*) as count,
                 COALESCE(SUM(total), 0) as total
             FROM sales
-            WHERE DATE(created_at AT TIME ZONE 'America/Sao_Paulo') = CURRENT_DATE
+            WHERE DATE(created_at AT TIME ZONE 'America/Sao_Paulo') = DATE(NOW() AT TIME ZONE 'America/Sao_Paulo')
               AND status = 'completed'
         `);
 
@@ -19,7 +19,7 @@ export const getSummary = async (req, res) => {
             WHERE stock_quantity <= min_stock 
               AND stock_quantity > 0
               AND is_active = true
-        `);
+            `);
 
         // 3. Produtos sem estoque
         const outOfStock = await pool.query(`
@@ -27,20 +27,20 @@ export const getSummary = async (req, res) => {
             FROM products
             WHERE stock_quantity = 0
               AND is_active = true
-        `);
+            `);
 
         // 4. Alertas de estoque (top produtos em falta)
         const alerts = await pool.query(`
-            SELECT 
-                name as product_name,
-                stock_quantity as stock,
-                min_stock
+        SELECT
+        name as product_name,
+            stock_quantity as stock,
+            min_stock
             FROM products
             WHERE stock_quantity <= min_stock
               AND is_active = true
             ORDER BY stock_quantity ASC
             LIMIT 5
-        `);
+            `);
 
         res.json({
             sales_today: {
@@ -67,10 +67,10 @@ export const getTopProducts = async (req, res) => {
         const { period = 7 } = req.query; // dias (7, 30, 90)
 
         const result = await pool.query(`
-            SELECT 
-                p.name as product_name,
-                SUM(si.quantity) as total_sold,
-                SUM(si.total) as revenue
+        SELECT
+        p.name as product_name,
+            SUM(si.quantity) as total_sold,
+            SUM(si.total) as revenue
             FROM sale_items si
             JOIN products p ON si.product_id = p.id
             JOIN sales s ON si.sale_id = s.id
@@ -79,7 +79,7 @@ export const getTopProducts = async (req, res) => {
             GROUP BY p.id, p.name
             ORDER BY total_sold DESC
             LIMIT 5
-        `);
+            `);
 
         res.json(result.rows.map(row => ({
             product_name: row.product_name,
