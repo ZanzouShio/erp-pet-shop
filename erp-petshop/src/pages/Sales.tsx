@@ -67,7 +67,6 @@ export default function Sales() {
 
     // Modal de detalhes
     const [selectedSale, setSelectedSale] = useState<SaleDetails | null>(null);
-    const [loadingDetails, setLoadingDetails] = useState(false);
 
     useEffect(() => {
         loadSales();
@@ -164,7 +163,6 @@ export default function Sales() {
 
     const loadSaleDetails = async (saleId: string) => {
         try {
-            setLoadingDetails(true);
             const response = await fetch(`${API_URL}/sales/${saleId}`);
             if (!response.ok) throw new Error('Erro ao carregar detalhes');
             const data = await response.json();
@@ -172,8 +170,6 @@ export default function Sales() {
         } catch (error) {
             console.error('Erro ao carregar detalhes:', error);
             alert('Erro ao carregar detalhes da venda');
-        } finally {
-            setLoadingDetails(false);
         }
     };
 

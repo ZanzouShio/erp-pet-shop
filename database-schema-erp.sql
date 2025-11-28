@@ -1,0 +1,3 @@
+-- Arquivo de schema placeholder para corrigir erro de mount do Docker.
+-- O banco de dados já deve estar inicializado no volume 'postgres_data'.
+-- Se precisar recriar o banco do zero, cole o schema completo aqui.

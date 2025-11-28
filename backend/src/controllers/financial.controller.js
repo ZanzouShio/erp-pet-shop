@@ -218,3 +218,13 @@ export const confirmEntry = async (req, res) => {
         client.release();
     }
 };
+
+export const getSuppliers = async (req, res) => {
+    try {
+        const result = await pool.query('SELECT id, trade_name as name FROM suppliers ORDER BY trade_name');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Erro ao listar fornecedores:', error);
+        res.status(500).json({ error: 'Erro ao listar fornecedores' });
+    }
+};

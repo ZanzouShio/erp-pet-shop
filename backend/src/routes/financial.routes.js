@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { uploadNfe } from '../controllers/financial.controller.js';
+import { uploadNfe, getSuppliers } from '../controllers/financial.controller.js';
 import fs from 'fs';
 
 const router = Router();
@@ -29,5 +29,7 @@ router.post('/nfe/confirm', async (req, res) => {
     const { confirmEntry } = await import('../controllers/financial.controller.js');
     confirmEntry(req, res);
 });
+
+router.get('/suppliers', getSuppliers);
 
 export default router;

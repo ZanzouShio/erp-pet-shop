@@ -6,6 +6,8 @@ import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
 import StockMovements from './pages/StockMovements';
 import Finance from './pages/Finance';
+import ExpenseCategories from './pages/ExpenseCategories';
+import AccountsPayable from './pages/AccountsPayable';
 
 function App() {
   return (
@@ -39,7 +41,15 @@ function AdminRoutes() {
         <Route path="stock-movements" element={<StockMovements />} />
         <Route path="sales" element={<Sales />} />
         <Route path="customers" element={<PlaceholderPage title="Clientes" />} />
-        <Route path="financial" element={<Finance />} />
+
+        {/* Rotas Financeiras */}
+        <Route path="financial" element={<Navigate to="/admin/financial/payable" replace />} />
+        <Route path="financial/import" element={<Finance />} />
+        <Route path="financial/categories" element={<ExpenseCategories />} />
+        <Route path="financial/payable" element={<AccountsPayable />} />
+        <Route path="financial/receivable" element={<PlaceholderPage title="Contas a Receber" />} />
+        <Route path="financial/cash-flow" element={<PlaceholderPage title="Fluxo de Caixa" />} />
+
         <Route path="reports" element={<PlaceholderPage title="Relatórios" />} />
         <Route path="users" element={<PlaceholderPage title="Usuários" />} />
         <Route path="settings" element={<PlaceholderPage title="Configurações" />} />
