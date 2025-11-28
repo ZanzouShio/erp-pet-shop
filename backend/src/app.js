@@ -7,6 +7,8 @@ import stockRoutes from './routes/stock.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
 import financialRoutes from './routes/financial.routes.js';
 import accountsPayableRoutes from './routes/accountsPayable.routes.js';
+import accountsReceivableRoutes from './routes/accountsReceivable.routes.js';
+import paymentRateRoutes from './routes/paymentRate.routes.js';
 
 const app = express();
 
@@ -25,6 +27,8 @@ app.use('/api/stock-movements', stockRoutes);
 app.use('/api/statistics', dashboardRoutes);
 app.use('/api/financial', financialRoutes);
 app.use('/api/accounts-payable', accountsPayableRoutes);
+app.use('/api/accounts-receivable', accountsReceivableRoutes);
+app.use('/api/payment-rates', paymentRateRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

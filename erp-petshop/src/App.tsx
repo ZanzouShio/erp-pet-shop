@@ -8,6 +8,7 @@ import StockMovements from './pages/StockMovements';
 import Finance from './pages/Finance';
 import ExpenseCategories from './pages/ExpenseCategories';
 import AccountsPayable from './pages/AccountsPayable';
+import AccountsReceivable from './pages/AccountsReceivable';
 
 function App() {
   return (
@@ -47,7 +48,7 @@ function AdminRoutes() {
         <Route path="financial/import" element={<Finance />} />
         <Route path="financial/categories" element={<ExpenseCategories />} />
         <Route path="financial/payable" element={<AccountsPayable />} />
-        <Route path="financial/receivable" element={<PlaceholderPage title="Contas a Receber" />} />
+        <Route path="financial/receivable" element={<AccountsReceivable />} />
         <Route path="financial/cash-flow" element={<PlaceholderPage title="Fluxo de Caixa" />} />
 
         <Route path="reports" element={<PlaceholderPage title="Relatórios" />} />

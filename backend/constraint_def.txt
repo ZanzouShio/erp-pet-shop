@@ -1,0 +1,1 @@
+CHECK (((type)::text = ANY ((ARRAY['revenue'::character varying, 'expense'::character varying])::text[])))

@@ -5,7 +5,7 @@ export const createSale = async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        const { items, payment_method, discount_amount } = req.body;
+        const { items, payment_method, discount_amount, installments = 1, customer_id, due_date } = req.body;
 
         if (!items || items.length === 0) {
             await client.query('ROLLBACK');
@@ -26,28 +26,27 @@ export const createSale = async (req, res) => {
         const sale_number = saleNumberResult.rows[0].next_number.toString();
 
         // User ID - Admin PDV (usuário existente no banco)
-        // TODO: Implementar autenticação e pegar user_id da sessão
         const user_id = 'e94460f4-6207-4156-918a-6e42b2978f6d';
 
-        // ✅ INSERT sem payment_method (não existe na tabela sales)
+        // 1. Criar Venda
         const saleResult = await client.query(`
             INSERT INTO sales (
                 sale_number, subtotal, discount, total,
-                status, user_id, synced
-            ) VALUES ($1, $2, $3, $4, 'completed', $5, false)
+                status, user_id, synced, customer_id
+            ) VALUES ($1, $2, $3, $4, 'completed', $5, false, $6)
             RETURNING *
-        `, [sale_number, subtotal, total_discount, total_amount, user_id]);
+        `, [sale_number, subtotal, total_discount, total_amount, user_id, customer_id || null]);
 
         const sale = saleResult.rows[0];
 
-        // Inserir forma de pagamento na tabela sale_payments
+        // 2. Inserir forma de pagamento
         await client.query(`
             INSERT INTO sale_payments (
                 sale_id, payment_method, amount
             ) VALUES ($1, $2, $3)
         `, [sale.id, payment_method, total_amount]);
 
-        // Inserir itens e atualizar estoque
+        // 3. Inserir itens e atualizar estoque
         for (const item of items) {
             await client.query(`
                 INSERT INTO sale_items (
@@ -68,6 +67,88 @@ export const createSale = async (req, res) => {
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = $2
             `, [item.quantity, item.product_id]);
+        }
+
+        // 4. Gerar Contas a Receber (Lógica Financeira)
+
+        // Buscar taxa configurada
+        let paymentType = 'debit'; // default
+        if (payment_method === 'credit_card') {
+            paymentType = installments > 1 ? 'credit_installment' : 'credit_1x';
+        } else if (payment_method === 'money' || payment_method === 'pix') {
+            paymentType = 'cash'; // Sem taxa geralmente, ou config específica
+        }
+
+        const rateResult = await client.query(`
+            SELECT * FROM payment_rates 
+            WHERE payment_type = $1 
+            AND $2 BETWEEN installments_min AND installments_max
+            LIMIT 1
+        `, [paymentType, installments]);
+
+        const rate = rateResult.rows[0] || { fee_percent: 0, days_to_liquidate: 0 };
+
+        // Calcular valores
+        const installmentValue = total_amount / installments;
+
+        for (let i = 1; i <= installments; i++) {
+            const feeAmount = (installmentValue * Number(rate.fee_percent)) / 100;
+            const netAmount = installmentValue - feeAmount;
+
+            // Calcular vencimento
+            const daysToAdd = payment_method === 'store_credit'
+                ? (due_date ? 0 : 30) // Se fiado e tem data, usa data. Se não, 30 dias.
+                : (rate.days_to_liquidate + ((i - 1) * 30)); // Cartão: dias liquidação + 30 dias por parcela
+
+            const dueDate = new Date();
+            if (payment_method === 'store_credit' && due_date) {
+                dueDate.setTime(new Date(due_date).getTime());
+            } else {
+                dueDate.setDate(dueDate.getDate() + daysToAdd);
+            }
+
+            // Status inicial
+            let status = 'pending';
+            let paidDate = null;
+
+            // Se for dinheiro/pix/débito, já nasce pago
+            if (['money', 'pix', 'debit_card'].includes(payment_method)) {
+                status = 'paid';
+                paidDate = new Date();
+            }
+
+            // Criar título
+            const titleResult = await client.query(`
+                INSERT INTO accounts_receivable (
+                    description, amount, net_amount, tax_amount, tax_rate,
+                    due_date, paid_date, status, customer_id, sale_id,
+                    installment_number, total_installments, payment_method, origin_type
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'sale')
+                RETURNING id
+            `, [
+                `Venda #${sale_number} - Parcela ${i}/${installments}`,
+                installmentValue,
+                netAmount,
+                feeAmount,
+                rate.fee_percent,
+                dueDate,
+                paidDate,
+                status,
+                customer_id || null,
+                sale.id,
+                i,
+                installments,
+                payment_method
+            ]);
+
+            // Se já nasceu pago, registrar transação financeira (Entrada de Caixa)
+            if (status === 'paid') {
+                await client.query(`
+                    INSERT INTO financial_transactions 
+                    (type, amount, description, date, issue_date, due_date, category, payment_method, status, customer_id)
+                    VALUES ('revenue', $1, $2, $3, $3, $3, 'Venda de Produtos', $4, 'paid', $5)
+                `, [netAmount, `Recebimento Venda #${sale_number}`, paidDate, payment_method, customer_id || null]);
+            }
         }
 
         await client.query('COMMIT');

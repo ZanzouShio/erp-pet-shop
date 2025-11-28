@@ -76,7 +76,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             enabled: true,
             subItems: [
                 { id: 'financial-payable', label: 'Contas a Pagar', icon: TrendingDown, enabled: true, path: '/admin/financial/payable' },
-                { id: 'financial-receivable', label: 'Contas a Receber', icon: TrendingUp, enabled: false, path: '/admin/financial/receivable' },
+                { id: 'financial-receivable', label: 'Contas a Receber', icon: TrendingUp, enabled: true, path: '/admin/financial/receivable' },
                 { id: 'financial-cashflow', label: 'Fluxo de Caixa', icon: LineChart, enabled: false, path: '/admin/financial/cash-flow' },
                 { id: 'financial-import', label: 'Importação NF-e', icon: Upload, enabled: true, path: '/admin/financial/import' },
             ]
