@@ -34,7 +34,7 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
         { id: 'inventory', label: 'Estoque', icon: Package, enabled: true },
         { id: 'sales', label: 'Vendas', icon: Receipt, enabled: true },
         { id: 'customers', label: 'Clientes', icon: Users, enabled: false },
-        { id: 'financial', label: 'Financeiro', icon: DollarSign, enabled: false },
+        { id: 'financial', label: 'Financeiro', icon: DollarSign, enabled: true },
         { id: 'reports', label: 'Relatórios', icon: BarChart3, enabled: false },
         { id: 'users', label: 'Usuários', icon: UserCog, enabled: false },
         { id: 'settings', label: 'Configurações', icon: Settings, enabled: false },

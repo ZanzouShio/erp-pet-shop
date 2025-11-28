@@ -5,6 +5,7 @@ import categoryRoutes from './routes/category.routes.js';
 import saleRoutes from './routes/sale.routes.js';
 import stockRoutes from './routes/stock.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
+import financialRoutes from './routes/financial.routes.js';
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/stock-movements', stockRoutes);
 app.use('/api/statistics', dashboardRoutes);
+app.use('/api/financial', financialRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

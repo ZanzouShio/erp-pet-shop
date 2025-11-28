@@ -5,6 +5,7 @@ import POS from './pages/POS';
 import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
 import StockMovements from './pages/StockMovements';
+import Finance from './pages/Finance';
 
 function App() {
   return (
@@ -38,7 +39,7 @@ function AdminRoutes() {
         <Route path="stock-movements" element={<StockMovements />} />
         <Route path="sales" element={<Sales />} />
         <Route path="customers" element={<PlaceholderPage title="Clientes" />} />
-        <Route path="financial" element={<PlaceholderPage title="Financeiro" />} />
+        <Route path="financial" element={<Finance />} />
         <Route path="reports" element={<PlaceholderPage title="Relatórios" />} />
         <Route path="users" element={<PlaceholderPage title="Usuários" />} />
         <Route path="settings" element={<PlaceholderPage title="Configurações" />} />
