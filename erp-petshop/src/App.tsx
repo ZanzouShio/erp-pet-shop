@@ -17,9 +17,12 @@ import CashPositionReport from './pages/Reports/CashPositionReport';
 import FinancialSituationReport from './pages/Reports/FinancialSituationReport';
 import StockAlertsReport from './pages/Reports/StockAlertsReport';
 import ProductPerformanceReport from './pages/Reports/ProductPerformanceReport';
+import PaymentFeesReport from './pages/Reports/PaymentFeesReport';
 import CustomerList from './pages/Customers/CustomerList';
 import CustomerForm from './pages/Customers/CustomerForm';
 import PetSpeciesSettings from './pages/Settings/PetSpeciesSettings';
+import PaymentSettings from './pages/Settings/PaymentSettings';
+import BankAccountSettings from './pages/Settings/BankAccountSettings';
 
 function App() {
   return (
@@ -68,6 +71,7 @@ function AdminRoutes() {
         <Route path="reports/financial-situation" element={<FinancialSituationReport />} />
         <Route path="reports/stock-alerts" element={<StockAlertsReport />} />
         <Route path="reports/product-performance" element={<ProductPerformanceReport />} />
+        <Route path="reports/payment-fees" element={<PaymentFeesReport />} />
 
         {/* Clientes */}
         <Route path="customers" element={<CustomerList />} />
@@ -76,21 +80,11 @@ function AdminRoutes() {
 
         {/* Configurações */}
         <Route path="settings/pet-species" element={<PetSpeciesSettings />} />
+        <Route path="settings/expense-categories" element={<ExpenseCategories />} />
+        <Route path="settings/payments" element={<PaymentSettings />} />
+        <Route path="settings/bank-accounts" element={<BankAccountSettings />} />
       </Routes>
     </AdminLayout>
-  );
-}
-
-// Componente placeholder para páginas em desenvolvimento
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div className="p-8 flex items-center justify-center h-full">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">{title}</h1>
-        <p className="text-gray-500 text-lg">Em desenvolvimento...</p>
-        <p className="text-gray-400 text-sm mt-2">Esta funcionalidade estará disponível em breve.</p>
-      </div>
-    </div>
   );
 }
 

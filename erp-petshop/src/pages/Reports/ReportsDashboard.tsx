@@ -39,6 +39,13 @@ export default function ReportsDashboard() {
             description: 'Curva ABC, margens e produtos com maior giro.',
             icon: <Package size={32} className="text-indigo-600" />,
             color: 'bg-indigo-50 border-indigo-200 hover:border-indigo-400'
+        },
+        {
+            id: 'payment-fees',
+            title: 'Taxas de Pagamento',
+            description: 'Análise de taxas por operador e parcelas.',
+            icon: <DollarSign size={32} className="text-red-600" />,
+            color: 'bg-red-50 border-red-200 hover:border-red-400'
         }
     ];
 

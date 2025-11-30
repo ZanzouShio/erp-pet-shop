@@ -116,7 +116,7 @@ export default function POS({ onExit }: POSProps) {
   };
 
   // Finalizar venda
-  const completeSale = async (paymentMethod: PaymentMethod) => {
+  const completeSale = async (paymentMethod: PaymentMethod, details?: any) => {
     try {
       // Preparar dados da venda para enviar ao backend
       const saleData = {
@@ -128,7 +128,8 @@ export default function POS({ onExit }: POSProps) {
         })),
         payment_method: paymentMethod,
         discount_amount: totalDiscount,
-        notes: null
+        notes: null,
+        ...details // Incluir paymentConfigId, installments, feePercent
       };
 
       // Enviar venda ao backend

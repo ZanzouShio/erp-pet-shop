@@ -85,7 +85,6 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
         },
         { id: 'reports', label: 'Relatórios', icon: FileText, enabled: true, path: '/admin/reports' },
         { id: 'customers', label: 'Clientes', icon: Users, enabled: true, path: '/admin/customers' },
-        { id: 'users', label: 'Usuários', icon: UserCog, enabled: false, path: '/admin/users' },
         {
             id: 'settings',
             label: 'Configurações',
@@ -98,7 +97,9 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
                     icon: DollarSign,
                     enabled: true,
                     subItems: [
-                        { id: 'expense-categories', label: 'Categorias de Despesas', icon: ChevronRight, enabled: true, path: '/admin/financial/categories' },
+                        { id: 'expense-categories', label: 'Categorias de Despesas', icon: ChevronRight, enabled: true, path: '/admin/settings/expense-categories' },
+                        { id: 'payment-methods', label: 'Métodos de Pagamento', icon: ChevronRight, enabled: true, path: '/admin/settings/payments' },
+                        { id: 'bank-accounts', label: 'Contas Bancárias', icon: ChevronRight, enabled: true, path: '/admin/settings/bank-accounts' },
                     ]
                 },
                 {

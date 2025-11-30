@@ -42,11 +42,13 @@ model accounts_receivable {
   installment_number Int?
   total_installments Int?
   payment_method     String?    @db.VarChar(50)
+  payment_config_id  String?    @db.Uuid
   origin_type        String?    @default("sale") @db.VarChar(20)
   created_at         DateTime?  @default(now()) @db.Timestamp(6)
   updated_at         DateTime?  @default(now()) @db.Timestamp(6)
   customers          customers? @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sales              sales?     @relation(fields: [sale_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  payment_config     payment_methods_config? @relation(fields: [payment_config_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([customer_id], map: "idx_receivables_customer")
   @@index([due_date], map: "idx_receivables_due_date")
@@ -91,6 +93,7 @@ model bank_accounts {
   updated_at             DateTime?                @default(now()) @db.Timestamp(6)
   bank_reconciliations   bank_reconciliations[]
   financial_transactions financial_transactions[]
+  payment_methods_config payment_methods_config[]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -277,6 +280,7 @@ model financial_transactions {
   paid_date                    DateTime?                @db.Date
   status                       String?                  @default("pending") @db.VarChar(20)
   payment_method               String?                  @db.VarChar(50)
+  payment_config_id            String?                  @db.Uuid
   installment_number           Int?
   total_installments           Int?
   parent_transaction_id        String?                  @db.Uuid
@@ -301,6 +305,7 @@ model financial_transactions {
   chart_of_accounts            chart_of_accounts?       @relation(fields: [account_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
   accounts_payable             accounts_payable?        @relation(fields: [account_payable_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   bank_accounts                bank_accounts?           @relation(fields: [bank_account_id], references: [id], onUpdate: NoAction)
+  payment_config               payment_methods_config?  @relation(fields: [payment_config_id], references: [id], onUpdate: NoAction)
   cost_centers                 cost_centers?            @relation(fields: [cost_center_id], references: [id], onUpdate: NoAction)
   customers                    customers?               @relation(fields: [customer_id], references: [id], onUpdate: NoAction)
   financial_transactions       financial_transactions?  @relation("financial_transactionsTofinancial_transactions", fields: [parent_transaction_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -394,6 +399,27 @@ model payment_rates {
   days_to_liquidate Int       @default(1)
   created_at        DateTime? @default(now()) @db.Timestamp(6)
   updated_at        DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model payment_methods_config {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type              String         @db.VarChar(20) // credit_card, debit_card, pix
+  name              String         @db.VarChar(100) // Nome do provedor (ex: Stone, Cielo)
+  is_active         Boolean        @default(true)
+  bank_account_id   String?        @db.Uuid
+  days_to_liquidate Int            @default(1)
+  receivable_mode   String?        @default("immediate") @db.VarChar(20) // immediate, flow
+  flat_fee_percent  Decimal?       @default(0) @db.Decimal(5, 2) // Para Débito e Pix
+  max_installments  Int?           @default(1) // Para Crédito
+  installment_fees  Json?          // Array de taxas: [{ installment: 1, fee: 2.5 }, ...]
+  created_at        DateTime?      @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?      @default(now()) @db.Timestamp(6)
+  bank_accounts     bank_accounts? @relation(fields: [bank_account_id], references: [id], onUpdate: NoAction)
+  accounts_receivable accounts_receivable[]
+  financial_transactions financial_transactions[]
+
+  @@index([type], map: "idx_payment_config_type")
+  @@index([is_active], map: "idx_payment_config_active")
 }
 
 model pdv_terminals {

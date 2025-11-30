@@ -5,7 +5,7 @@ export const createSale = async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        const { items, payment_method, discount_amount, installments = 1, customer_id, due_date } = req.body;
+        const { items, payment_method, discount_amount, installments = 1, customer_id, due_date, paymentConfigId, feePercent } = req.body;
 
         if (!items || items.length === 0) {
             await client.query('ROLLBACK');
@@ -71,88 +71,152 @@ export const createSale = async (req, res) => {
 
         // 4. Gerar Contas a Receber (Lógica Financeira)
 
-        // Buscar taxa configurada
-        let paymentType = 'debit'; // default
-        if (payment_method === 'credit_card') {
-            paymentType = installments > 1 ? 'credit_installment' : 'credit_1x';
-        } else if (payment_method === 'money' || payment_method === 'pix') {
-            paymentType = 'cash'; // Sem taxa geralmente, ou config específica
+        let config = null;
+        if (paymentConfigId) {
+            const configResult = await client.query('SELECT * FROM payment_methods_config WHERE id = $1', [paymentConfigId]);
+            config = configResult.rows[0];
         }
 
-        const rateResult = await client.query(`
-            SELECT * FROM payment_rates 
-            WHERE payment_type = $1 
-            AND $2 BETWEEN installments_min AND installments_max
-            LIMIT 1
-        `, [paymentType, installments]);
+        const receivableMode = config?.receivable_mode || 'immediate';
+        const daysToLiquidate = config?.days_to_liquidate || (payment_method === 'credit_card' ? 30 : 1);
+        const appliedFeePercent = feePercent !== undefined ? Number(feePercent) : 0;
 
-        const rate = rateResult.rows[0] || { fee_percent: 0, days_to_liquidate: 0 };
+        // Se for "Fiado" (store_credit), mantém lógica específica
+        if (payment_method === 'store_credit') {
+            const installmentValue = total_amount / installments;
+            for (let i = 1; i <= installments; i++) {
+                const dueDate = new Date();
+                if (due_date) {
+                    dueDate.setTime(new Date(due_date).getTime());
+                    // Se tiver parcelas no fiado, teria que calcular datas futuras, mas por simplificação assumimos 30 dias se não tiver data
+                } else {
+                    dueDate.setDate(dueDate.getDate() + (i * 30));
+                }
 
-        // Calcular valores
-        const installmentValue = total_amount / installments;
-
-        for (let i = 1; i <= installments; i++) {
-            const feeAmount = (installmentValue * Number(rate.fee_percent)) / 100;
-            const netAmount = installmentValue - feeAmount;
-
-            // Calcular vencimento
-            const daysToAdd = payment_method === 'store_credit'
-                ? (due_date ? 0 : 30) // Se fiado e tem data, usa data. Se não, 30 dias.
-                : (rate.days_to_liquidate + ((i - 1) * 30)); // Cartão: dias liquidação + 30 dias por parcela
+                await client.query(`
+                    INSERT INTO accounts_receivable (
+                        description, amount, net_amount, tax_amount, tax_rate,
+                        due_date, paid_date, status, customer_id, sale_id,
+                        installment_number, total_installments, payment_method, origin_type
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'sale')
+                `, [
+                    `Venda #${sale_number} - Parcela ${i}/${installments}`,
+                    installmentValue,
+                    installmentValue, // Sem taxa no fiado por padrão
+                    0,
+                    0,
+                    dueDate,
+                    null,
+                    'pending',
+                    customer_id || null,
+                    sale.id,
+                    i,
+                    installments,
+                    payment_method
+                ]);
+            }
+        }
+        // Lógica para Cartão/Pix/Dinheiro com Configuração
+        else if (receivableMode === 'immediate') {
+            // Recebimento único (Antecipação ou à vista)
+            const totalFee = (total_amount * appliedFeePercent) / 100;
+            const netAmount = total_amount - totalFee;
 
             const dueDate = new Date();
-            if (payment_method === 'store_credit' && due_date) {
-                dueDate.setTime(new Date(due_date).getTime());
-            } else {
-                dueDate.setDate(dueDate.getDate() + daysToAdd);
-            }
+            dueDate.setDate(dueDate.getDate() + daysToLiquidate);
 
-            // Status inicial
             let status = 'pending';
             let paidDate = null;
 
-            console.log(`[DEBUG] Payment Method: '${payment_method}'`);
+            // Dinheiro/Pix/Débito geralmente já nascem pagos se days_to_liquidate = 0 ou 1?
+            // Se days_to_liquidate = 0, é D+0 (Hoje). Se 1, D+1 (Amanhã).
+            // Vamos manter a lógica: se for dinheiro/pix/débito E days_to_liquidate <= 1, consideramos pago?
+            // Ou melhor, se o método for 'money', é pago na hora. Pix também.
+            // Cartão de débito cai em D+1 geralmente, então fica 'pending' até cair? Ou consideramos 'paid' para simplificar caixa?
+            // O usuário disse: "existem muitos que te pagam logo no dia seguinte ou no mesmo dia".
+            // Se for 'money', é caixa físico, já está na mão.
 
-            // Se for dinheiro/pix/débito, já nasce pago
-            if (['money', 'pix', 'debit_card'].includes(payment_method)) {
+            if (payment_method === 'money') {
                 status = 'paid';
                 paidDate = new Date();
-                console.log('[DEBUG] Status set to PAID');
-            } else {
-                console.log('[DEBUG] Status set to PENDING');
             }
 
-            // Criar título
             const titleResult = await client.query(`
                 INSERT INTO accounts_receivable (
                     description, amount, net_amount, tax_amount, tax_rate,
                     due_date, paid_date, status, customer_id, sale_id,
-                    installment_number, total_installments, payment_method, origin_type
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'sale')
+                    installment_number, total_installments, payment_method, payment_config_id, origin_type
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'sale')
                 RETURNING id
             `, [
-                `Venda #${sale_number} - Parcela ${i}/${installments}`,
-                installmentValue,
+                `Venda #${sale_number} (Integral)`,
+                total_amount,
                 netAmount,
-                feeAmount,
-                rate.fee_percent,
+                totalFee,
+                appliedFeePercent,
                 dueDate,
                 paidDate,
                 status,
                 customer_id || null,
                 sale.id,
-                i,
-                installments,
-                payment_method
+                1,
+                1,
+                payment_method,
+                paymentConfigId || null
             ]);
 
-            // Se já nasceu pago, registrar transação financeira (Entrada de Caixa)
+            // Se pago (Dinheiro), lança no caixa
             if (status === 'paid') {
                 await client.query(`
                     INSERT INTO financial_transactions 
-                    (type, amount, description, date, issue_date, due_date, category, payment_method, status, customer_id)
-                    VALUES ('revenue', $1, $2, $3, $3, $3, 'Venda de Produtos', $4, 'paid', $5)
-                `, [netAmount, `Recebimento Venda #${sale_number}`, paidDate, payment_method, customer_id || null]);
+                    (type, amount, description, date, issue_date, due_date, category, payment_method, payment_config_id, status, customer_id)
+                    VALUES ('revenue', $1, $2, $3, $4, $5, 'Venda de Produtos', $6, $7, 'paid', $8)
+                `, [
+                    netAmount,
+                    `Recebimento Venda #${sale_number}`,
+                    paidDate, paidDate, paidDate,
+                    payment_method,
+                    paymentConfigId || null,
+                    customer_id || null
+                ]);
+            }
+
+        } else {
+            // receivableMode === 'flow' (Fluxo - 1 recebível por parcela)
+            const installmentValue = total_amount / installments;
+
+            for (let i = 1; i <= installments; i++) {
+                const feeAmount = (installmentValue * appliedFeePercent) / 100;
+                const netAmount = installmentValue - feeAmount;
+
+                // Data de vencimento: (i * 30 dias) + dias de liquidação
+                // Ex: Parcela 1: 30 dias + 1 dia (D+31)
+                const daysToAdd = (i * 30) + daysToLiquidate;
+                const dueDate = new Date();
+                dueDate.setDate(dueDate.getDate() + daysToAdd);
+
+                await client.query(`
+                    INSERT INTO accounts_receivable (
+                        description, amount, net_amount, tax_amount, tax_rate,
+                        due_date, paid_date, status, customer_id, sale_id,
+                        installment_number, total_installments, payment_method, payment_config_id, origin_type
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'sale')
+                `, [
+                    `Venda #${sale_number} - Parcela ${i}/${installments}`,
+                    installmentValue,
+                    netAmount,
+                    feeAmount,
+                    appliedFeePercent,
+                    dueDate,
+                    null, // Fluxo futuro é sempre pendente
+                    'pending',
+                    customer_id || null,
+                    sale.id,
+                    i,
+                    installments,
+                    payment_method,
+                    paymentConfigId || null
+                ]);
             }
         }
 

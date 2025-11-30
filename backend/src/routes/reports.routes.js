@@ -8,5 +8,6 @@ router.get('/cash-position', ReportsController.getCashPosition);
 router.get('/financial-situation', ReportsController.getFinancialSituation);
 router.get('/stock-alerts', ReportsController.getStockAlerts);
 router.get('/product-performance', ReportsController.getProductPerformance);
+router.get('/payment-fees', ReportsController.getPaymentFeesReport);
 
 export default router;

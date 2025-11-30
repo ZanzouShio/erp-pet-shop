@@ -482,6 +482,85 @@ class ReportsController {
             res.status(500).json({ error: 'Erro ao gerar relatório' });
         }
     }
+
+    // 6. Relatório de Taxas de Pagamento
+    async getPaymentFeesReport(req, res) {
+        try {
+            const { startDate, endDate } = req.query;
+            const start = startDate ? startOfDay(new Date(startDate)) : startOfDay(subDays(new Date(), 30));
+            const end = endDate ? endOfDay(new Date(endDate)) : endOfDay(new Date());
+
+            // Agrupar por Configuração de Pagamento (Operador) e Parcelas
+            // Usamos accounts_receivable pois é onde as taxas reais ficam gravadas
+            const feesByConfig = await prisma.accounts_receivable.groupBy({
+                by: ['payment_config_id', 'total_installments'],
+                where: {
+                    created_at: { gte: start, lte: end },
+                    origin_type: 'sale',
+                    payment_config_id: { not: null } // Apenas onde temos config rastreada
+                },
+                _sum: {
+                    amount: true,      // Valor Bruto (Parcela)
+                    net_amount: true,  // Valor Líquido
+                    tax_amount: true   // Valor da Taxa
+                },
+                _count: {
+                    id: true // Quantidade de parcelas geradas
+                }
+            });
+
+            // Enriquecer com nome do operador
+            const reportData = await Promise.all(feesByConfig.map(async (item) => {
+                const config = await prisma.payment_methods_config.findUnique({
+                    where: { id: item.payment_config_id },
+                    select: { name: true, type: true }
+                });
+
+                return {
+                    operatorId: item.payment_config_id,
+                    operatorName: config?.name || 'Desconhecido',
+                    paymentType: config?.type || 'N/A',
+                    installments: item.total_installments || 1,
+                    totalGross: Number(item._sum.amount || 0),
+                    totalNet: Number(item._sum.net_amount || 0),
+                    totalFees: Number(item._sum.tax_amount || 0),
+                    count: item._count.id
+                };
+            }));
+
+            // Agrupar por Operador (Resumo)
+            const summaryByOperator = reportData.reduce((acc, curr) => {
+                if (!acc[curr.operatorName]) {
+                    acc[curr.operatorName] = {
+                        name: curr.operatorName,
+                        totalGross: 0,
+                        totalFees: 0,
+                        avgFeePercent: 0
+                    };
+                }
+                acc[curr.operatorName].totalGross += curr.totalGross;
+                acc[curr.operatorName].totalFees += curr.totalFees;
+                return acc;
+            }, {});
+
+            // Calcular % média
+            Object.values(summaryByOperator).forEach(op => {
+                if (op.totalGross > 0) {
+                    op.avgFeePercent = (op.totalFees / op.totalGross) * 100;
+                }
+            });
+
+            res.json({
+                period: { start, end },
+                details: reportData.sort((a, b) => a.operatorName.localeCompare(b.operatorName) || a.installments - b.installments),
+                summary: Object.values(summaryByOperator)
+            });
+
+        } catch (error) {
+            console.error('Erro ao gerar relatório de taxas:', error);
+            res.status(500).json({ error: 'Erro ao gerar relatório de taxas' });
+        }
+    }
 }
 
 export default new ReportsController();
