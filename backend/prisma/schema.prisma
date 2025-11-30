@@ -412,6 +412,7 @@ model payment_methods_config {
   flat_fee_percent  Decimal?       @default(0) @db.Decimal(5, 2) // Para Débito e Pix
   max_installments  Int?           @default(1) // Para Crédito
   installment_fees  Json?          // Array de taxas: [{ installment: 1, fee: 2.5 }, ...]
+  color             String?        @default("#3b82f6") @db.VarChar(20) // Cor para gráficos
   created_at        DateTime?      @default(now()) @db.Timestamp(6)
   updated_at        DateTime?      @default(now()) @db.Timestamp(6)
   bank_accounts     bank_accounts? @relation(fields: [bank_account_id], references: [id], onUpdate: NoAction)

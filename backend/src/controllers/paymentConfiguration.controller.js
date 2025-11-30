@@ -28,7 +28,8 @@ class PaymentConfigurationController {
                 receivable_mode,
                 flat_fee_percent,
                 max_installments,
-                installment_fees
+                installment_fees,
+                color
             } = req.body;
 
             // Validações básicas
@@ -49,6 +50,7 @@ class PaymentConfigurationController {
                     flat_fee_percent: flat_fee_percent ? parseFloat(flat_fee_percent) : 0,
                     max_installments: max_installments ? parseInt(max_installments) : 1,
                     installment_fees: installment_fees || [],
+                    color: color || '#3b82f6',
                     is_active: true
                 }
             });
@@ -71,7 +73,8 @@ class PaymentConfigurationController {
                 flat_fee_percent,
                 max_installments,
                 installment_fees,
-                is_active
+                is_active,
+                color
             } = req.body;
 
             // Sanitização do bank_account_id
@@ -87,7 +90,8 @@ class PaymentConfigurationController {
                     flat_fee_percent: flat_fee_percent !== undefined ? parseFloat(flat_fee_percent) : undefined,
                     max_installments: max_installments ? parseInt(max_installments) : undefined,
                     installment_fees,
-                    is_active
+                    is_active,
+                    color
                 }
             });
 

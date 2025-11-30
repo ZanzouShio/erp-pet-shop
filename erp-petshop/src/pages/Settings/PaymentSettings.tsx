@@ -14,6 +14,7 @@ interface PaymentConfig {
     max_installments?: number;
     installment_fees?: { installment: number; fee: number }[];
     bank_accounts?: { name: string; bank_name: string };
+    color?: string;
 }
 
 interface BankAccount {
@@ -128,7 +129,8 @@ export default function PaymentSettings() {
             receivable_mode: 'immediate',
             flat_fee_percent: 0,
             max_installments: 1,
-            installment_fees: []
+            installment_fees: [],
+            color: '#3b82f6'
         });
         setIsEditing(true);
     };
@@ -197,6 +199,18 @@ export default function PaymentSettings() {
                                     onChange={e => setEditingConfig({ ...editingConfig, name: e.target.value })}
                                     placeholder="Ex: Stone, Cielo, Banco X"
                                 />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Cor de Identificação</label>
+                                <div className="flex gap-2 items-center">
+                                    <input
+                                        type="color"
+                                        className="h-10 w-20 p-1 border rounded-lg cursor-pointer"
+                                        value={editingConfig.color || '#3b82f6'}
+                                        onChange={e => setEditingConfig({ ...editingConfig, color: e.target.value })}
+                                    />
+                                    <span className="text-sm text-gray-500">{editingConfig.color || '#3b82f6'}</span>
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Conta Bancária de Recebimento</label>
@@ -345,8 +359,13 @@ export default function PaymentSettings() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredConfigs.map(config => (
-                            <div key={config.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                                <div className="flex justify-between items-start mb-4">
+                            <div key={config.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 relative overflow-hidden">
+                                {/* Color Strip */}
+                                <div
+                                    className="absolute top-0 left-0 w-1.5 h-full"
+                                    style={{ backgroundColor: config.color || '#3b82f6' }}
+                                />
+                                <div className="flex justify-between items-start mb-4 pl-2">
                                     <div>
                                         <h3 className="font-bold text-gray-800 text-lg">{config.name}</h3>
                                         {config.bank_accounts && (
@@ -369,7 +388,7 @@ export default function PaymentSettings() {
                                     </div>
                                 </div>
 
-                                <div className="space-y-2 text-sm text-gray-600">
+                                <div className="space-y-2 text-sm text-gray-600 pl-2">
                                     <div className="flex justify-between">
                                         <span>Liquidação:</span>
                                         <span className="font-medium">{config.days_to_liquidate} dias</span>

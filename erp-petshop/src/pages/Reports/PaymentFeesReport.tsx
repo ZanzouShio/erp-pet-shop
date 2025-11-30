@@ -24,7 +24,8 @@ interface OperatorSummary {
     totalGross: number;
     totalFees: number;
     avgFeePercent: number;
-    [key: string]: string | number; // Index signature for Recharts
+    color?: string;
+    [key: string]: string | number | undefined; // Index signature for Recharts
 }
 
 interface ReportResponse {
@@ -32,8 +33,6 @@ interface ReportResponse {
     details: PaymentFeeData[];
     summary: OperatorSummary[];
 }
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 const PaymentFeesReport: React.FC = () => {
     const [startDate, setStartDate] = useState(
@@ -124,22 +123,9 @@ const PaymentFeesReport: React.FC = () => {
 
             {data && (
                 <>
-                    {/* Cards de Resumo */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white p-6 rounded-xl shadow-sm border">
-                            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <h3 className="text-sm font-medium text-gray-500">Total de Taxas</h3>
-                                <DollarSign className="h-4 w-4 text-red-500" />
-                            </div>
-                            <div>
-                                <div className="text-2xl font-bold text-red-600">
-                                    {formatCurrency(data.summary.reduce((acc, curr) => acc + curr.totalFees, 0))}
-                                </div>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Valor pago em taxas no período
-                                </p>
-                            </div>
-                        </div>
+                    {/* Cards de Resumo (Storytelling: Bruto -> Taxas -> Líquido -> Média) */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        {/* 1. Vendas Brutas */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border">
                             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <h3 className="text-sm font-medium text-gray-500">Vendas Brutas</h3>
@@ -150,10 +136,44 @@ const PaymentFeesReport: React.FC = () => {
                                     {formatCurrency(data.summary.reduce((acc, curr) => acc + curr.totalGross, 0))}
                                 </div>
                                 <p className="text-xs text-gray-500 mt-1">
-                                    Total transacionado via cartão/pix
+                                    Total transacionado
                                 </p>
                             </div>
                         </div>
+
+                        {/* 2. Total de Taxas */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border">
+                            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <h3 className="text-sm font-medium text-gray-500">Total de Taxas</h3>
+                                <DollarSign className="h-4 w-4 text-red-500" />
+                            </div>
+                            <div>
+                                <div className="text-2xl font-bold text-red-600">
+                                    {formatCurrency(data.summary.reduce((acc, curr) => acc + curr.totalFees, 0))}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Custo total com taxas
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* 3. Total Líquido (Novo) */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border">
+                            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <h3 className="text-sm font-medium text-gray-500">Total Líquido</h3>
+                                <DollarSign className="h-4 w-4 text-green-500" />
+                            </div>
+                            <div>
+                                <div className="text-2xl font-bold text-green-600">
+                                    {formatCurrency(data.summary.reduce((acc, curr) => acc + (curr.totalGross - curr.totalFees), 0))}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Valor real a receber
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* 4. Taxa Média Global */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border">
                             <div className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <h3 className="text-sm font-medium text-gray-500">Taxa Média Global</h3>
@@ -168,7 +188,7 @@ const PaymentFeesReport: React.FC = () => {
                                     })()}
                                 </div>
                                 <p className="text-xs text-gray-500 mt-1">
-                                    Impacto médio das taxas sobre as vendas
+                                    Impacto médio nas vendas
                                 </p>
                             </div>
                         </div>
@@ -189,7 +209,11 @@ const PaymentFeesReport: React.FC = () => {
                                         <YAxis />
                                         <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                                         <Legend />
-                                        <Bar dataKey="totalFees" name="Total Taxas (R$)" fill="#ef4444" />
+                                        <Bar dataKey="totalFees" name="Total Taxas (R$)">
+                                            {data.summary.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color || '#ef4444'} />
+                                            ))}
+                                        </Bar>
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
@@ -212,8 +236,8 @@ const PaymentFeesReport: React.FC = () => {
                                             outerRadius={80}
                                             label={(entry) => entry.name}
                                         >
-                                            {data.summary.map((_entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            {data.summary.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color || '#3b82f6'} />
                                             ))}
                                         </Pie>
                                         <Tooltip formatter={(value) => formatCurrency(Number(value))} />

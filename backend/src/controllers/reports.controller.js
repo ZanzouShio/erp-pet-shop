@@ -5,7 +5,7 @@ class ReportsController {
     // 1. Resumo de Vendas do Dia
     async getDailySalesSummary(req, res) {
         try {
-            const dateParam = req.query.date ? new Date(req.query.date) : new Date();
+            const dateParam = req.query.date ? new Date(req.query.date + 'T00:00:00') : new Date();
             const todayStart = startOfDay(dateParam);
             const todayEnd = endOfDay(dateParam);
 
@@ -128,7 +128,7 @@ class ReportsController {
     // 2. Posição de Caixa
     async getCashPosition(req, res) {
         try {
-            const dateParam = req.query.date ? new Date(req.query.date) : new Date();
+            const dateParam = req.query.date ? new Date(req.query.date + 'T00:00:00') : new Date();
             const start = startOfDay(dateParam);
             const end = endOfDay(dateParam);
 
@@ -384,7 +384,7 @@ class ReportsController {
     // 5. Performance de Produtos
     async getProductPerformance(req, res) {
         try {
-            const dateParam = req.query.date ? new Date(req.query.date) : new Date();
+            const dateParam = req.query.date ? new Date(req.query.date + 'T00:00:00') : new Date();
             const start = startOfDay(subDays(dateParam, 30)); // Últimos 30 dias por padrão
             const end = endOfDay(dateParam);
 
@@ -487,8 +487,8 @@ class ReportsController {
     async getPaymentFeesReport(req, res) {
         try {
             const { startDate, endDate } = req.query;
-            const start = startDate ? startOfDay(new Date(startDate)) : startOfDay(subDays(new Date(), 30));
-            const end = endDate ? endOfDay(new Date(endDate)) : endOfDay(new Date());
+            const start = startDate ? startOfDay(new Date(startDate + 'T00:00:00')) : startOfDay(subDays(new Date(), 30));
+            const end = endDate ? endOfDay(new Date(endDate + 'T00:00:00')) : endOfDay(new Date());
 
             // Agrupar por Configuração de Pagamento (Operador) e Parcelas
             // Usamos accounts_receivable pois é onde as taxas reais ficam gravadas
@@ -513,13 +513,14 @@ class ReportsController {
             const reportData = await Promise.all(feesByConfig.map(async (item) => {
                 const config = await prisma.payment_methods_config.findUnique({
                     where: { id: item.payment_config_id },
-                    select: { name: true, type: true }
+                    select: { name: true, type: true, color: true }
                 });
 
                 return {
                     operatorId: item.payment_config_id,
                     operatorName: config?.name || 'Desconhecido',
                     paymentType: config?.type || 'N/A',
+                    color: config?.color || '#3b82f6',
                     installments: item.total_installments || 1,
                     totalGross: Number(item._sum.amount || 0),
                     totalNet: Number(item._sum.net_amount || 0),
@@ -533,6 +534,7 @@ class ReportsController {
                 if (!acc[curr.operatorName]) {
                     acc[curr.operatorName] = {
                         name: curr.operatorName,
+                        color: curr.color, // Propagando a cor para o resumo
                         totalGross: 0,
                         totalFees: 0,
                         avgFeePercent: 0
