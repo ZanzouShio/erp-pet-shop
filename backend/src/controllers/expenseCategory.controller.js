@@ -1,11 +1,13 @@
-import pool from '../db.js';
+import { prisma } from '../db.js';
 
 export const expenseCategoryController = {
     // Listar todas as categorias
     async list(req, res) {
         try {
-            const result = await pool.query('SELECT * FROM expense_categories ORDER BY name');
-            res.json(result.rows);
+            const categories = await prisma.expense_categories.findMany({
+                orderBy: { name: 'asc' }
+            });
+            res.json(categories);
         } catch (error) {
             console.error('Erro ao listar categorias:', error);
             res.status(500).json({ error: 'Erro ao listar categorias' });
@@ -16,11 +18,14 @@ export const expenseCategoryController = {
     async create(req, res) {
         const { name, description, color } = req.body;
         try {
-            const result = await pool.query(
-                'INSERT INTO expense_categories (name, description, color) VALUES ($1, $2, $3) RETURNING *',
-                [name, description, color]
-            );
-            res.status(201).json(result.rows[0]);
+            const category = await prisma.expense_categories.create({
+                data: {
+                    name,
+                    description,
+                    color
+                }
+            });
+            res.status(201).json(category);
         } catch (error) {
             console.error('Erro ao criar categoria:', error);
             res.status(500).json({ error: 'Erro ao criar categoria' });
@@ -32,16 +37,21 @@ export const expenseCategoryController = {
         const { id } = req.params;
         const { name, description, color } = req.body;
         try {
-            const result = await pool.query(
-                'UPDATE expense_categories SET name = $1, description = $2, color = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
-                [name, description, color, id]
-            );
-            if (result.rowCount === 0) {
-                return res.status(404).json({ error: 'Categoria não encontrada' });
-            }
-            res.json(result.rows[0]);
+            const category = await prisma.expense_categories.update({
+                where: { id },
+                data: {
+                    name,
+                    description,
+                    color,
+                    updated_at: new Date()
+                }
+            });
+            res.json(category);
         } catch (error) {
             console.error('Erro ao atualizar categoria:', error);
+            if (error.code === 'P2025') {
+                return res.status(404).json({ error: 'Categoria não encontrada' });
+            }
             res.status(500).json({ error: 'Erro ao atualizar categoria' });
         }
     },
@@ -51,18 +61,24 @@ export const expenseCategoryController = {
         const { id } = req.params;
         try {
             // Verificar se está em uso
-            const check = await pool.query('SELECT id FROM accounts_payable WHERE category_id = $1 LIMIT 1', [id]);
-            if (check.rowCount > 0) {
+            const check = await prisma.accounts_payable.findFirst({
+                where: { category_id: id }
+            });
+
+            if (check) {
                 return res.status(400).json({ error: 'Categoria em uso por contas a pagar' });
             }
 
-            const result = await pool.query('DELETE FROM expense_categories WHERE id = $1 RETURNING id', [id]);
-            if (result.rowCount === 0) {
-                return res.status(404).json({ error: 'Categoria não encontrada' });
-            }
+            await prisma.expense_categories.delete({
+                where: { id }
+            });
+
             res.json({ message: 'Categoria excluída com sucesso' });
         } catch (error) {
             console.error('Erro ao excluir categoria:', error);
+            if (error.code === 'P2025') {
+                return res.status(404).json({ error: 'Categoria não encontrada' });
+            }
             res.status(500).json({ error: 'Erro ao excluir categoria' });
         }
     }

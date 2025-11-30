@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { uploadNfe, getSuppliers } from '../controllers/financial.controller.js';
+import { uploadNfe, getSuppliers, getBankAccounts } from '../controllers/financial.controller.js';
 import fs from 'fs';
 
 const router = Router();
@@ -23,13 +23,15 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+// Rotas
 router.post('/nfe/upload', upload.single('xml'), uploadNfe);
 router.post('/nfe/confirm', async (req, res) => {
-    // Import dinâmico para evitar dependência circular se houver, ou apenas para garantir
+    // Import dinâmico para evitar dependência circular se houver
     const { confirmEntry } = await import('../controllers/financial.controller.js');
     confirmEntry(req, res);
 });
 
 router.get('/suppliers', getSuppliers);
+router.get('/bank-accounts', getBankAccounts);
 
 export default router;

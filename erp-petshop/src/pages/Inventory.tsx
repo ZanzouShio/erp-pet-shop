@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, Package, Edit, Trash2, AlertTriangle } from 'lucide-react';
 import ProductFormModal from '../components/ProductFormModal';
 
-const API_URL = 'http://localhost:3001/api';
+import { API_URL } from '../services/api';
 
 interface Product {
     id: string;

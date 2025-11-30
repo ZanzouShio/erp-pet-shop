@@ -1,7 +1,7 @@
 import { Package, Plus, TrendingDown, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-const API_URL = 'http://localhost:3001/api';
+import { API_URL } from '../services/api';
 
 interface Product {
     id: string;

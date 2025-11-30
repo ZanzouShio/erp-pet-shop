@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Package, Tag, DollarSign, Layers } from 'lucide-react';
 
-const API_URL = 'http://localhost:3001/api';
+import { API_URL } from '../services/api';
 
 interface Category {
     id: string;

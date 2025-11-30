@@ -1,1 +1,5 @@
-CHECK (((type)::text = ANY ((ARRAY['revenue'::character varying, 'expense'::character varying])::text[])))
+[
+  {
+    "constraint_def": "CHECK (((gender)::text = ANY ((ARRAY['male'::character varying, 'female'::character varying])::text[])))"
+  }
+]

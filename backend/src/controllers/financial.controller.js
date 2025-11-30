@@ -1,9 +1,8 @@
 import { XMLParser } from 'fast-xml-parser';
-import pool from '../db.js';
+import { prisma } from '../db.js';
 import fs from 'fs';
 
 export const uploadNfe = async (req, res) => {
-    const client = await pool.connect();
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'Nenhum arquivo enviado' });
@@ -27,15 +26,15 @@ export const uploadNfe = async (req, res) => {
 
         // Dados da Nota
         const nfeData = {
-            number: infNFe.ide.nNF,
-            series: infNFe.ide.serie,
+            number: String(infNFe.ide.nNF),
+            series: String(infNFe.ide.serie),
             date: infNFe.ide.dhEmi,
             supplier: {
                 cnpj: emit.CNPJ,
                 name: emit.xNome,
                 tradeName: emit.xFant
             },
-            total: infNFe.total.ICMSTot.vNF
+            total: parseFloat(infNFe.total.ICMSTot.vNF)
         };
 
         // Verificação Antecipada de Duplicidade
@@ -43,12 +42,14 @@ export const uploadNfe = async (req, res) => {
         const cnpjLimpo = cnpjString.replace(/\D/g, '');
         const uniqueNfeKey = `${cnpjLimpo}-${nfeData.number}`;
 
-        const existingEntry = await client.query(
-            "SELECT id FROM stock_movements WHERE reference_type = 'NFE' AND reference_id = $1 LIMIT 1",
-            [uniqueNfeKey]
-        );
+        const existingEntry = await prisma.stock_movements.findFirst({
+            where: {
+                reference_type: 'NFE',
+                reference_id: uniqueNfeKey
+            }
+        });
 
-        if (existingEntry.rowCount > 0) {
+        if (existingEntry) {
             fs.unlinkSync(req.file.path);
             return res.status(409).json({
                 error: `A Nota Fiscal ${nfeData.number} deste fornecedor já foi importada anteriormente.`
@@ -62,15 +63,15 @@ export const uploadNfe = async (req, res) => {
 
             // Tentar encontrar produto no banco
             // 1. Pelo EAN (cEAN)
-            // 2. Pelo Código do Fornecedor (cProd) - Futuro: Tabela de vínculo
-
             let product = null;
             let matchType = null;
 
             if (prod.cEAN && prod.cEAN !== 'SEM GTIN') {
-                const prodResult = await client.query('SELECT * FROM products WHERE ean = $1', [prod.cEAN]);
-                if (prodResult.rowCount > 0) {
-                    product = prodResult.rows[0];
+                product = await prisma.products.findFirst({
+                    where: { ean: prod.cEAN }
+                });
+
+                if (product) {
                     matchType = 'EAN';
                 }
             }
@@ -102,129 +103,159 @@ export const uploadNfe = async (req, res) => {
             fs.unlinkSync(req.file.path);
         }
         res.status(500).json({ error: 'Erro ao processar NFe: ' + error.message });
-    } finally {
-        client.release();
     }
 };
 
 export const confirmEntry = async (req, res) => {
-    const client = await pool.connect();
+    const { items, nfeData } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: 'Nenhum item para processar' });
+    }
+
     try {
-        await client.query('BEGIN');
-        const { items, nfeData } = req.body;
+        await prisma.$transaction(async (tx) => {
+            // Gerar chave única para controle de duplicidade (CNPJ + Número da Nota)
+            const cnpjString = String(nfeData.supplier.cnpj);
+            const cnpjLimpo = cnpjString.replace(/\D/g, '');
+            const uniqueNfeKey = `${cnpjLimpo}-${nfeData.number}`;
 
-        if (!items || !Array.isArray(items) || items.length === 0) {
-            throw new Error('Nenhum item para processar');
-        }
+            // Verificar se já existe movimentação para esta nota
+            const existingEntry = await tx.stock_movements.findFirst({
+                where: {
+                    reference_type: 'NFE',
+                    reference_id: uniqueNfeKey
+                }
+            });
 
-        // Gerar chave única para controle de duplicidade (CNPJ + Número da Nota)
-        const cnpjString = String(nfeData.supplier.cnpj);
-        const cnpjLimpo = cnpjString.replace(/\D/g, '');
-        const uniqueNfeKey = `${cnpjLimpo}-${nfeData.number}`;
+            if (existingEntry) {
+                throw new Error(`A Nota Fiscal ${nfeData.number} deste fornecedor já foi importada anteriormente.`);
+            }
 
-        // Verificar se já existe movimentação para esta nota
-        const existingEntry = await client.query(
-            "SELECT id FROM stock_movements WHERE reference_type = 'NFE' AND reference_id = $1 LIMIT 1",
-            [uniqueNfeKey]
-        );
+            for (const item of items) {
+                console.log(`🔄 Processando item: ${item.name} | Qtd: ${item.quantity} | Preço: ${item.unitPrice}`);
 
-        if (existingEntry.rowCount > 0) {
-            throw new Error(`A Nota Fiscal ${nfeData.number} deste fornecedor já foi importada anteriormente.`);
-        }
+                let productId = item.matchedProduct ? item.matchedProduct.id : null;
 
-        for (const item of items) {
-            console.log(`🔄 Processando item: ${item.name} | Qtd: ${item.quantity} | Preço: ${item.unitPrice}`);
+                // Se não tem produto vinculado, CRIAR NOVO
+                if (!productId) {
+                    // Verificar se já existe por EAN antes de criar
+                    if (item.ean && item.ean !== 'SEM GTIN') {
+                        const existing = await tx.products.findFirst({
+                            where: { ean: item.ean }
+                        });
+                        if (existing) {
+                            productId = existing.id;
+                        }
+                    }
 
-            let productId = item.matchedProduct ? item.matchedProduct.id : null;
-
-            // Se não tem produto vinculado, CRIAR NOVO
-            if (!productId) {
-                // Verificar se já existe por EAN antes de criar
-                if (item.ean && item.ean !== 'SEM GTIN') {
-                    const existing = await client.query('SELECT id FROM products WHERE ean = $1', [item.ean]);
-                    if (existing.rowCount > 0) {
-                        productId = existing.rows[0].id;
+                    if (!productId) {
+                        console.log('✨ Criando novo produto...');
+                        const newProduct = await tx.products.create({
+                            data: {
+                                name: item.name,
+                                description: `Importado via NFe ${nfeData.number}`,
+                                ean: item.ean !== 'SEM GTIN' ? item.ean : null,
+                                sale_price: parseFloat(item.unitPrice) * 1.5,
+                                cost_price: parseFloat(item.unitPrice),
+                                stock_quantity: 0,
+                                min_stock: 10,
+                                unit: 'UN',
+                                is_active: true
+                            }
+                        });
+                        productId = newProduct.id;
                     }
                 }
 
-                if (!productId) {
-                    console.log('✨ Criando novo produto...');
-                    const newProductResult = await client.query(`
-                        INSERT INTO products (
-                            name, description, ean, sale_price, cost_price,
-                            stock_quantity, min_stock, unit, is_active, created_at, updated_at
-                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                        RETURNING id
-                    `, [
-                        item.name,
-                        `Importado via NFe ${nfeData.number}`,
-                        item.ean !== 'SEM GTIN' ? item.ean : null,
-                        parseFloat(item.unitPrice) * 1.5,
-                        parseFloat(item.unitPrice),
-                        0,
-                        10,
-                        'UN'
-                    ]);
-                    productId = newProductResult.rows[0].id;
+                // 1. Registrar Movimentação de Estoque
+                await tx.stock_movements.create({
+                    data: {
+                        product_id: productId,
+                        type: 'IN',
+                        quantity: parseFloat(item.quantity),
+                        cost_price: parseFloat(item.unitPrice),
+                        reference_type: 'NFE',
+                        reference_id: uniqueNfeKey,
+                        notes: `Entrada via NFe ${nfeData.number} - Fornecedor: ${nfeData.supplier.name}`
+                    }
+                });
+
+                // 2. Atualizar Produto (Estoque e Custo Médio)
+                const currentProd = await tx.products.findUnique({
+                    where: { id: productId },
+                    select: { stock_quantity: true, cost_price: true }
+                });
+
+                const currentStock = Number(currentProd.stock_quantity) || 0;
+                const currentCost = Number(currentProd.cost_price) || 0;
+                const entryQty = parseFloat(item.quantity);
+                const entryPrice = parseFloat(item.unitPrice);
+
+                const newStock = currentStock + entryQty;
+
+                console.log(`📊 Estoque: ${currentStock} + ${entryQty} = ${newStock}`);
+
+                // Cálculo Custo Médio Ponderado
+                let newCost = entryPrice;
+                if (newStock > 0) {
+                    newCost = ((currentStock * currentCost) + (entryQty * entryPrice)) / newStock;
                 }
+
+                await tx.products.update({
+                    where: { id: productId },
+                    data: {
+                        stock_quantity: newStock,
+                        cost_price: newCost,
+                        updated_at: new Date()
+                    }
+                });
             }
+        });
 
-            // 1. Registrar Movimentação de Estoque
-            await client.query(`
-                INSERT INTO stock_movements (
-                    product_id, type, quantity, cost_price,
-                    reference_type, reference_id, notes, created_at
-                ) VALUES ($1, 'IN', $2, $3, 'NFE', $4, $5, CURRENT_TIMESTAMP)
-            `, [
-                productId,
-                parseFloat(item.quantity),
-                parseFloat(item.unitPrice),
-                uniqueNfeKey,
-                `Entrada via NFe ${nfeData.number} - Fornecedor: ${nfeData.supplier.name}`
-            ]);
-
-            // 2. Atualizar Produto (Estoque e Custo Médio)
-            const currentProd = await client.query('SELECT stock_quantity, cost_price FROM products WHERE id = $1', [productId]);
-            const currentStock = parseFloat(currentProd.rows[0].stock_quantity) || 0;
-            const currentCost = parseFloat(currentProd.rows[0].cost_price) || 0;
-            const entryQty = parseFloat(item.quantity);
-            const entryPrice = parseFloat(item.unitPrice);
-
-            const newStock = currentStock + entryQty;
-
-            console.log(`📊 Estoque: ${currentStock} + ${entryQty} = ${newStock}`);
-
-            // Cálculo Custo Médio Ponderado
-            let newCost = entryPrice;
-            if (newStock > 0) {
-                newCost = ((currentStock * currentCost) + (entryQty * entryPrice)) / newStock;
-            }
-
-            await client.query(`
-                UPDATE products 
-                SET stock_quantity = $1, cost_price = $2, updated_at = CURRENT_TIMESTAMP
-                WHERE id = $3
-            `, [newStock, newCost, productId]);
-        }
-
-        await client.query('COMMIT');
         res.json({ message: 'Entrada confirmada com sucesso! Estoque atualizado.' });
 
     } catch (error) {
-        await client.query('ROLLBACK');
         console.error('❌ Erro ao confirmar entrada:', error);
         res.status(500).json({ error: 'Erro ao confirmar entrada: ' + error.message });
-    } finally {
-        client.release();
     }
 };
 
 export const getSuppliers = async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, trade_name as name FROM suppliers ORDER BY trade_name');
-        res.json(result.rows);
+        const suppliers = await prisma.suppliers.findMany({
+            select: {
+                id: true,
+                trade_name: true
+            },
+            orderBy: {
+                trade_name: 'asc'
+            }
+        });
+
+        // Mapear para manter compatibilidade com o frontend (name)
+        const formattedSuppliers = suppliers.map(s => ({
+            id: s.id,
+            name: s.trade_name
+        }));
+
+        res.json(formattedSuppliers);
     } catch (error) {
         console.error('Erro ao listar fornecedores:', error);
         res.status(500).json({ error: 'Erro ao listar fornecedores' });
+    }
+};
+
+export const getBankAccounts = async (req, res) => {
+    try {
+        const accounts = await prisma.bank_accounts.findMany({
+            orderBy: {
+                bank_name: 'asc'
+            }
+        });
+        res.json(accounts);
+    } catch (error) {
+        console.error('Erro ao listar contas bancárias:', error);
+        res.status(500).json({ error: 'Erro ao listar contas bancárias' });
     }
 };

@@ -111,10 +111,15 @@ export const createSale = async (req, res) => {
             let status = 'pending';
             let paidDate = null;
 
+            console.log(`[DEBUG] Payment Method: '${payment_method}'`);
+
             // Se for dinheiro/pix/débito, já nasce pago
             if (['money', 'pix', 'debit_card'].includes(payment_method)) {
                 status = 'paid';
                 paidDate = new Date();
+                console.log('[DEBUG] Status set to PAID');
+            } else {
+                console.log('[DEBUG] Status set to PENDING');
             }
 
             // Criar título
@@ -151,6 +156,57 @@ export const createSale = async (req, res) => {
             }
         }
 
+        // 5. Programa de Fidelidade
+        if (customer_id) {
+            const settingsResult = await client.query('SELECT loyalty_enabled, loyalty_points_per_real FROM company_settings LIMIT 1');
+            const settings = settingsResult.rows[0];
+
+            if (settings && settings.loyalty_enabled) {
+                const pointsEarned = Math.floor(total_amount * Number(settings.loyalty_points_per_real));
+
+                if (pointsEarned > 0) {
+                    // Atualizar cliente (pontos e total gasto)
+                    await client.query(`
+                        UPDATE customers 
+                        SET loyalty_points = loyalty_points + $1,
+                            total_spent = total_spent + $2,
+                            last_purchase_at = CURRENT_TIMESTAMP
+                        WHERE id = $3
+                    `, [pointsEarned, total_amount, customer_id]);
+
+                    // Registrar transação de fidelidade
+                    await client.query(`
+                        INSERT INTO loyalty_transactions (
+                            customer_id, type, points, description, reference_id
+                        ) VALUES ($1, 'earn', $2, $3, $4)
+                    `, [customer_id, pointsEarned, `Compra #${sale_number}`, sale.id]);
+
+                    // Atualizar venda com pontos ganhos
+                    await client.query(`
+                        UPDATE sales 
+                        SET loyalty_points_earned = $1 
+                        WHERE id = $2
+                    `, [pointsEarned, sale.id]);
+                } else {
+                    // Apenas atualizar total gasto e última compra mesmo sem pontos
+                    await client.query(`
+                        UPDATE customers 
+                        SET total_spent = total_spent + $1,
+                            last_purchase_at = CURRENT_TIMESTAMP
+                        WHERE id = $2
+                    `, [total_amount, customer_id]);
+                }
+            } else {
+                // Apenas atualizar total gasto e última compra se fidelidade desativada
+                await client.query(`
+                    UPDATE customers 
+                    SET total_spent = total_spent + $1,
+                        last_purchase_at = CURRENT_TIMESTAMP
+                    WHERE id = $2
+                `, [total_amount, customer_id]);
+            }
+        }
+
         await client.query('COMMIT');
 
         res.status(201).json({
@@ -181,13 +237,13 @@ export const getAllSales = async (req, res) => {
 
         if (startDate) {
             params.push(startDate);
-            whereClause += ` AND DATE(s.created_at AT TIME ZONE 'America/Sao_Paulo') >= $${paramCount}::date`;
+            whereClause += ` AND DATE(s.created_at AT TIME ZONE 'America/Sao_Paulo') >= $${paramCount}:: date`;
             paramCount++;
         }
 
         if (endDate) {
             params.push(endDate);
-            whereClause += ` AND DATE(s.created_at AT TIME ZONE 'America/Sao_Paulo') <= $${paramCount}::date`;
+            whereClause += ` AND DATE(s.created_at AT TIME ZONE 'America/Sao_Paulo') <= $${paramCount}:: date`;
             paramCount++;
         }
 
@@ -198,8 +254,14 @@ export const getAllSales = async (req, res) => {
         }
 
         if (search) {
-            params.push(`%${search}%`);
+            params.push(`% ${search} % `);
             whereClause += ` AND s.sale_number ILIKE $${paramCount}`;
+            paramCount++;
+        }
+
+        if (req.query.customerId) {
+            params.push(req.query.customerId);
+            whereClause += ` AND s.customer_id = $${paramCount}`;
             paramCount++;
         }
 
@@ -228,7 +290,7 @@ export const getAllSales = async (req, res) => {
             GROUP BY s.id
             ORDER BY s.created_at DESC
             LIMIT $${limitParam} OFFSET $${offsetParam}
-        `, params);
+                    `, params);
 
         const sales = result.rows.map(row => ({
             id: row.id,
@@ -262,7 +324,7 @@ export const getSaleById = async (req, res) => {
             FROM sales s
             LEFT JOIN users u ON s.user_id = u.id
             WHERE s.id = $1
-        `, [id]);
+                    `, [id]);
 
         if (saleResult.rowCount === 0) {
             return res.status(404).json({ error: 'Venda não encontrada' });
@@ -284,7 +346,7 @@ export const getSaleById = async (req, res) => {
             JOIN products p ON si.product_id = p.id
             WHERE si.sale_id = $1
             ORDER BY si.id
-        `, [id]);
+                    `, [id]);
 
         //3. Buscar pagamentos
         const paymentsResult = await pool.query(`
@@ -293,7 +355,7 @@ export const getSaleById = async (req, res) => {
                 amount
             FROM sale_payments
             WHERE sale_id = $1
-        `, [id]);
+                    `, [id]);
 
         // 4. Montar resposta
         res.json({
@@ -336,7 +398,7 @@ export const cancelSale = async (req, res) => {
         // 1. Buscar venda e verificar status
         const saleResult = await client.query(`
             SELECT id, status FROM sales WHERE id = $1 FOR UPDATE
-        `, [id]);
+                    `, [id]);
 
         if (saleResult.rowCount === 0) {
             await client.query('ROLLBACK');
@@ -355,7 +417,7 @@ export const cancelSale = async (req, res) => {
             SELECT product_id, quantity, unit_price 
             FROM sale_items 
             WHERE sale_id = $1
-        `, [id]);
+                    `, [id]);
 
         // 3. Estornar estoque e registrar movimentação
         for (const item of itemsResult.rows) {
@@ -363,17 +425,17 @@ export const cancelSale = async (req, res) => {
             await client.query(`
                 UPDATE products 
                 SET stock_quantity = stock_quantity + $1,
-                    updated_at = CURRENT_TIMESTAMP
+                updated_at = CURRENT_TIMESTAMP
                 WHERE id = $2
-            `, [item.quantity, item.product_id]);
+                    `, [item.quantity, item.product_id]);
 
             // Registrar movimentação
             await client.query(`
-                INSERT INTO stock_movements (
-                    product_id, type, quantity, cost_price,
-                    reference_type, reference_id, notes, created_at
-                ) VALUES ($1, 'IN', $2, $3, 'sale_cancellation', $4, 'Cancelamento de venda', NOW())
-            `, [
+                INSERT INTO stock_movements(
+                        product_id, type, quantity, cost_price,
+                        reference_type, reference_id, notes, created_at
+                    ) VALUES($1, 'IN', $2, $3, 'sale_cancellation', $4, 'Cancelamento de venda', NOW())
+                    `, [
                 item.product_id,
                 item.quantity,
                 0, // TODO: Ideal seria pegar o custo original, mas por hora 0 ou custo atual
@@ -386,7 +448,7 @@ export const cancelSale = async (req, res) => {
             UPDATE sales 
             SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
             WHERE id = $1
-        `, [id]);
+                    `, [id]);
 
         await client.query('COMMIT');
 

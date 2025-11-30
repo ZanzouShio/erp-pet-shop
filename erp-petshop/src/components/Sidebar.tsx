@@ -17,7 +17,8 @@ import {
     TrendingDown,
     Upload,
     LineChart,
-    Boxes
+    Boxes,
+    Link as LinkIcon
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -77,12 +78,13 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             subItems: [
                 { id: 'financial-payable', label: 'Contas a Pagar', icon: TrendingDown, enabled: true, path: '/admin/financial/payable' },
                 { id: 'financial-receivable', label: 'Contas a Receber', icon: TrendingUp, enabled: true, path: '/admin/financial/receivable' },
-                { id: 'financial-cashflow', label: 'Fluxo de Caixa', icon: LineChart, enabled: false, path: '/admin/financial/cash-flow' },
+                { id: 'financial-cashflow', label: 'Fluxo de Caixa', icon: LineChart, enabled: true, path: '/admin/financial/cash-flow' },
+                { id: 'financial-reconciliation', label: 'Conciliação Bancária', icon: LinkIcon, enabled: true, path: '/admin/financial/reconciliation' },
                 { id: 'financial-import', label: 'Importação NF-e', icon: Upload, enabled: true, path: '/admin/financial/import' },
             ]
         },
-        { id: 'reports', label: 'Relatórios', icon: BarChart3, enabled: false, path: '/admin/reports' },
-        { id: 'customers', label: 'Clientes', icon: Users, enabled: false, path: '/admin/customers' },
+        { id: 'reports', label: 'Relatórios', icon: FileText, enabled: true, path: '/admin/reports' },
+        { id: 'customers', label: 'Clientes', icon: Users, enabled: true, path: '/admin/customers' },
         { id: 'users', label: 'Usuários', icon: UserCog, enabled: false, path: '/admin/users' },
         {
             id: 'settings',
@@ -96,7 +98,16 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
                     icon: DollarSign,
                     enabled: true,
                     subItems: [
-                        { id: 'financial-categories', label: 'Categorias de Despesa', icon: FileText, enabled: true, path: '/admin/financial/categories' },
+                        { id: 'expense-categories', label: 'Categorias de Despesas', icon: ChevronRight, enabled: true, path: '/admin/financial/categories' },
+                    ]
+                },
+                {
+                    id: 'settings-pets',
+                    label: 'Clientes',
+                    icon: Users,
+                    enabled: true,
+                    subItems: [
+                        { id: 'pet-species', label: 'Cadastro de Espécies', icon: ChevronRight, enabled: true, path: '/admin/settings/pet-species' },
                     ]
                 }
             ]
@@ -180,7 +191,12 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
 
     return (
         <aside
-            className={`${isCollapsed ? 'w-20' : 'w-64'} bg-white shadow-xl flex flex-col transition-all duration-300 h-screen sticky top-0 z-50 border-r border-gray-100`}
+            className={`
+                fixed lg:static inset-y-0 left-0 z-30
+                ${isCollapsed ? 'w-20' : 'w-64'} 
+                bg-white shadow-xl flex flex-col transition-all duration-300 h-screen border-r border-gray-100
+                print:hidden
+            `}
         >
             {/* Logo e Toggle */}
             <div className="p-4 border-b border-gray-100 flex-shrink-0 bg-white">

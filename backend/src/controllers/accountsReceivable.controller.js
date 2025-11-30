@@ -1,4 +1,4 @@
-import pool from '../db.js';
+import { prisma } from '../db.js';
 
 class AccountsReceivableController {
     // Listar títulos (com filtros)
@@ -6,38 +6,40 @@ class AccountsReceivableController {
         const { start_date, end_date, status, customer_id } = req.query;
         console.log('📥 GET /accounts-receivable - Filtros:', { start_date, end_date, status, customer_id });
 
-        let query = `
-            SELECT ar.*, c.name as customer_name 
-            FROM accounts_receivable ar
-            LEFT JOIN customers c ON ar.customer_id = c.id
-            WHERE 1=1
-        `;
-        const params = [];
-        let paramIndex = 1;
-
-        if (start_date) {
-            query += ` AND ar.due_date >= $${paramIndex++}`;
-            params.push(start_date);
-        }
-        if (end_date) {
-            query += ` AND ar.due_date <= $${paramIndex++}`;
-            params.push(end_date);
-        }
-        if (status) {
-            query += ` AND ar.status = $${paramIndex++}`;
-            params.push(status);
-        }
-        if (customer_id) {
-            query += ` AND ar.customer_id = $${paramIndex++}`;
-            params.push(customer_id);
-        }
-
-        query += ` ORDER BY ar.due_date ASC`;
-
         try {
-            const result = await pool.query(query, params);
-            console.log(`📤 Retornando ${result.rows.length} registros`);
-            res.json(result.rows);
+            const where = {};
+
+            if (start_date) {
+                where.due_date = { ...where.due_date, gte: new Date(start_date) };
+            }
+            if (end_date) {
+                where.due_date = { ...where.due_date, lte: new Date(end_date) };
+            }
+            if (status) {
+                where.status = status;
+            }
+            if (customer_id) {
+                where.customer_id = customer_id;
+            }
+
+            const titles = await prisma.accounts_receivable.findMany({
+                where,
+                include: {
+                    customers: {
+                        select: { name: true }
+                    }
+                },
+                orderBy: { due_date: 'asc' }
+            });
+
+            // Mapear para manter compatibilidade com o frontend (customer_name)
+            const formattedTitles = titles.map(t => ({
+                ...t,
+                customer_name: t.customers?.name
+            }));
+
+            console.log(`📤 Retornando ${formattedTitles.length} registros`);
+            res.json(formattedTitles);
         } catch (error) {
             console.error('Erro ao listar contas a receber:', error);
             res.status(500).json({ error: 'Erro ao listar contas a receber' });
@@ -48,23 +50,27 @@ class AccountsReceivableController {
     async getByCustomer(req, res) {
         const { customerId } = req.params;
         try {
-            const titles = await pool.query(`
-                SELECT * FROM accounts_receivable 
-                WHERE customer_id = $1 
-                ORDER BY due_date ASC
-            `, [customerId]);
+            const titles = await prisma.accounts_receivable.findMany({
+                where: { customer_id: customerId },
+                orderBy: { due_date: 'asc' }
+            });
 
-            const summary = await pool.query(`
-                SELECT 
-                    SUM(amount) FILTER (WHERE status = 'pending') as total_pending,
-                    SUM(amount) FILTER (WHERE status = 'overdue') as total_overdue
-                FROM accounts_receivable
-                WHERE customer_id = $1
-            `, [customerId]);
+            const pending = await prisma.accounts_receivable.aggregate({
+                where: { customer_id: customerId, status: 'pending' },
+                _sum: { amount: true }
+            });
+
+            const overdue = await prisma.accounts_receivable.aggregate({
+                where: { customer_id: customerId, status: 'overdue' },
+                _sum: { amount: true }
+            });
 
             res.json({
-                summary: summary.rows[0],
-                titles: titles.rows
+                summary: {
+                    total_pending: pending._sum.amount || 0,
+                    total_overdue: overdue._sum.amount || 0
+                },
+                titles
             });
         } catch (error) {
             console.error('Erro ao buscar carteira do cliente:', error);
@@ -74,44 +80,53 @@ class AccountsReceivableController {
 
     // Baixar título (Recebimento)
     async receive(req, res) {
-        const client = await pool.connect();
+        const { id } = req.params;
+        const { payment_date } = req.body;
+
         try {
-            await client.query('BEGIN');
-            const { id } = req.params;
-            const { payment_date, amount_received } = req.body; // Pode ser parcial no futuro
+            await prisma.$transaction(async (tx) => {
+                // 1. Buscar título
+                const title = await tx.accounts_receivable.findUnique({
+                    where: { id }
+                });
 
-            // 1. Buscar título
-            const titleRes = await client.query('SELECT * FROM accounts_receivable WHERE id = $1', [id]);
-            if (titleRes.rowCount === 0) throw new Error('Título não encontrado');
-            const title = titleRes.rows[0];
+                if (!title) throw new Error('Título não encontrado');
+                if (title.status === 'paid') throw new Error('Título já está pago');
 
-            if (title.status === 'paid') throw new Error('Título já está pago');
+                const pDate = payment_date ? new Date(payment_date) : new Date();
 
-            // 2. Atualizar título
-            const pDate = payment_date || new Date();
-            await client.query(`
-                UPDATE accounts_receivable 
-                SET status = 'paid', paid_date = $1, updated_at = NOW()
-                WHERE id = $2
-            `, [pDate, id]);
+                // 2. Atualizar título
+                await tx.accounts_receivable.update({
+                    where: { id },
+                    data: {
+                        status: 'paid',
+                        paid_date: pDate,
+                        updated_at: new Date()
+                    }
+                });
 
-            // 3. Registrar transação financeira (Entrada)
-            // 3. Registrar transação financeira (Entrada)
-            await client.query(`
-                INSERT INTO financial_transactions 
-                (type, amount, description, date, issue_date, due_date, category, payment_method, status, customer_id)
-                VALUES ('revenue', $1, $2, $3, $4, $4, 'Recebimento de Cliente', $5, 'paid', $6)
-            `, [title.net_amount, `Recebimento: ${title.description}`, pDate, pDate, title.payment_method, title.customer_id]);
+                // 3. Registrar transação financeira (Entrada)
+                await tx.financial_transactions.create({
+                    data: {
+                        type: 'revenue',
+                        amount: title.net_amount,
+                        description: `Recebimento: ${title.description}`,
+                        date: pDate,
+                        issue_date: pDate,
+                        due_date: pDate,
+                        category: 'Recebimento de Cliente',
+                        payment_method: title.payment_method,
+                        status: 'paid',
+                        customer_id: title.customer_id
+                    }
+                });
+            });
 
-            await client.query('COMMIT');
             res.json({ message: 'Título baixado com sucesso' });
 
         } catch (error) {
-            await client.query('ROLLBACK');
             console.error('Erro ao baixar título:', error);
             res.status(500).json({ error: error.message || 'Erro ao baixar título' });
-        } finally {
-            client.release();
         }
     }
 }

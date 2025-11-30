@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Save, X } from 'lucide-react';
 
-const API_URL = 'http://localhost:3001/api';
+import { API_URL } from '../services/api';
 
 interface ExpenseCategory {
     id: string;

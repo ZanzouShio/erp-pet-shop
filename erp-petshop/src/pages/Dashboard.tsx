@@ -1,7 +1,7 @@
 import { TrendingUp, Users, Package, Calendar, ArrowUpRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-const API_URL = 'http://localhost:3001/api';
+import { API_URL } from '../services/api';
 
 interface DashboardMetrics {
     salesToday: { value: number; change: number };
@@ -205,8 +205,8 @@ export default function Dashboard() {
                                             </td>
                                             <td className="px-6 py-4 text-sm">
                                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${sale.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                                        sale.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                                            'bg-yellow-100 text-yellow-800'
+                                                    sale.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                                        'bg-yellow-100 text-yellow-800'
                                                     }`}>
                                                     {sale.status === 'completed' ? 'Concluída' :
                                                         sale.status === 'cancelled' ? 'Cancelada' : 'Pendente'}

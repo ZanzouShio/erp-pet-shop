@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Filter, CheckCircle, AlertCircle, Clock, Search, X, CreditCard, Wallet, Banknote } from 'lucide-react';
 
-const API_URL = 'http://localhost:3001/api';
+import { API_URL } from '../services/api';
 
 interface AccountPayable {
     id: string;
@@ -344,8 +344,8 @@ export default function AccountsPayable() {
                                             type="button"
                                             onClick={() => setPaymentData({ ...paymentData, method })}
                                             className={`p-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 ${paymentData.method === method
-                                                    ? 'bg-blue-50 border-blue-500 text-blue-700'
-                                                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                                ? 'bg-blue-50 border-blue-500 text-blue-700'
+                                                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                                                 }`}
                                         >
                                             {method === 'PIX' && <Banknote size={16} />}

@@ -1,0 +1,7 @@
+Iniciando testes...
+❌ FALHA com gender: 'm' - Erro: new row for relation "pets" violates check constraint "pets_gender_check"
+❌ FALHA com gender: 'f' - Erro: new row for relation "pets" violates check constraint "pets_gender_check"
+❌ FALHA com gender: 'Masculino' - Erro: new row for relation "pets" violates check constraint "pets_gender_check"
+❌ FALHA com gender: 'Feminino' - Erro: new row for relation "pets" violates check constraint "pets_gender_check"
+❌ FALHA com gender: 'boy' - Erro: new row for relation "pets" violates check constraint "pets_gender_check"
+❌ FALHA com gender: 'girl' - Erro: new row for relation "pets" violates check constraint "pets_gender_check"

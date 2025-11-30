@@ -18,7 +18,7 @@ interface ReceivableTitle {
     payment_method: string;
 }
 
-const API_URL = 'http://localhost:3001/api';
+import { API_URL } from '../services/api';
 
 export default function AccountsReceivable() {
     const [titles, setTitles] = useState<ReceivableTitle[]>([]);

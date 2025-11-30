@@ -1,0 +1,789 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model accounts_payable {
+  id                     String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  description            String                   @db.VarChar(255)
+  amount                 Decimal                  @db.Decimal(15, 2)
+  due_date               DateTime                 @db.Date
+  status                 String                   @default("pending") @db.VarChar(20)
+  supplier_id            String?                  @db.Uuid
+  category_id            String?                  @db.Uuid
+  payment_date           DateTime?                @db.Date
+  total_paid             Decimal?                 @default(0) @db.Decimal(15, 2)
+  recurrence             String?                  @db.VarChar(20)
+  installments           Json?
+  notes                  String?
+  created_at             DateTime?                @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime?                @default(now()) @db.Timestamptz(6)
+  expense_categories     expense_categories?      @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  suppliers              suppliers?               @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  financial_transactions financial_transactions[]
+}
+
+model accounts_receivable {
+  id                 String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  description        String
+  amount             Decimal    @db.Decimal(10, 2)
+  net_amount         Decimal    @db.Decimal(10, 2)
+  tax_amount         Decimal?   @default(0) @db.Decimal(10, 2)
+  tax_rate           Decimal?   @default(0) @db.Decimal(5, 2)
+  due_date           DateTime   @db.Date
+  paid_date          DateTime?  @db.Date
+  status             String     @default("pending") @db.VarChar(20)
+  customer_id        String?    @db.Uuid
+  sale_id            String?    @db.Uuid
+  installment_number Int?
+  total_installments Int?
+  payment_method     String?    @db.VarChar(50)
+  origin_type        String?    @default("sale") @db.VarChar(20)
+  created_at         DateTime?  @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?  @default(now()) @db.Timestamp(6)
+  customers          customers? @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sales              sales?     @relation(fields: [sale_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([customer_id], map: "idx_receivables_customer")
+  @@index([due_date], map: "idx_receivables_due_date")
+  @@index([sale_id], map: "idx_receivables_sale")
+  @@index([status], map: "idx_receivables_status")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model audit_logs {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String?   @db.Uuid
+  action      String    @db.VarChar(100)
+  entity_type String    @db.VarChar(100)
+  entity_id   String?   @db.Uuid
+  description String?
+  reason      String?
+  metadata    Json?
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  users       users?    @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@index([created_at], map: "idx_audit_logs_date")
+  @@index([entity_type, entity_id], map: "idx_audit_logs_entity")
+  @@index([user_id], map: "idx_audit_logs_user")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bank_accounts {
+  id                     String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                   String                   @db.VarChar(100)
+  bank_name              String                   @db.VarChar(100)
+  bank_code              String?                  @db.VarChar(10)
+  agency                 String?                  @db.VarChar(20)
+  account_number         String?                  @db.VarChar(20)
+  account_type           String?                  @db.VarChar(20)
+  initial_balance        Decimal?                 @default(0) @db.Decimal(10, 2)
+  current_balance        Decimal?                 @default(0) @db.Decimal(10, 2)
+  pix_enabled            Boolean?                 @default(false)
+  pix_key                String?                  @db.VarChar(255)
+  pix_api_credentials    Json?
+  is_active              Boolean?                 @default(true)
+  created_at             DateTime?                @default(now()) @db.Timestamp(6)
+  updated_at             DateTime?                @default(now()) @db.Timestamp(6)
+  bank_reconciliations   bank_reconciliations[]
+  financial_transactions financial_transactions[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bank_reconciliations {
+  id                     String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bank_account_id        String                  @db.Uuid
+  transaction_id         String?                 @db.Uuid
+  bank_transaction_date  DateTime                @db.Date
+  bank_description       String?
+  bank_amount            Decimal                 @db.Decimal(10, 2)
+  status                 String?                 @default("pending") @db.VarChar(20)
+  reconciled_by          String?                 @db.Uuid
+  reconciled_at          DateTime?               @db.Timestamp(6)
+  notes                  String?
+  created_at             DateTime?               @default(now()) @db.Timestamp(6)
+  bank_accounts          bank_accounts           @relation(fields: [bank_account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users                  users?                  @relation(fields: [reconciled_by], references: [id], onUpdate: NoAction)
+  financial_transactions financial_transactions? @relation(fields: [transaction_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model cash_movements {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cash_register_id String         @db.Uuid
+  type             String         @db.VarChar(20)
+  amount           Decimal        @db.Decimal(10, 2)
+  reason           String?
+  user_id          String?        @db.Uuid
+  created_at       DateTime?      @default(now()) @db.Timestamp(6)
+  cash_registers   cash_registers @relation(fields: [cash_register_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users            users?         @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model cash_registers {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  terminal_id      String           @db.Uuid
+  user_id          String           @db.Uuid
+  opened_at        DateTime         @default(now()) @db.Timestamp(6)
+  closed_at        DateTime?        @db.Timestamp(6)
+  opening_balance  Decimal          @default(0) @db.Decimal(10, 2)
+  closing_balance  Decimal?         @db.Decimal(10, 2)
+  expected_balance Decimal?         @db.Decimal(10, 2)
+  difference       Decimal?         @db.Decimal(10, 2)
+  status           String?          @default("open") @db.VarChar(20)
+  notes            String?
+  created_at       DateTime?        @default(now()) @db.Timestamp(6)
+  cash_movements   cash_movements[]
+  pdv_terminals    pdv_terminals    @relation(fields: [terminal_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users            users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sales            sales[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model chart_of_accounts {
+  id                      String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code                    String                   @unique @db.VarChar(20)
+  name                    String                   @db.VarChar(255)
+  type                    String                   @db.VarChar(20)
+  parent_id               String?                  @db.Uuid
+  is_analytical           Boolean?                 @default(true)
+  is_active               Boolean?                 @default(true)
+  created_at              DateTime?                @default(now()) @db.Timestamp(6)
+  updated_at              DateTime?                @default(now()) @db.Timestamp(6)
+  chart_of_accounts       chart_of_accounts?       @relation("chart_of_accountsTochart_of_accounts", fields: [parent_id], references: [id], onUpdate: NoAction)
+  other_chart_of_accounts chart_of_accounts[]      @relation("chart_of_accountsTochart_of_accounts")
+  financial_transactions  financial_transactions[]
+}
+
+model company_settings {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  company_name            String    @db.VarChar(255)
+  trade_name              String?   @db.VarChar(255)
+  cnpj                    String    @unique @db.VarChar(18)
+  state_registration      String?   @db.VarChar(50)
+  municipal_registration  String?   @db.VarChar(50)
+  tax_regime              String?   @db.VarChar(50)
+  zip_code                String?   @db.VarChar(10)
+  address                 String?   @db.VarChar(255)
+  number                  String?   @db.VarChar(20)
+  complement              String?   @db.VarChar(100)
+  neighborhood            String?   @db.VarChar(100)
+  city                    String?   @db.VarChar(100)
+  state                   String?   @db.VarChar(2)
+  phone                   String?   @db.VarChar(20)
+  email                   String?   @db.VarChar(255)
+  website                 String?   @db.VarChar(255)
+  logo_url                String?
+  nfce_series             String?   @db.VarChar(10)
+  nfe_series              String?   @db.VarChar(10)
+  nfse_rps_series         String?   @db.VarChar(10)
+  loyalty_enabled         Boolean?  @default(false)
+  loyalty_points_per_real Decimal?  @default(1) @db.Decimal(5, 2)
+  created_at              DateTime? @default(now()) @db.Timestamp(6)
+  updated_at              DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model cost_centers {
+  id                     String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                   String                   @unique @db.VarChar(100)
+  description            String?
+  is_active              Boolean?                 @default(true)
+  created_at             DateTime?                @default(now()) @db.Timestamp(6)
+  updated_at             DateTime?                @default(now()) @db.Timestamp(6)
+  financial_transactions financial_transactions[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model customers {
+  id                     String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                   String                   @db.VarChar(255)
+  cpf_cnpj               String?                  @unique @db.VarChar(18)
+  email                  String?                  @db.VarChar(255)
+  phone                  String?                  @db.VarChar(20)
+  mobile                 String?                  @db.VarChar(20)
+  birth_date             DateTime?                @db.Date
+  zip_code               String?                  @db.VarChar(10)
+  address                String?                  @db.VarChar(255)
+  number                 String?                  @db.VarChar(20)
+  complement             String?                  @db.VarChar(100)
+  neighborhood           String?                  @db.VarChar(100)
+  city                   String?                  @db.VarChar(100)
+  state                  String?                  @db.VarChar(2)
+  credit_limit           Decimal?                 @default(0) @db.Decimal(10, 2)
+  status                 String?                  @default("active") @db.VarChar(20)
+  loyalty_points         Int?                     @default(0)
+  total_spent            Decimal?                 @default(0) @db.Decimal(10, 2)
+  last_purchase_at       DateTime?                @db.Timestamp(6)
+  notes                  String?
+  created_at             DateTime?                @default(now()) @db.Timestamp(6)
+  updated_at             DateTime?                @default(now()) @db.Timestamp(6)
+  accounts_receivable    accounts_receivable[]
+  financial_transactions financial_transactions[]
+  loyalty_transactions   loyalty_transactions[]
+  pets                   pets[]
+  quotes                 quotes[]
+  sales                  sales[]
+
+  @@index([cpf_cnpj], map: "idx_customers_cpf_cnpj")
+  @@index([phone], map: "idx_customers_phone")
+  @@index([status], map: "idx_customers_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model digital_certificates {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String    @db.VarChar(255)
+  type               String?   @db.VarChar(10)
+  certificate_file   Bytes?
+  password_encrypted String?   @db.VarChar(255)
+  issued_by          String?   @db.VarChar(255)
+  valid_from         DateTime  @db.Date
+  valid_until        DateTime  @db.Date
+  is_active          Boolean?  @default(true)
+  created_at         DateTime? @default(now()) @db.Timestamp(6)
+  updated_at         DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model expense_categories {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String             @db.VarChar(100)
+  description      String?
+  color            String?            @default("#6B7280") @db.VarChar(20)
+  created_at       DateTime?          @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime?          @default(now()) @db.Timestamptz(6)
+  accounts_payable accounts_payable[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model financial_transactions {
+  id                           String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type                         String                   @db.VarChar(20)
+  account_id                   String?                  @db.Uuid
+  cost_center_id               String?                  @db.Uuid
+  bank_account_id              String?                  @db.Uuid
+  customer_id                  String?                  @db.Uuid
+  supplier_id                  String?                  @db.Uuid
+  description                  String
+  amount                       Decimal                  @db.Decimal(10, 2)
+  issue_date                   DateTime                 @db.Date
+  due_date                     DateTime                 @db.Date
+  paid_date                    DateTime?                @db.Date
+  status                       String?                  @default("pending") @db.VarChar(20)
+  payment_method               String?                  @db.VarChar(50)
+  installment_number           Int?
+  total_installments           Int?
+  parent_transaction_id        String?                  @db.Uuid
+  interest                     Decimal?                 @default(0) @db.Decimal(10, 2)
+  discount                     Decimal?                 @default(0) @db.Decimal(10, 2)
+  paid_amount                  Decimal?                 @default(0) @db.Decimal(10, 2)
+  is_recurring                 Boolean?                 @default(false)
+  recurrence_frequency         String?                  @db.VarChar(20)
+  document_type                String?                  @db.VarChar(50)
+  document_number              String?                  @db.VarChar(100)
+  attachment_path              String?
+  reference_type               String?                  @db.VarChar(50)
+  reference_id                 String?                  @db.Uuid
+  notes                        String?
+  user_id                      String?                  @db.Uuid
+  created_at                   DateTime?                @default(now()) @db.Timestamp(6)
+  updated_at                   DateTime?                @default(now()) @db.Timestamp(6)
+  account_payable_id           String?                  @db.Uuid
+  date                         DateTime?                @default(now()) @db.Timestamptz(6)
+  category                     String?                  @db.VarChar(100)
+  bank_reconciliations         bank_reconciliations[]
+  chart_of_accounts            chart_of_accounts?       @relation(fields: [account_id], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  accounts_payable             accounts_payable?        @relation(fields: [account_payable_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  bank_accounts                bank_accounts?           @relation(fields: [bank_account_id], references: [id], onUpdate: NoAction)
+  cost_centers                 cost_centers?            @relation(fields: [cost_center_id], references: [id], onUpdate: NoAction)
+  customers                    customers?               @relation(fields: [customer_id], references: [id], onUpdate: NoAction)
+  financial_transactions       financial_transactions?  @relation("financial_transactionsTofinancial_transactions", fields: [parent_transaction_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  other_financial_transactions financial_transactions[] @relation("financial_transactionsTofinancial_transactions")
+  suppliers                    suppliers?               @relation(fields: [supplier_id], references: [id], onUpdate: NoAction)
+  users                        users?                   @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@index([account_id], map: "idx_transactions_account")
+  @@index([customer_id], map: "idx_transactions_customer")
+  @@index([due_date], map: "idx_transactions_due_date")
+  @@index([paid_date], map: "idx_transactions_paid_date")
+  @@index([status], map: "idx_transactions_status")
+  @@index([supplier_id], map: "idx_transactions_supplier")
+  @@index([type], map: "idx_transactions_type")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model invoice_series {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type            String           @db.VarChar(20)
+  series          String           @db.VarChar(10)
+  next_number     Int              @default(1)
+  location_id     String?          @db.Uuid
+  is_active       Boolean?         @default(true)
+  created_at      DateTime?        @default(now()) @db.Timestamp(6)
+  updated_at      DateTime?        @default(now()) @db.Timestamp(6)
+  stock_locations stock_locations? @relation(fields: [location_id], references: [id], onUpdate: NoAction)
+
+  @@unique([type, series])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model invoices {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type                   String    @db.VarChar(20)
+  number                 String    @db.VarChar(50)
+  series                 String    @db.VarChar(10)
+  access_key             String?   @db.VarChar(44)
+  status                 String?   @default("pending") @db.VarChar(30)
+  issuer_cnpj            String    @db.VarChar(18)
+  issuer_name            String    @db.VarChar(255)
+  recipient_type         String?   @db.VarChar(20)
+  recipient_id           String?   @db.Uuid
+  recipient_cpf_cnpj     String?   @db.VarChar(18)
+  recipient_name         String?   @db.VarChar(255)
+  subtotal               Decimal   @db.Decimal(10, 2)
+  discount               Decimal?  @default(0) @db.Decimal(10, 2)
+  total                  Decimal   @db.Decimal(10, 2)
+  icms_total             Decimal?  @default(0) @db.Decimal(10, 2)
+  ipi_total              Decimal?  @default(0) @db.Decimal(10, 2)
+  authorization_protocol String?   @db.VarChar(50)
+  authorization_date     DateTime? @db.Timestamp(6)
+  sefaz_response         String?
+  cancelled_at           DateTime? @db.Timestamp(6)
+  cancellation_protocol  String?   @db.VarChar(50)
+  cancellation_reason    String?
+  xml_file               Bytes?
+  pdf_path               String?
+  sale_id                String?   @db.Uuid
+  notes                  String?
+  created_at             DateTime? @default(now()) @db.Timestamp(6)
+  updated_at             DateTime? @default(now()) @db.Timestamp(6)
+  sales                  sales?    @relation(fields: [sale_id], references: [id], onUpdate: NoAction)
+
+  @@index([access_key], map: "idx_invoices_access_key")
+  @@index([sale_id], map: "idx_invoices_sale")
+  @@index([status], map: "idx_invoices_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model loyalty_transactions {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id  String    @db.Uuid
+  type         String    @db.VarChar(20)
+  points       Int
+  description  String?
+  reference_id String?   @db.Uuid
+  expires_at   DateTime? @db.Timestamp(6)
+  created_at   DateTime? @default(now()) @db.Timestamp(6)
+  customers    customers @relation(fields: [customer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model payment_rates {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider          String?   @default("Default") @db.VarChar(50)
+  payment_type      String    @db.VarChar(50)
+  installments_min  Int?      @default(1)
+  installments_max  Int?      @default(1)
+  fee_percent       Decimal   @default(0) @db.Decimal(5, 2)
+  days_to_liquidate Int       @default(1)
+  created_at        DateTime? @default(now()) @db.Timestamp(6)
+  updated_at        DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model pdv_terminals {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String           @db.VarChar(100)
+  location_id     String?          @db.Uuid
+  serial_number   String?          @db.VarChar(100)
+  ip_address      String?          @db.VarChar(45)
+  is_active       Boolean?         @default(true)
+  last_sync_at    DateTime?        @db.Timestamp(6)
+  created_at      DateTime?        @default(now()) @db.Timestamp(6)
+  updated_at      DateTime?        @default(now()) @db.Timestamp(6)
+  cash_registers  cash_registers[]
+  stock_locations stock_locations? @relation(fields: [location_id], references: [id], onUpdate: NoAction)
+  sales           sales[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model pets {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id String    @db.Uuid
+  name        String    @db.VarChar(100)
+  species     String?   @db.VarChar(50)
+  breed       String?   @db.VarChar(100)
+  size        String?   @db.VarChar(20)
+  gender      String?   @db.VarChar(10)
+  birth_date  DateTime? @db.Date
+  photo_url   String?
+  notes       String?
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  updated_at  DateTime? @default(now()) @db.Timestamp(6)
+  customers   customers @relation(fields: [customer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model pet_species {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String    @unique @db.VarChar(50)
+  active     Boolean?  @default(true)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model product_batches {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id       String            @db.Uuid
+  batch_number     String            @db.VarChar(100)
+  manufacture_date DateTime?         @db.Date
+  expiry_date      DateTime?         @db.Date
+  quantity         Decimal           @default(0) @db.Decimal(10, 3)
+  location_id      String?           @db.Uuid
+  is_blocked       Boolean?          @default(false)
+  notes            String?
+  created_at       DateTime?         @default(now()) @db.Timestamp(6)
+  updated_at       DateTime?         @default(now()) @db.Timestamp(6)
+  stock_locations  stock_locations?  @relation(fields: [location_id], references: [id], onUpdate: NoAction)
+  products         products          @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sale_items       sale_items[]
+  stock_movements  stock_movements[]
+
+  @@unique([product_id, batch_number])
+}
+
+model product_categories {
+  id                       String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                     String               @db.VarChar(100)
+  parent_id                String?              @db.Uuid
+  description              String?
+  is_active                Boolean?             @default(true)
+  created_at               DateTime?            @default(now()) @db.Timestamp(6)
+  updated_at               DateTime?            @default(now()) @db.Timestamp(6)
+  product_categories       product_categories?  @relation("product_categoriesToproduct_categories", fields: [parent_id], references: [id], onUpdate: NoAction)
+  other_product_categories product_categories[] @relation("product_categoriesToproduct_categories")
+  products                 products[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model product_stock {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id        String          @db.Uuid
+  location_id       String          @db.Uuid
+  quantity          Decimal         @default(0) @db.Decimal(10, 3)
+  reserved_quantity Decimal?        @default(0) @db.Decimal(10, 3)
+  updated_at        DateTime?       @default(now()) @db.Timestamp(6)
+  stock_locations   stock_locations @relation(fields: [location_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  products          products        @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([product_id, location_id])
+  @@index([location_id], map: "idx_product_stock_location")
+  @@index([product_id], map: "idx_product_stock_product")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model products {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  category_id        String?             @db.Uuid
+  supplier_id        String?             @db.Uuid
+  name               String              @db.VarChar(255)
+  description        String?
+  brand              String?             @db.VarChar(100)
+  internal_code      String?             @unique @db.VarChar(100)
+  ean                String?             @db.VarChar(13)
+  sku                String?             @db.VarChar(100)
+  cost_price         Decimal             @default(0) @db.Decimal(10, 2)
+  sale_price         Decimal             @default(0) @db.Decimal(10, 2)
+  profit_margin      Decimal?            @db.Decimal(5, 2)
+  stock_quantity     Decimal?            @default(0) @db.Decimal(10, 3)
+  min_stock          Decimal?            @default(0) @db.Decimal(10, 3)
+  max_stock          Decimal?            @db.Decimal(10, 3)
+  unit               String?             @default("UN") @db.VarChar(20)
+  is_bulk            Boolean?            @default(false)
+  parent_product_id  String?             @db.Uuid
+  conversion_factor  Decimal?            @db.Decimal(10, 3)
+  is_perishable      Boolean?            @default(false)
+  shelf_life_days    Int?
+  track_by_batch     Boolean?            @default(false)
+  ncm                String?             @db.VarChar(8)
+  cest               String?             @db.VarChar(7)
+  cfop               String?             @default("5102") @db.VarChar(4)
+  icms_rate          Decimal?            @db.Decimal(5, 2)
+  ipi_rate           Decimal?            @db.Decimal(5, 2)
+  pis_rate           Decimal?            @db.Decimal(5, 2)
+  cofins_rate        Decimal?            @db.Decimal(5, 2)
+  image_url          String?
+  is_active          Boolean?            @default(true)
+  created_at         DateTime?           @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime?           @default(now()) @db.Timestamptz(6)
+  last_cost          Decimal?            @default(0) @db.Decimal
+  average_cost       Decimal?            @default(0) @db.Decimal
+  product_batches    product_batches[]
+  product_stock      product_stock[]
+  product_categories product_categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+  products           products?           @relation("productsToproducts", fields: [parent_product_id], references: [id], onUpdate: NoAction)
+  other_products     products[]          @relation("productsToproducts")
+  suppliers          suppliers?          @relation(fields: [supplier_id], references: [id], onUpdate: NoAction)
+  quote_items        quote_items[]
+  sale_items         sale_items[]
+  stock_movements    stock_movements[]
+
+  @@index([is_active], map: "idx_products_active")
+  @@index([is_bulk], map: "idx_products_bulk")
+  @@index([category_id], map: "idx_products_category")
+  @@index([ean], map: "idx_products_ean")
+  @@index([internal_code], map: "idx_products_internal_code")
+}
+
+model quote_items {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quote_id   String    @db.Uuid
+  product_id String    @db.Uuid
+  quantity   Decimal   @db.Decimal(10, 3)
+  unit_price Decimal   @db.Decimal(10, 2)
+  discount   Decimal?  @default(0) @db.Decimal(10, 2)
+  total      Decimal   @db.Decimal(10, 2)
+  notes      String?
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  products   products  @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  quotes     quotes    @relation(fields: [quote_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model quotes {
+  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  quote_number         String        @unique @db.VarChar(50)
+  customer_id          String?       @db.Uuid
+  user_id              String        @db.Uuid
+  subtotal             Decimal       @default(0) @db.Decimal(10, 2)
+  discount             Decimal?      @default(0) @db.Decimal(10, 2)
+  total                Decimal       @default(0) @db.Decimal(10, 2)
+  valid_until          DateTime      @db.Date
+  status               String?       @default("pending") @db.VarChar(20)
+  converted_to_sale_id String?       @db.Uuid
+  converted_at         DateTime?     @db.Timestamp(6)
+  notes                String?
+  created_at           DateTime?     @default(now()) @db.Timestamp(6)
+  updated_at           DateTime?     @default(now()) @db.Timestamp(6)
+  quote_items          quote_items[]
+  sales                sales?        @relation(fields: [converted_to_sale_id], references: [id], onUpdate: NoAction)
+  customers            customers?    @relation(fields: [customer_id], references: [id], onUpdate: NoAction)
+  users                users         @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model sale_items {
+  id                String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sale_id           String           @db.Uuid
+  product_id        String           @db.Uuid
+  batch_id          String?          @db.Uuid
+  quantity          Decimal          @db.Decimal(10, 3)
+  unit_price        Decimal          @db.Decimal(10, 2)
+  cost_price        Decimal?         @db.Decimal(10, 2)
+  discount          Decimal?         @default(0) @db.Decimal(10, 2)
+  total             Decimal          @db.Decimal(10, 2)
+  weight            Decimal?         @db.Decimal(10, 3)
+  barcode_generated String?          @db.VarChar(13)
+  deleted_at        DateTime?        @db.Timestamp(6)
+  deleted_by        String?          @db.Uuid
+  deletion_reason   String?
+  created_at        DateTime?        @default(now()) @db.Timestamptz(6)
+  product_batches   product_batches? @relation(fields: [batch_id], references: [id], onUpdate: NoAction)
+  users             users?           @relation(fields: [deleted_by], references: [id], onUpdate: NoAction)
+  products          products         @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sales             sales            @relation(fields: [sale_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([product_id], map: "idx_sale_items_product")
+  @@index([sale_id], map: "idx_sale_items_sale")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model sale_payments {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sale_id            String    @db.Uuid
+  payment_method     String    @db.VarChar(50)
+  amount             Decimal   @db.Decimal(10, 2)
+  card_brand         String?   @db.VarChar(50)
+  card_last_digits   String?   @db.VarChar(4)
+  installments       Int?      @default(1)
+  authorization_code String?   @db.VarChar(100)
+  pix_qrcode         String?
+  pix_txid           String?   @db.VarChar(100)
+  pix_e2eid          String?   @db.VarChar(100)
+  pix_status         String?   @db.VarChar(20)
+  pix_confirmed_at   DateTime? @db.Timestamp(6)
+  change_amount      Decimal?  @db.Decimal(10, 2)
+  notes              String?
+  created_at         DateTime? @default(now()) @db.Timestamptz(6)
+  sales              sales     @relation(fields: [sale_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model sales {
+  id                              String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sale_number                     String                @unique @db.VarChar(50)
+  terminal_id                     String?               @db.Uuid
+  cash_register_id                String?               @db.Uuid
+  customer_id                     String?               @db.Uuid
+  user_id                         String                @db.Uuid
+  subtotal                        Decimal               @default(0) @db.Decimal(10, 2)
+  discount                        Decimal?              @default(0) @db.Decimal(10, 2)
+  total                           Decimal               @default(0) @db.Decimal(10, 2)
+  status                          String?               @default("completed") @db.VarChar(20)
+  cancelled_reason                String?
+  cancelled_by                    String?               @db.Uuid
+  cancelled_at                    DateTime?             @db.Timestamp(6)
+  invoice_type                    String?               @db.VarChar(20)
+  invoice_number                  String?               @db.VarChar(50)
+  invoice_series                  String?               @db.VarChar(10)
+  invoice_key                     String?               @db.VarChar(44)
+  invoice_xml_path                String?
+  invoice_pdf_path                String?
+  invoice_issued_at               DateTime?             @db.Timestamp(6)
+  synced                          Boolean?              @default(false)
+  sync_errors                     String?
+  loyalty_points_earned           Int?                  @default(0)
+  loyalty_points_redeemed         Int?                  @default(0)
+  created_at                      DateTime?             @default(now()) @db.Timestamptz(6)
+  updated_at                      DateTime?             @default(now()) @db.Timestamptz(6)
+  accounts_receivable             accounts_receivable[]
+  invoices                        invoices[]
+  quotes                          quotes[]
+  sale_items                      sale_items[]
+  sale_payments                   sale_payments[]
+  users_sales_cancelled_byTousers users?                @relation("sales_cancelled_byTousers", fields: [cancelled_by], references: [id], onUpdate: NoAction)
+  cash_registers                  cash_registers?       @relation(fields: [cash_register_id], references: [id], onUpdate: NoAction)
+  customers                       customers?            @relation(fields: [customer_id], references: [id], onUpdate: NoAction)
+  pdv_terminals                   pdv_terminals?        @relation(fields: [terminal_id], references: [id], onUpdate: NoAction)
+  users_sales_user_idTousers      users                 @relation("sales_user_idTousers", fields: [user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([customer_id], map: "idx_sales_customer")
+  @@index([created_at], map: "idx_sales_date")
+  @@index([status], map: "idx_sales_status")
+  @@index([synced], map: "idx_sales_synced")
+  @@index([user_id], map: "idx_sales_user")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model stock_locations {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String            @unique @db.VarChar(100)
+  type            String?           @db.VarChar(50)
+  address         String?
+  is_default      Boolean?          @default(false)
+  is_active       Boolean?          @default(true)
+  created_at      DateTime?         @default(now()) @db.Timestamp(6)
+  updated_at      DateTime?         @default(now()) @db.Timestamp(6)
+  invoice_series  invoice_series[]
+  pdv_terminals   pdv_terminals[]
+  product_batches product_batches[]
+  product_stock   product_stock[]
+  stock_movements stock_movements[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model stock_movements {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id      String           @db.Uuid
+  batch_id        String?          @db.Uuid
+  location_id     String?          @db.Uuid
+  type            String           @db.VarChar(50)
+  quantity        Decimal          @db.Decimal(10, 3)
+  cost_price      Decimal?         @db.Decimal(10, 2)
+  reference_type  String?          @db.VarChar(50)
+  reference_id    String?          @db.VarChar(255)
+  user_id         String?          @db.Uuid
+  notes           String?
+  created_at      DateTime?        @default(now()) @db.Timestamp(6)
+  product_batches product_batches? @relation(fields: [batch_id], references: [id], onUpdate: NoAction)
+  stock_locations stock_locations? @relation(fields: [location_id], references: [id], onUpdate: NoAction)
+  products        products         @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users           users?           @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@index([created_at], map: "idx_stock_movements_date")
+  @@index([product_id], map: "idx_stock_movements_product")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model suppliers {
+  id                         String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  company_name               String                   @db.VarChar(255)
+  trade_name                 String?                  @db.VarChar(255)
+  cnpj                       String                   @unique @db.VarChar(18)
+  email                      String?                  @db.VarChar(255)
+  phone                      String?                  @db.VarChar(20)
+  mobile                     String?                  @db.VarChar(20)
+  website                    String?                  @db.VarChar(255)
+  zip_code                   String?                  @db.VarChar(10)
+  address                    String?                  @db.VarChar(255)
+  number                     String?                  @db.VarChar(20)
+  complement                 String?                  @db.VarChar(100)
+  neighborhood               String?                  @db.VarChar(100)
+  city                       String?                  @db.VarChar(100)
+  state                      String?                  @db.VarChar(2)
+  payment_terms              String?                  @db.VarChar(100)
+  discount_for_early_payment Decimal?                 @db.Decimal(5, 2)
+  average_delivery_days      Int?
+  rating                     Decimal?                 @db.Decimal(3, 2)
+  status                     String?                  @default("active") @db.VarChar(20)
+  notes                      String?
+  created_at                 DateTime?                @default(now()) @db.Timestamp(6)
+  updated_at                 DateTime?                @default(now()) @db.Timestamp(6)
+  accounts_payable           accounts_payable[]
+  financial_transactions     financial_transactions[]
+  products                   products[]
+}
+
+model system_settings {
+  key         String    @id @db.VarChar(100)
+  value       Json
+  description String?
+  updated_at  DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model user_sessions {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String    @db.Uuid
+  token      String    @db.VarChar(500)
+  ip_address String?   @db.VarChar(45)
+  user_agent String?
+  expires_at DateTime  @db.Timestamp(6)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model users {
+  id                              String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                            String                   @db.VarChar(255)
+  email                           String                   @unique @db.VarChar(255)
+  password_hash                   String                   @db.VarChar(255)
+  cpf                             String?                  @unique @db.VarChar(14)
+  phone                           String?                  @db.VarChar(20)
+  role                            String                   @db.VarChar(50)
+  is_active                       Boolean?                 @default(true)
+  last_login_at                   DateTime?                @db.Timestamp(6)
+  created_at                      DateTime?                @default(now()) @db.Timestamp(6)
+  updated_at                      DateTime?                @default(now()) @db.Timestamp(6)
+  audit_logs                      audit_logs[]
+  bank_reconciliations            bank_reconciliations[]
+  cash_movements                  cash_movements[]
+  cash_registers                  cash_registers[]
+  financial_transactions          financial_transactions[]
+  quotes                          quotes[]
+  sale_items                      sale_items[]
+  sales_sales_cancelled_byTousers sales[]                  @relation("sales_cancelled_byTousers")
+  sales_sales_user_idTousers      sales[]                  @relation("sales_user_idTousers")
+  stock_movements                 stock_movements[]
+  user_sessions                   user_sessions[]
+
+  @@index([email], map: "idx_users_email")
+  @@index([role], map: "idx_users_role")
+}

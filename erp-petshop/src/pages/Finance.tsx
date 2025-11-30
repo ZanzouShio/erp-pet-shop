@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 
-const API_URL = 'http://localhost:3001/api';
+import { API_URL } from '../services/api';
 
 interface NfeItem {
     code: string;

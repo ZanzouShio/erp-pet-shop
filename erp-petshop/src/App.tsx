@@ -9,6 +9,17 @@ import Finance from './pages/Finance';
 import ExpenseCategories from './pages/ExpenseCategories';
 import AccountsPayable from './pages/AccountsPayable';
 import AccountsReceivable from './pages/AccountsReceivable';
+import CashFlow from './pages/CashFlow';
+import BankReconciliation from './pages/BankReconciliation';
+import ReportsDashboard from './pages/Reports/ReportsDashboard';
+import DailySalesReport from './pages/Reports/DailySalesReport';
+import CashPositionReport from './pages/Reports/CashPositionReport';
+import FinancialSituationReport from './pages/Reports/FinancialSituationReport';
+import StockAlertsReport from './pages/Reports/StockAlertsReport';
+import ProductPerformanceReport from './pages/Reports/ProductPerformanceReport';
+import CustomerList from './pages/Customers/CustomerList';
+import CustomerForm from './pages/Customers/CustomerForm';
+import PetSpeciesSettings from './pages/Settings/PetSpeciesSettings';
 
 function App() {
   return (
@@ -38,23 +49,33 @@ function AdminRoutes() {
     <AdminLayout>
       <Routes>
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="sales" element={<Sales />} />
         <Route path="inventory" element={<Inventory />} />
         <Route path="stock-movements" element={<StockMovements />} />
-        <Route path="sales" element={<Sales />} />
-        <Route path="customers" element={<PlaceholderPage title="Clientes" />} />
 
-        {/* Rotas Financeiras */}
-        <Route path="financial" element={<Navigate to="/admin/financial/payable" replace />} />
-        <Route path="financial/import" element={<Finance />} />
-        <Route path="financial/categories" element={<ExpenseCategories />} />
+        {/* Financeiro */}
         <Route path="financial/payable" element={<AccountsPayable />} />
         <Route path="financial/receivable" element={<AccountsReceivable />} />
-        <Route path="financial/cash-flow" element={<PlaceholderPage title="Fluxo de Caixa" />} />
+        <Route path="financial/categories" element={<ExpenseCategories />} />
+        <Route path="financial/cash-flow" element={<CashFlow />} />
+        <Route path="financial/reconciliation" element={<BankReconciliation />} />
+        <Route path="financial/import" element={<Finance />} />
 
-        <Route path="reports" element={<PlaceholderPage title="Relatórios" />} />
-        <Route path="users" element={<PlaceholderPage title="Usuários" />} />
-        <Route path="settings" element={<PlaceholderPage title="Configurações" />} />
-        <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+        {/* Relatórios */}
+        <Route path="reports" element={<ReportsDashboard />} />
+        <Route path="reports/daily-sales" element={<DailySalesReport />} />
+        <Route path="reports/cash-position" element={<CashPositionReport />} />
+        <Route path="reports/financial-situation" element={<FinancialSituationReport />} />
+        <Route path="reports/stock-alerts" element={<StockAlertsReport />} />
+        <Route path="reports/product-performance" element={<ProductPerformanceReport />} />
+
+        {/* Clientes */}
+        <Route path="customers" element={<CustomerList />} />
+        <Route path="customers/new" element={<CustomerForm />} />
+        <Route path="customers/:id" element={<CustomerForm />} />
+
+        {/* Configurações */}
+        <Route path="settings/pet-species" element={<PetSpeciesSettings />} />
       </Routes>
     </AdminLayout>
   );
