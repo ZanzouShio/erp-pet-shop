@@ -16,6 +16,7 @@ import customerRoutes from './routes/customers.routes.js';
 import petSpeciesRoutes from './routes/petSpecies.routes.js';
 import paymentConfigurationRoutes from './routes/paymentConfiguration.routes.js';
 import bankAccountRoutes from './routes/bankAccount.routes.js';
+import suppliersRoutes from './routes/suppliers.routes.js';
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/pet-species', petSpeciesRoutes);
 app.use('/api/payment-config', paymentConfigurationRoutes);
 app.use('/api/bank-accounts', bankAccountRoutes);
+app.use('/api/suppliers', suppliersRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

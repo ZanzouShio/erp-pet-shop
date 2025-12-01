@@ -18,7 +18,8 @@ import {
     Upload,
     LineChart,
     Boxes,
-    Link as LinkIcon
+    Link as LinkIcon,
+    Truck
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -85,6 +86,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
         },
         { id: 'reports', label: 'Relatórios', icon: FileText, enabled: true, path: '/admin/reports' },
         { id: 'customers', label: 'Clientes', icon: Users, enabled: true, path: '/admin/customers' },
+        { id: 'suppliers', label: 'Fornecedores', icon: Truck, enabled: true, path: '/admin/suppliers' },
         {
             id: 'settings',
             label: 'Configurações',

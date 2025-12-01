@@ -29,10 +29,20 @@ Sistema de gestão completo para Pet Shops, desenvolvido com tecnologias moderna
 - **Detalhes:** Visualização detalhada de itens, pagamentos e descontos.
 - **Cancelamento:** Estorno automático de estoque ao cancelar venda.
 
-### 📊 Dashboard
+### 📊 Dashboard & Relatórios
 - **Resumo Diário:** Vendas do dia, ticket médio.
 - **Top Produtos:** Ranking dos produtos mais vendidos.
+- **Relatórios Financeiros:** Taxas por operador, posição de caixa e performance.
 - **Alertas:** Produtos com estoque baixo ou zerado.
+
+### 🤝 Gestão de Fornecedores
+- **Cadastro Completo:** Dados cadastrais, contato e condições comerciais.
+- **Automação:** Busca automática de endereço via CEP.
+- **Validação:** Verificação de CNPJ (suporte a alfanumérico) e máscaras de input.
+
+### ⚙️ Configurações
+- **Espécies Dinâmicas:** Cadastro personalizável de espécies de pets.
+- **Meios de Pagamento:** Configuração de taxas, prazos e cores para cartões e Pix.
 
 ## 📂 Estrutura do Projeto
 

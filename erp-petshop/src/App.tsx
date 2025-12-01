@@ -23,6 +23,8 @@ import CustomerForm from './pages/Customers/CustomerForm';
 import PetSpeciesSettings from './pages/Settings/PetSpeciesSettings';
 import PaymentSettings from './pages/Settings/PaymentSettings';
 import BankAccountSettings from './pages/Settings/BankAccountSettings';
+import SuppliersList from './pages/Suppliers/SuppliersList';
+import SupplierForm from './pages/Suppliers/SupplierForm';
 
 function App() {
   return (
@@ -77,6 +79,11 @@ function AdminRoutes() {
         <Route path="customers" element={<CustomerList />} />
         <Route path="customers/new" element={<CustomerForm />} />
         <Route path="customers/:id" element={<CustomerForm />} />
+
+        {/* Fornecedores */}
+        <Route path="suppliers" element={<SuppliersList />} />
+        <Route path="suppliers/new" element={<SupplierForm />} />
+        <Route path="suppliers/:id" element={<SupplierForm />} />
 
         {/* Configurações */}
         <Route path="settings/pet-species" element={<PetSpeciesSettings />} />
