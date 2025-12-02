@@ -4,6 +4,11 @@ import { API_URL } from '../services/api';
 
 interface PaymentModalProps {
     total: number;
+    customer?: {
+        id: string;
+        name: string;
+        wallet_balance: number;
+    } | null;
     onClose: () => void;
     onComplete: (paymentMethod: PaymentMethod, details?: any) => void;
 }
@@ -20,6 +25,7 @@ interface PaymentConfig {
 
 export default function PaymentModal({
     total,
+    customer,
     onClose,
     onComplete,
 }: PaymentModalProps) {
@@ -30,6 +36,7 @@ export default function PaymentModal({
     const [selectedConfigId, setSelectedConfigId] = useState<string>('');
     const [installments, setInstallments] = useState<number>(1);
     const [loading, setLoading] = useState(false);
+    const [useWalletBalance, setUseWalletBalance] = useState(false);
 
     // Reset ao abrir
     useEffect(() => {
@@ -37,6 +44,7 @@ export default function PaymentModal({
         setSelectedMethod('cash');
         setInstallments(1);
         setConfigs([]);
+        setUseWalletBalance(false);
     }, [total]);
 
     const fetchConfigs = async (type: string) => {
@@ -57,13 +65,9 @@ export default function PaymentModal({
         if (method === 'cash') {
             setStep('confirm');
         } else if (method === 'credit_card') {
-            // Buscar configs primeiro para saber o max de parcelas global? 
-            // Ou apenas ir para tela de parcelas e depois filtrar?
-            // Melhor buscar configs agora para saber quais parcelas mostrar
             await fetchConfigs(method);
             setStep('installments');
         } else {
-            // Débito ou Pix
             await fetchConfigs(method);
             setStep('provider');
         }
@@ -79,7 +83,12 @@ export default function PaymentModal({
         setStep('confirm');
     };
 
-    const change = cashReceived ? parseFloat(cashReceived) - total : 0;
+    // Cálculos de Cashback
+    const walletBalance = Number(customer?.wallet_balance || 0);
+    const walletDiscount = useWalletBalance ? Math.min(walletBalance, total) : 0;
+    const amountToPay = total - walletDiscount;
+
+    const change = cashReceived ? parseFloat(cashReceived) - amountToPay : 0;
 
     const getSelectedConfig = () => configs.find(c => c.id === selectedConfigId);
 
@@ -97,10 +106,13 @@ export default function PaymentModal({
             return;
         }
 
-        const details: any = {};
+        const details: any = {
+            useWalletBalance,
+            walletAmountUsed: walletDiscount
+        };
+
         if (selectedMethod !== 'cash') {
             const config = getSelectedConfig();
-            // Se não tiver config selecionada (ex: lista vazia), segue sem config
             if (config) {
                 details.paymentConfigId = config.id;
                 details.providerName = config.name;
@@ -126,13 +138,11 @@ export default function PaymentModal({
         if (selectedMethod !== 'credit_card') return true;
         return (c.max_installments || 1) >= installments;
     }).sort((a, b) => {
-        // Ordenar por menor taxa
         const feeA = getFeeForConfig(a, installments);
         const feeB = getFeeForConfig(b, installments);
         return feeA - feeB;
     });
 
-    // Calcular maior número de parcelas disponível entre todas as configs
     const maxGlobalInstallments = configs.reduce((max, c) => Math.max(max, c.max_installments || 1), 1);
 
     return (
@@ -159,7 +169,16 @@ export default function PaymentModal({
                     </div>
                     <div style={{ marginTop: '1rem' }}>
                         <p style={{ fontSize: '0.875rem', opacity: 0.9 }}>Total a pagar</p>
-                        <p style={{ fontSize: '2.25rem', fontWeight: 'bold', marginTop: '0.25rem' }}>R$ {total.toFixed(2)}</p>
+                        <div className="flex items-baseline gap-2">
+                            <p style={{ fontSize: '2.25rem', fontWeight: 'bold', marginTop: '0.25rem' }}>
+                                R$ {amountToPay.toFixed(2)}
+                            </p>
+                            {walletDiscount > 0 && (
+                                <span className="text-sm bg-green-500/20 px-2 py-1 rounded text-white font-medium">
+                                    (- R$ {walletDiscount.toFixed(2)} Cashback)
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -168,24 +187,64 @@ export default function PaymentModal({
 
                     {/* STEP 1: Method Selection */}
                     {step === 'method' && (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                            {paymentMethods.map((method) => (
-                                <button
-                                    key={method.id}
-                                    onClick={() => handleMethodSelect(method.id)}
-                                    style={{
-                                        padding: '1.5rem', borderRadius: '0.5rem',
-                                        border: '1px solid #e5e7eb', backgroundColor: 'white',
-                                        color: '#111827', cursor: 'pointer', transition: 'all 0.2s',
-                                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem'
-                                    }}
-                                    className="hover:bg-gray-50 hover:border-blue-300"
-                                >
-                                    <div style={{ fontSize: '2rem' }}>{method.icon}</div>
-                                    <div style={{ fontWeight: '600' }}>{method.name}</div>
-                                </button>
-                            ))}
-                        </div>
+                        <>
+                            {/* Cashback Toggle */}
+                            {customer && walletBalance > 0 && (
+                                <div className="bg-green-50 p-4 rounded-lg border border-green-200 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-green-100 rounded-full text-green-600">
+                                            💰
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-gray-800">Usar Cashback</p>
+                                            <p className="text-sm text-gray-600">
+                                                Saldo disponível: <span className="font-bold">R$ {walletBalance.toFixed(2)}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only peer"
+                                            checked={useWalletBalance}
+                                            onChange={e => setUseWalletBalance(e.target.checked)}
+                                        />
+                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                    </label>
+                                </div>
+                            )}
+
+                            {amountToPay > 0 ? (
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                    {paymentMethods.map((method) => (
+                                        <button
+                                            key={method.id}
+                                            onClick={() => handleMethodSelect(method.id)}
+                                            style={{
+                                                padding: '1.5rem', borderRadius: '0.5rem',
+                                                border: '1px solid #e5e7eb', backgroundColor: 'white',
+                                                color: '#111827', cursor: 'pointer', transition: 'all 0.2s',
+                                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem'
+                                            }}
+                                            className="hover:bg-gray-50 hover:border-blue-300"
+                                        >
+                                            <div style={{ fontSize: '2rem' }}>{method.icon}</div>
+                                            <div style={{ fontWeight: '600' }}>{method.name}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center p-6">
+                                    <p className="text-lg text-gray-600 mb-4">O saldo de cashback cobre o valor total da compra.</p>
+                                    <button
+                                        onClick={() => handleMethodSelect('cash')} // Usa 'cash' como placeholder, mas valor será 0
+                                        className="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 w-full"
+                                    >
+                                        Concluir Pagamento com Cashback
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     )}
 
                     {/* STEP 2: Installments (Credit Card Only) */}
@@ -198,7 +257,7 @@ export default function PaymentModal({
                                     className="p-4 border rounded-lg hover:bg-blue-50 hover:border-blue-500 transition-all text-center"
                                 >
                                     <div className="font-bold text-lg text-gray-800">{i}x</div>
-                                    <div className="text-xs text-gray-500">R$ {(total / i).toFixed(2)}</div>
+                                    <div className="text-xs text-gray-500">R$ {(amountToPay / i).toFixed(2)}</div>
                                 </button>
                             ))}
                         </div>
@@ -210,7 +269,7 @@ export default function PaymentModal({
                             {availableConfigs.length > 0 ? (
                                 availableConfigs.map(config => {
                                     const fee = getFeeForConfig(config, installments);
-                                    const netValue = total - (total * fee / 100);
+                                    const netValue = amountToPay - (amountToPay * fee / 100);
                                     return (
                                         <button
                                             key={config.id}
@@ -277,7 +336,7 @@ export default function PaymentModal({
                                     {installments > 1 && (
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Parcelas:</span>
-                                            <span className="font-medium">{installments}x de R$ {(total / installments).toFixed(2)}</span>
+                                            <span className="font-medium">{installments}x de R$ {(amountToPay / installments).toFixed(2)}</span>
                                         </div>
                                     )}
                                     {getSelectedConfig() && (

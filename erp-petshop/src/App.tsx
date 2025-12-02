@@ -25,6 +25,7 @@ import PaymentSettings from './pages/Settings/PaymentSettings';
 import BankAccountSettings from './pages/Settings/BankAccountSettings';
 import SuppliersList from './pages/Suppliers/SuppliersList';
 import SupplierForm from './pages/Suppliers/SupplierForm';
+import LoyaltySettings from './pages/Settings/LoyaltySettings';
 
 function App() {
   return (
@@ -89,7 +90,9 @@ function AdminRoutes() {
         <Route path="settings/pet-species" element={<PetSpeciesSettings />} />
         <Route path="settings/expense-categories" element={<ExpenseCategories />} />
         <Route path="settings/payments" element={<PaymentSettings />} />
+        <Route path="settings/payments" element={<PaymentSettings />} />
         <Route path="settings/bank-accounts" element={<BankAccountSettings />} />
+        <Route path="settings/loyalty" element={<LoyaltySettings />} />
       </Routes>
     </AdminLayout>
   );

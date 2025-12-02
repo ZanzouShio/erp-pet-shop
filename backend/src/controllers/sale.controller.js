@@ -39,14 +39,7 @@ export const createSale = async (req, res) => {
 
         const sale = saleResult.rows[0];
 
-        // 2. Inserir forma de pagamento
-        await client.query(`
-            INSERT INTO sale_payments (
-                sale_id, payment_method, amount
-            ) VALUES ($1, $2, $3)
-        `, [sale.id, payment_method, total_amount]);
-
-        // 3. Inserir itens e atualizar estoque
+        // 2. Inserir Itens
         for (const item of items) {
             await client.query(`
                 INSERT INTO sale_items (
@@ -61,139 +54,131 @@ export const createSale = async (req, res) => {
                 (item.unit_price * item.quantity) - (item.discount || 0)
             ]);
 
+            // Atualizar Estoque
             await client.query(`
-                UPDATE products
+                UPDATE products 
                 SET stock_quantity = stock_quantity - $1,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = $2
             `, [item.quantity, item.product_id]);
-        }
 
-        // 4. Gerar Contas a Receber (Lógica Financeira)
-
-        let config = null;
-        if (paymentConfigId) {
-            const configResult = await client.query('SELECT * FROM payment_methods_config WHERE id = $1', [paymentConfigId]);
-            config = configResult.rows[0];
-        }
-
-        const receivableMode = config?.receivable_mode || 'immediate';
-        const daysToLiquidate = config?.days_to_liquidate || (payment_method === 'credit_card' ? 30 : 1);
-        const appliedFeePercent = feePercent !== undefined ? Number(feePercent) : 0;
-
-        // Se for "Fiado" (store_credit), mantém lógica específica
-        if (payment_method === 'store_credit') {
-            const installmentValue = total_amount / installments;
-            for (let i = 1; i <= installments; i++) {
-                const dueDate = new Date();
-                if (due_date) {
-                    dueDate.setTime(new Date(due_date).getTime());
-                    // Se tiver parcelas no fiado, teria que calcular datas futuras, mas por simplificação assumimos 30 dias se não tiver data
-                } else {
-                    dueDate.setDate(dueDate.getDate() + (i * 30));
-                }
-
-                await client.query(`
-                    INSERT INTO accounts_receivable (
-                        description, amount, net_amount, tax_amount, tax_rate,
-                        due_date, paid_date, status, customer_id, sale_id,
-                        installment_number, total_installments, payment_method, origin_type
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'sale')
-                `, [
-                    `Venda #${sale_number} - Parcela ${i}/${installments}`,
-                    installmentValue,
-                    installmentValue, // Sem taxa no fiado por padrão
-                    0,
-                    0,
-                    dueDate,
-                    null,
-                    'pending',
-                    customer_id || null,
-                    sale.id,
-                    i,
-                    installments,
-                    payment_method
-                ]);
-            }
-        }
-        // Lógica para Cartão/Pix/Dinheiro com Configuração
-        else if (receivableMode === 'immediate') {
-            // Recebimento único (Antecipação ou à vista)
-            const totalFee = (total_amount * appliedFeePercent) / 100;
-            const netAmount = total_amount - totalFee;
-
-            const dueDate = new Date();
-            dueDate.setDate(dueDate.getDate() + daysToLiquidate);
-
-            let status = 'pending';
-            let paidDate = null;
-
-            // Dinheiro/Pix/Débito geralmente já nascem pagos se days_to_liquidate = 0 ou 1?
-            // Se days_to_liquidate = 0, é D+0 (Hoje). Se 1, D+1 (Amanhã).
-            // Vamos manter a lógica: se for dinheiro/pix/débito E days_to_liquidate <= 1, consideramos pago?
-            // Ou melhor, se o método for 'money', é pago na hora. Pix também.
-            // Cartão de débito cai em D+1 geralmente, então fica 'pending' até cair? Ou consideramos 'paid' para simplificar caixa?
-            // O usuário disse: "existem muitos que te pagam logo no dia seguinte ou no mesmo dia".
-            // Se for 'money', é caixa físico, já está na mão.
-
-            if (payment_method === 'money') {
-                status = 'paid';
-                paidDate = new Date();
-            }
-
-            const titleResult = await client.query(`
-                INSERT INTO accounts_receivable (
-                    description, amount, net_amount, tax_amount, tax_rate,
-                    due_date, paid_date, status, customer_id, sale_id,
-                    installment_number, total_installments, payment_method, payment_config_id, origin_type
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'sale')
-                RETURNING id
+            // Registrar Movimentação de Estoque
+            await client.query(`
+                INSERT INTO stock_movements (
+                    product_id, type, quantity, cost_price, 
+                    reference_type, reference_id, notes, created_at
+                ) VALUES ($1, 'OUT', $2, $3, 'sale', $4, 'Venda realizada', NOW())
             `, [
-                `Venda #${sale_number} (Integral)`,
-                total_amount,
-                netAmount,
-                totalFee,
-                appliedFeePercent,
-                dueDate,
-                paidDate,
-                status,
-                customer_id || null,
-                sale.id,
-                1,
-                1,
-                payment_method,
-                paymentConfigId || null
+                item.product_id,
+                item.quantity,
+                0, // TODO: Buscar preço de custo do produto
+                sale.id
             ]);
+        }
 
-            // Se pago (Dinheiro), lança no caixa
-            if (status === 'paid') {
+        // 4. Lógica de Pagamento e Carteira (Cashback)
+        let amountToPay = total_amount;
+        let walletAmountUsed = 0;
+
+        // Verificar uso de saldo de cashback
+        if (req.body.useWalletBalance && customer_id) {
+            const customerResult = await client.query('SELECT wallet_balance FROM customers WHERE id = $1', [customer_id]);
+            const currentBalance = Number(customerResult.rows[0]?.wallet_balance || 0);
+
+            if (currentBalance > 0) {
+                walletAmountUsed = Math.min(currentBalance, total_amount);
+                amountToPay = total_amount - walletAmountUsed;
+
+                // Debitar da carteira
                 await client.query(`
-                    INSERT INTO financial_transactions 
-                    (type, amount, description, date, issue_date, due_date, category, payment_method, payment_config_id, status, customer_id)
-                    VALUES ('revenue', $1, $2, $3, $4, $5, 'Venda de Produtos', $6, $7, 'paid', $8)
-                `, [
-                    netAmount,
-                    `Recebimento Venda #${sale_number}`,
-                    paidDate, paidDate, paidDate,
-                    payment_method,
-                    paymentConfigId || null,
-                    customer_id || null
-                ]);
+                    UPDATE customers 
+                    SET wallet_balance = wallet_balance - $1 
+                    WHERE id = $2
+                `, [walletAmountUsed, customer_id]);
+
+                // Registrar transação de débito
+                await client.query(`
+                    INSERT INTO wallet_transactions (
+                        customer_id, sale_id, amount, type, description
+                    ) VALUES ($1, $2, $3, 'debit', $4)
+                `, [customer_id, sale.id, walletAmountUsed, `Uso de saldo na venda #${sale_number}`]);
+
+                // Registrar pagamento com cashback
+                await client.query(`
+                    INSERT INTO sale_payments (
+                        sale_id, payment_method, amount
+                    ) VALUES ($1, 'cashback', $2)
+                `, [sale.id, walletAmountUsed]);
+            }
+        }
+
+        // Registrar pagamento principal (se houver restante)
+        if (amountToPay > 0) {
+            await client.query(`
+                INSERT INTO sale_payments (
+                    sale_id, payment_method, amount
+                ) VALUES ($1, $2, $3)
+            `, [sale.id, payment_method, amountToPay]);
+        }
+
+        // 5. Gerar Contas a Receber (Apenas sobre o valor pago em dinheiro/cartão/etc)
+        if (amountToPay > 0) {
+            let config = null;
+            if (paymentConfigId) {
+                const configResult = await client.query('SELECT * FROM payment_methods_config WHERE id = $1', [paymentConfigId]);
+                config = configResult.rows[0];
             }
 
-        } else {
-            // receivableMode === 'flow' (Fluxo - 1 recebível por parcela)
-            const installmentValue = total_amount / installments;
+            const receivableMode = config?.receivable_mode || 'immediate';
+            const daysToLiquidate = config?.days_to_liquidate || (payment_method === 'credit_card' ? 30 : 1);
+            const appliedFeePercent = feePercent !== undefined ? Number(feePercent) : 0;
 
-            for (let i = 1; i <= installments; i++) {
-                const feeAmount = (installmentValue * appliedFeePercent) / 100;
-                const netAmount = installmentValue - feeAmount;
+            if (payment_method === 'store_credit') {
+                const installmentValue = amountToPay / installments;
+                for (let i = 1; i <= installments; i++) {
+                    const dueDate = new Date();
+                    if (due_date) {
+                        dueDate.setTime(new Date(due_date).getTime());
+                    } else {
+                        dueDate.setDate(dueDate.getDate() + (i * 30));
+                    }
 
-                // Data de vencimento: (i * 30 dias) + dias de liquidação
-                // Ex: Parcela 1: 30 dias + 1 dia (D+31)
-                const daysToAdd = (i * 30) + daysToLiquidate;
+                    await client.query(`
+                        INSERT INTO accounts_receivable (
+                            description, amount, net_amount, tax_amount, tax_rate,
+                            due_date, paid_date, status, customer_id, sale_id,
+                            installment_number, total_installments, payment_method, origin_type
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'sale')
+                    `, [
+                        `Venda #${sale_number} - Parcela ${i}/${installments}`,
+                        installmentValue,
+                        installmentValue,
+                        0,
+                        0,
+                        dueDate,
+                        null,
+                        'pending',
+                        customer_id || null,
+                        sale.id,
+                        i,
+                        installments,
+                        payment_method
+                    ]);
+                }
+            } else if (receivableMode === 'immediate') {
+                const totalFee = (amountToPay * appliedFeePercent) / 100;
+                const netAmount = amountToPay - totalFee;
+
                 const dueDate = new Date();
-                dueDate.setDate(dueDate.getDate() + daysToAdd);
+                dueDate.setDate(dueDate.getDate() + daysToLiquidate);
+
+                let status = 'pending';
+                let paidDate = null;
+
+                if (payment_method === 'money' || payment_method === 'pix') { // Pix também geralmente é imediato
+                    status = 'paid';
+                    paidDate = new Date();
+                }
 
                 await client.query(`
                     INSERT INTO accounts_receivable (
@@ -202,57 +187,132 @@ export const createSale = async (req, res) => {
                         installment_number, total_installments, payment_method, payment_config_id, origin_type
                     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'sale')
                 `, [
-                    `Venda #${sale_number} - Parcela ${i}/${installments}`,
-                    installmentValue,
+                    `Venda #${sale_number} (Integral)`,
+                    amountToPay,
                     netAmount,
-                    feeAmount,
+                    totalFee,
                     appliedFeePercent,
                     dueDate,
-                    null, // Fluxo futuro é sempre pendente
-                    'pending',
+                    paidDate,
+                    status,
                     customer_id || null,
                     sale.id,
-                    i,
-                    installments,
+                    1,
+                    1,
                     payment_method,
                     paymentConfigId || null
                 ]);
+
+                if (status === 'paid') {
+                    await client.query(`
+                        INSERT INTO financial_transactions 
+                        (type, amount, description, date, issue_date, due_date, category, payment_method, payment_config_id, status, customer_id)
+                        VALUES ('revenue', $1, $2, $3, $4, $5, 'Venda de Produtos', $6, $7, 'paid', $8)
+                    `, [
+                        netAmount,
+                        `Recebimento Venda #${sale_number}`,
+                        paidDate, paidDate, paidDate,
+                        payment_method,
+                        paymentConfigId || null,
+                        customer_id || null
+                    ]);
+                }
+            } else {
+                // Fluxo
+                const installmentValue = amountToPay / installments;
+
+                for (let i = 1; i <= installments; i++) {
+                    const feeAmount = (installmentValue * appliedFeePercent) / 100;
+                    const netAmount = installmentValue - feeAmount;
+                    const daysToAdd = (i * 30) + daysToLiquidate;
+                    const dueDate = new Date();
+                    dueDate.setDate(dueDate.getDate() + daysToAdd);
+
+                    await client.query(`
+                        INSERT INTO accounts_receivable (
+                            description, amount, net_amount, tax_amount, tax_rate,
+                            due_date, paid_date, status, customer_id, sale_id,
+                            installment_number, total_installments, payment_method, payment_config_id, origin_type
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'sale')
+                    `, [
+                        `Venda #${sale_number} - Parcela ${i}/${installments}`,
+                        installmentValue,
+                        netAmount,
+                        feeAmount,
+                        appliedFeePercent,
+                        dueDate,
+                        null,
+                        'pending',
+                        customer_id || null,
+                        sale.id,
+                        i,
+                        installments,
+                        payment_method,
+                        paymentConfigId || null
+                    ]);
+                }
             }
         }
 
-        // 5. Programa de Fidelidade
+        // 6. Fidelidade e Cashback (Acúmulo)
         if (customer_id) {
-            const settingsResult = await client.query('SELECT loyalty_enabled, loyalty_points_per_real FROM company_settings LIMIT 1');
+            const settingsResult = await client.query('SELECT * FROM company_settings LIMIT 1');
             const settings = settingsResult.rows[0];
 
-            if (settings && settings.loyalty_enabled) {
-                const pointsEarned = Math.floor(total_amount * Number(settings.loyalty_points_per_real));
+            if (settings) {
+                // Fidelidade (Pontos)
+                if (settings.loyalty_enabled) {
+                    const pointsEarned = Math.floor(total_amount * Number(settings.loyalty_points_per_real));
+                    if (pointsEarned > 0) {
+                        await client.query(`
+                            UPDATE customers 
+                            SET loyalty_points = loyalty_points + $1,
+                                total_spent = total_spent + $2,
+                                last_purchase_at = CURRENT_TIMESTAMP
+                            WHERE id = $3
+                        `, [pointsEarned, total_amount, customer_id]);
 
-                if (pointsEarned > 0) {
-                    // Atualizar cliente (pontos e total gasto)
-                    await client.query(`
-                        UPDATE customers 
-                        SET loyalty_points = loyalty_points + $1,
-                            total_spent = total_spent + $2,
-                            last_purchase_at = CURRENT_TIMESTAMP
-                        WHERE id = $3
-                    `, [pointsEarned, total_amount, customer_id]);
+                        await client.query(`
+                            INSERT INTO loyalty_transactions (
+                                customer_id, type, points, description, reference_id
+                            ) VALUES ($1, 'earn', $2, $3, $4)
+                        `, [customer_id, pointsEarned, `Compra #${sale_number}`, sale.id]);
 
-                    // Registrar transação de fidelidade
-                    await client.query(`
-                        INSERT INTO loyalty_transactions (
-                            customer_id, type, points, description, reference_id
-                        ) VALUES ($1, 'earn', $2, $3, $4)
-                    `, [customer_id, pointsEarned, `Compra #${sale_number}`, sale.id]);
+                        await client.query('UPDATE sales SET loyalty_points_earned = $1 WHERE id = $2', [pointsEarned, sale.id]);
+                    }
+                }
 
-                    // Atualizar venda com pontos ganhos
-                    await client.query(`
-                        UPDATE sales 
-                        SET loyalty_points_earned = $1 
-                        WHERE id = $2
-                    `, [pointsEarned, sale.id]);
-                } else {
-                    // Apenas atualizar total gasto e última compra mesmo sem pontos
+                // Cashback
+                if (settings.cashback_enabled && amountToPay > 0) { // Só gera cashback sobre o valor pago (não sobre o saldo usado)
+                    const cashbackPercent = Number(settings.cashback_percentage || 0);
+                    if (cashbackPercent > 0) {
+                        const cashbackValue = (amountToPay * cashbackPercent) / 100;
+                        const expireDays = settings.cashback_expire_days || 90;
+                        const expiresAt = new Date();
+                        expiresAt.setDate(expiresAt.getDate() + expireDays);
+
+                        await client.query(`
+                            UPDATE customers 
+                            SET wallet_balance = wallet_balance + $1
+                            WHERE id = $2
+                        `, [cashbackValue, customer_id]);
+
+                        await client.query(`
+                            INSERT INTO wallet_transactions (
+                                customer_id, sale_id, amount, type, description, expires_at
+                            ) VALUES ($1, $2, $3, 'credit', $4, $5)
+                        `, [
+                            customer_id,
+                            sale.id,
+                            cashbackValue,
+                            `Cashback Venda #${sale_number}`,
+                            expiresAt
+                        ]);
+                    }
+                }
+
+                // Se nenhum sistema ativo, apenas atualiza total gasto
+                if (!settings.loyalty_enabled && !settings.cashback_enabled) {
                     await client.query(`
                         UPDATE customers 
                         SET total_spent = total_spent + $1,
@@ -260,14 +320,6 @@ export const createSale = async (req, res) => {
                         WHERE id = $2
                     `, [total_amount, customer_id]);
                 }
-            } else {
-                // Apenas atualizar total gasto e última compra se fidelidade desativada
-                await client.query(`
-                    UPDATE customers 
-                    SET total_spent = total_spent + $1,
-                        last_purchase_at = CURRENT_TIMESTAMP
-                    WHERE id = $2
-                `, [total_amount, customer_id]);
             }
         }
 
@@ -318,7 +370,7 @@ export const getAllSales = async (req, res) => {
         }
 
         if (search) {
-            params.push(`% ${search} % `);
+            params.push(`%${search}%`);
             whereClause += ` AND s.sale_number ILIKE $${paramCount}`;
             paramCount++;
         }
@@ -354,7 +406,7 @@ export const getAllSales = async (req, res) => {
             GROUP BY s.id
             ORDER BY s.created_at DESC
             LIMIT $${limitParam} OFFSET $${offsetParam}
-                    `, params);
+        `, params);
 
         const sales = result.rows.map(row => ({
             id: row.id,
@@ -388,7 +440,7 @@ export const getSaleById = async (req, res) => {
             FROM sales s
             LEFT JOIN users u ON s.user_id = u.id
             WHERE s.id = $1
-                    `, [id]);
+        `, [id]);
 
         if (saleResult.rowCount === 0) {
             return res.status(404).json({ error: 'Venda não encontrada' });
@@ -410,7 +462,7 @@ export const getSaleById = async (req, res) => {
             JOIN products p ON si.product_id = p.id
             WHERE si.sale_id = $1
             ORDER BY si.id
-                    `, [id]);
+        `, [id]);
 
         //3. Buscar pagamentos
         const paymentsResult = await pool.query(`
@@ -419,7 +471,7 @@ export const getSaleById = async (req, res) => {
                 amount
             FROM sale_payments
             WHERE sale_id = $1
-                    `, [id]);
+        `, [id]);
 
         // 4. Montar resposta
         res.json({
@@ -462,7 +514,7 @@ export const cancelSale = async (req, res) => {
         // 1. Buscar venda e verificar status
         const saleResult = await client.query(`
             SELECT id, status FROM sales WHERE id = $1 FOR UPDATE
-                    `, [id]);
+        `, [id]);
 
         if (saleResult.rowCount === 0) {
             await client.query('ROLLBACK');
@@ -481,7 +533,7 @@ export const cancelSale = async (req, res) => {
             SELECT product_id, quantity, unit_price 
             FROM sale_items 
             WHERE sale_id = $1
-                    `, [id]);
+        `, [id]);
 
         // 3. Estornar estoque e registrar movimentação
         for (const item of itemsResult.rows) {
@@ -489,17 +541,17 @@ export const cancelSale = async (req, res) => {
             await client.query(`
                 UPDATE products 
                 SET stock_quantity = stock_quantity + $1,
-                updated_at = CURRENT_TIMESTAMP
+                    updated_at = CURRENT_TIMESTAMP
                 WHERE id = $2
-                    `, [item.quantity, item.product_id]);
+            `, [item.quantity, item.product_id]);
 
             // Registrar movimentação
             await client.query(`
-                INSERT INTO stock_movements(
-                        product_id, type, quantity, cost_price,
-                        reference_type, reference_id, notes, created_at
-                    ) VALUES($1, 'IN', $2, $3, 'sale_cancellation', $4, 'Cancelamento de venda', NOW())
-                    `, [
+                INSERT INTO stock_movements (
+                    product_id, type, quantity, cost_price, 
+                    reference_type, reference_id, notes, created_at
+                ) VALUES ($1, 'IN', $2, $3, 'sale_cancellation', $4, 'Cancelamento de venda', NOW())
+            `, [
                 item.product_id,
                 item.quantity,
                 0, // TODO: Ideal seria pegar o custo original, mas por hora 0 ou custo atual
@@ -512,7 +564,7 @@ export const cancelSale = async (req, res) => {
             UPDATE sales 
             SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
             WHERE id = $1
-                    `, [id]);
+        `, [id]);
 
         await client.query('COMMIT');
 

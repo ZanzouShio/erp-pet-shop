@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { Product, CartItem, PaymentMethod } from '../types/index';
 // import { mockProducts } from '../data/mockProducts'; // Não usar mais mock
 import ProductSearch from '../components/ProductSearch';
+import CustomerSearch from '../components/CustomerSearch';
 import Cart from '../components/Cart';
 import PaymentModal from '../components/PaymentModal';
 
@@ -17,6 +18,7 @@ export default function POS({ onExit }: POSProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showPayment, setShowPayment] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
 
 
   // Buscar produtos da API
@@ -128,8 +130,9 @@ export default function POS({ onExit }: POSProps) {
         })),
         payment_method: paymentMethod,
         discount_amount: totalDiscount,
+        customer_id: selectedCustomer?.id,
         notes: null,
-        ...details // Incluir paymentConfigId, installments, feePercent
+        ...details // Incluir paymentConfigId, installments, feePercent, useWalletBalance
       };
 
       // Enviar venda ao backend
@@ -309,6 +312,13 @@ export default function POS({ onExit }: POSProps) {
         }}>
           {/* Coluna Esquerda: Grid de Produtos */}
           <div>
+            <div className="mb-6">
+              <CustomerSearch
+                onSelectCustomer={setSelectedCustomer}
+                selectedCustomer={selectedCustomer}
+              />
+            </div>
+
             <ProductSearch
               products={products}
               searchTerm={searchTerm}
@@ -338,6 +348,7 @@ export default function POS({ onExit }: POSProps) {
       {showPayment && (
         <PaymentModal
           total={total}
+          customer={selectedCustomer}
           onClose={() => setShowPayment(false)}
           onComplete={completeSale}
         />

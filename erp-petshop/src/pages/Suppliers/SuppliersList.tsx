@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Truck, Phone, Mail, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../services/api';
+import { maskPhone, maskMobile } from '../../utils/masks';
 
 interface Supplier {
     id: string;
@@ -141,7 +142,12 @@ export default function SuppliersList() {
                                                 )}
                                                 {supplier.phone && (
                                                     <div className="flex items-center gap-1">
-                                                        <Phone size={14} /> {supplier.phone}
+                                                        <Phone size={14} /> {maskPhone(supplier.phone)}
+                                                    </div>
+                                                )}
+                                                {supplier.mobile && (
+                                                    <div className="flex items-center gap-1">
+                                                        <Phone size={14} /> {maskMobile(supplier.mobile)}
                                                     </div>
                                                 )}
                                             </div>
@@ -158,8 +164,8 @@ export default function SuppliersList() {
                                         </td>
                                         <td className="p-4">
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${supplier.status === 'active'
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-red-100 text-red-700'
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-red-100 text-red-700'
                                                 }`}>
                                                 {supplier.status === 'active' ? 'Ativo' : 'Inativo'}
                                             </span>

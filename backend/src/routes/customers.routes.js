@@ -15,4 +15,7 @@ router.post('/:id/pets', CustomersController.addPet);
 router.put('/pets/:petId', CustomersController.updatePet);
 router.delete('/pets/:petId', CustomersController.deletePet);
 
+// Rotas de Carteira
+router.get('/:id/wallet-transactions', CustomersController.getWalletTransactions);
+
 export default router;

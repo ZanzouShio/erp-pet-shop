@@ -111,6 +111,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
                     enabled: true,
                     subItems: [
                         { id: 'pet-species', label: 'Cadastro de Espécies', icon: ChevronRight, enabled: true, path: '/admin/settings/pet-species' },
+                        { id: 'loyalty-settings', label: 'Fidelidade e Cashback', icon: ChevronRight, enabled: true, path: '/admin/settings/loyalty' },
                     ]
                 }
             ]

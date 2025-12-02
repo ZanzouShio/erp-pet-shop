@@ -187,6 +187,9 @@ model company_settings {
   nfse_rps_series         String?   @db.VarChar(10)
   loyalty_enabled         Boolean?  @default(false)
   loyalty_points_per_real Decimal?  @default(1) @db.Decimal(5, 2)
+  cashback_enabled        Boolean?  @default(false)
+  cashback_percentage     Decimal?  @default(0) @db.Decimal(5, 2)
+  cashback_expire_days    Int?      @default(90)
   created_at              DateTime? @default(now()) @db.Timestamp(6)
   updated_at              DateTime? @default(now()) @db.Timestamp(6)
 }
@@ -221,6 +224,7 @@ model customers {
   credit_limit           Decimal?                 @default(0) @db.Decimal(10, 2)
   status                 String?                  @default("active") @db.VarChar(20)
   loyalty_points         Int?                     @default(0)
+  wallet_balance         Decimal?                 @default(0) @db.Decimal(10, 2)
   total_spent            Decimal?                 @default(0) @db.Decimal(10, 2)
   last_purchase_at       DateTime?                @db.Timestamp(6)
   notes                  String?
@@ -229,6 +233,7 @@ model customers {
   accounts_receivable    accounts_receivable[]
   financial_transactions financial_transactions[]
   loyalty_transactions   loyalty_transactions[]
+  wallet_transactions    wallet_transactions[]
   pets                   pets[]
   quotes                 quotes[]
   sales                  sales[]
@@ -236,6 +241,21 @@ model customers {
   @@index([cpf_cnpj], map: "idx_customers_cpf_cnpj")
   @@index([phone], map: "idx_customers_phone")
   @@index([status], map: "idx_customers_status")
+}
+
+model wallet_transactions {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id String    @db.Uuid
+  sale_id     String?   @db.Uuid
+  amount      Decimal   @db.Decimal(10, 2)
+  type        String    @db.VarChar(20) // credit, debit, expired
+  description String    @db.VarChar(255)
+  expires_at  DateTime? @db.Timestamp(6)
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  customers   customers @relation(fields: [customer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sales       sales?    @relation(fields: [sale_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([customer_id], map: "idx_wallet_customer")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -683,6 +703,7 @@ model sales {
   quotes                          quotes[]
   sale_items                      sale_items[]
   sale_payments                   sale_payments[]
+  wallet_transactions             wallet_transactions[]
   users_sales_cancelled_byTousers users?                @relation("sales_cancelled_byTousers", fields: [cancelled_by], references: [id], onUpdate: NoAction)
   cash_registers                  cash_registers?       @relation(fields: [cash_register_id], references: [id], onUpdate: NoAction)
   customers                       customers?            @relation(fields: [customer_id], references: [id], onUpdate: NoAction)

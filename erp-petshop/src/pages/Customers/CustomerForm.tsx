@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Trash2, ShoppingBag, Calendar, DollarSign } from 'lucide-react';
 import { isValidCPF, formatCPF } from '../../utils/validators';
+import { maskMobile, maskPhone, maskCEP, unmask } from '../../utils/masks';
 
 import { API_URL } from '../../services/api';
 
@@ -29,12 +30,15 @@ export default function CustomerForm() {
         notes: '',
         status: 'active',
         loyalty_points: 0,
+        wallet_balance: 0,
         total_spent: 0
     });
 
     const [pets, setPets] = useState<any[]>([]);
     const [sales, setSales] = useState<any[]>([]);
     const [loadingSales, setLoadingSales] = useState(false);
+    const [walletTransactions, setWalletTransactions] = useState<any[]>([]);
+    const [loadingWallet, setLoadingWallet] = useState(false);
     const [speciesOptions, setSpeciesOptions] = useState<any[]>([]);
 
     useEffect(() => {
@@ -60,8 +64,9 @@ export default function CustomerForm() {
     }, [id]);
 
     useEffect(() => {
-        if (isEditing && activeTab === 'history') {
-            fetchSales();
+        if (isEditing) {
+            if (activeTab === 'history') fetchSales();
+            if (activeTab === 'wallet') fetchWalletTransactions();
         }
     }, [activeTab, id]);
 
@@ -72,7 +77,9 @@ export default function CustomerForm() {
                 const data = await res.json();
                 setFormData({
                     ...data,
-                    birth_date: data.birth_date ? data.birth_date.split('T')[0] : ''
+                    birth_date: data.birth_date ? data.birth_date.split('T')[0] : '',
+                    mobile: maskMobile(data.mobile || ''),
+                    phone: maskPhone(data.phone || '')
                 });
                 setPets(data.pets || []);
             }
@@ -96,6 +103,46 @@ export default function CustomerForm() {
         }
     };
 
+    const fetchWalletTransactions = async () => {
+        setLoadingWallet(true);
+        try {
+            // Precisamos criar essa rota no backend ou usar uma query customizada
+            // Por enquanto, vamos assumir que existe ou criar em breve.
+            // Vou usar uma rota genérica de transações ou adicionar ao customer details
+            // Melhor: adicionar endpoint /customers/:id/wallet-transactions
+            const res = await fetch(`${API_URL}/customers/${id}/wallet-transactions`);
+            if (res.ok) {
+                const data = await res.json();
+                setWalletTransactions(data);
+            }
+        } catch (error) {
+            console.error('Erro ao carregar transações:', error);
+        } finally {
+            setLoadingWallet(false);
+        }
+    };
+
+    const handleCepBlur = async () => {
+        const cleanCep = unmask(formData.zip_code);
+        if (cleanCep.length === 8) {
+            try {
+                const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+                const data = await response.json();
+                if (!data.erro) {
+                    setFormData(prev => ({
+                        ...prev,
+                        address: data.logradouro,
+                        neighborhood: data.bairro,
+                        city: data.localidade,
+                        state: data.uf
+                    }));
+                }
+            } catch (error) {
+                console.error('Erro ao buscar CEP:', error);
+            }
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -113,6 +160,7 @@ export default function CustomerForm() {
             const payload = {
                 ...formData,
                 birth_date: formData.birth_date ? new Date(formData.birth_date) : null,
+                mobile: unmask(formData.mobile), // Remove máscara antes de enviar
                 pets: !isEditing ? pets : undefined // Envia pets apenas na criação
             };
 
@@ -231,6 +279,15 @@ export default function CustomerForm() {
                             Histórico de Compras
                         </button>
                     )}
+                    {isEditing && (
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('wallet')}
+                            className={`px-6 py-3 font-medium text-sm whitespace-nowrap ${activeTab === 'wallet' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            Carteira / Cashback
+                        </button>
+                    )}
                 </div>
 
                 <div className="p-6">
@@ -293,7 +350,8 @@ export default function CustomerForm() {
                                     type="text"
                                     className="w-full p-2 border rounded-lg"
                                     value={formData.mobile}
-                                    onChange={e => setFormData({ ...formData, mobile: e.target.value })}
+                                    onChange={e => setFormData({ ...formData, mobile: maskMobile(e.target.value) })}
+                                    maxLength={15}
                                 />
                             </div>
                             <div>
@@ -325,7 +383,9 @@ export default function CustomerForm() {
                                     type="text"
                                     className="w-full p-2 border rounded-lg"
                                     value={formData.zip_code}
-                                    onChange={e => setFormData({ ...formData, zip_code: e.target.value })}
+                                    onChange={e => setFormData({ ...formData, zip_code: maskCEP(e.target.value) })}
+                                    onBlur={handleCepBlur}
+                                    maxLength={9}
                                 />
                             </div>
                             <div className="col-span-2 md:col-span-1">
@@ -516,6 +576,74 @@ export default function CustomerForm() {
                                                             {sale.status === 'completed' ? 'Concluída' :
                                                                 sale.status === 'cancelled' ? 'Cancelada' : sale.status}
                                                         </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {activeTab === 'wallet' && (
+                        <div className="space-y-6">
+                            <div className="bg-green-50 p-4 rounded-lg border border-green-200 flex justify-between items-center">
+                                <div>
+                                    <p className="text-green-800 text-sm font-medium">Saldo Disponível em Cashback</p>
+                                    <h3 className="text-3xl font-bold text-green-700">
+                                        R$ {Number(formData.wallet_balance || 0).toFixed(2)}
+                                    </h3>
+                                </div>
+                                <div className="p-3 bg-green-100 rounded-full text-green-600">
+                                    <DollarSign size={32} />
+                                </div>
+                            </div>
+
+                            <h3 className="text-lg font-semibold text-gray-800">Histórico de Transações</h3>
+
+                            {loadingWallet ? (
+                                <div className="text-center py-8 text-gray-500">Carregando transações...</div>
+                            ) : walletTransactions.length === 0 ? (
+                                <div className="text-center py-8 text-gray-500 border-2 border-dashed rounded-lg">
+                                    <p>Nenhuma transação encontrada.</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                                            <tr>
+                                                <th className="px-4 py-3">Data</th>
+                                                <th className="px-4 py-3">Tipo</th>
+                                                <th className="px-4 py-3">Descrição</th>
+                                                <th className="px-4 py-3">Valor</th>
+                                                <th className="px-4 py-3">Validade</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {walletTransactions.map((tx) => (
+                                                <tr key={tx.id} className="bg-white border-b hover:bg-gray-50">
+                                                    <td className="px-4 py-3">
+                                                        {new Date(tx.created_at).toLocaleDateString()} {new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${tx.type === 'credit' ? 'bg-green-100 text-green-800' :
+                                                            tx.type === 'debit' ? 'bg-red-100 text-red-800' :
+                                                                'bg-gray-100 text-gray-800'
+                                                            }`}>
+                                                            {tx.type === 'credit' ? 'Crédito' :
+                                                                tx.type === 'debit' ? 'Débito' : 'Expirado'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-gray-600">
+                                                        {tx.description}
+                                                    </td>
+                                                    <td className={`px-4 py-3 font-bold ${tx.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                                                        }`}>
+                                                        {tx.type === 'credit' ? '+' : '-'} R$ {Number(tx.amount).toFixed(2)}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-gray-500">
+                                                        {tx.expires_at ? new Date(tx.expires_at).toLocaleDateString() : '-'}
                                                     </td>
                                                 </tr>
                                             ))}

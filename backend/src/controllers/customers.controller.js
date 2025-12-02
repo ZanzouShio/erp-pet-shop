@@ -1,5 +1,5 @@
 import { prisma } from '../db.js';
-import { isValidCPF } from '../utils/validators.js';
+import { isValidCPF, formatCPF, formatCNPJ } from '../utils/validators.js';
 
 class CustomersController {
     // Listar clientes com paginação e busca
@@ -10,6 +10,8 @@ class CustomersController {
 
             const where = {};
             if (search) {
+                const searchDigits = search.replace(/\D/g, '');
+
                 where.OR = [
                     { name: { contains: search, mode: 'insensitive' } },
                     { cpf_cnpj: { contains: search } },
@@ -17,6 +19,13 @@ class CustomersController {
                     { phone: { contains: search } },
                     { mobile: { contains: search } }
                 ];
+
+                // Se a busca for numérica e tiver tamanho de CPF ou CNPJ, tenta buscar formatado
+                if (searchDigits.length === 11) {
+                    where.OR.push({ cpf_cnpj: { contains: formatCPF(searchDigits) } });
+                } else if (searchDigits.length === 14) {
+                    where.OR.push({ cpf_cnpj: { contains: formatCNPJ(searchDigits) } });
+                }
             }
 
             // Filtro por espécie
@@ -35,6 +44,8 @@ class CustomersController {
             let orderBy = { name: 'asc' };
             if (sortBy === 'loyalty_points') {
                 orderBy = { loyalty_points: sortOrder };
+            } else if (sortBy === 'wallet_balance') {
+                orderBy = { wallet_balance: sortOrder };
             } else if (sortBy === 'pet_count') {
                 orderBy = { pets: { _count: sortOrder } };
             } else if (sortBy === 'name') {
@@ -252,6 +263,21 @@ class CustomersController {
         } catch (error) {
             console.error('Erro ao remover pet:', error);
             res.status(500).json({ error: 'Erro ao remover pet' });
+        }
+    }
+    // Listar transações da carteira
+    async getWalletTransactions(req, res) {
+        try {
+            const { id } = req.params;
+            const transactions = await prisma.wallet_transactions.findMany({
+                where: { customer_id: id },
+                orderBy: { created_at: 'desc' }
+            });
+
+            res.json(transactions);
+        } catch (error) {
+            console.error('Erro ao buscar transações da carteira:', error);
+            res.status(500).json({ error: 'Erro ao buscar transações da carteira' });
         }
     }
 }

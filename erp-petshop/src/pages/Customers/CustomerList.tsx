@@ -3,6 +3,7 @@ import { Plus, Search, Edit, Trash2, User, Phone, MapPin, ArrowUp, ArrowDown, Fi
 import { useNavigate } from 'react-router-dom';
 
 import { API_URL } from '../../services/api';
+import { maskMobile } from '../../utils/masks';
 
 export default function CustomerList() {
     const navigate = useNavigate();
@@ -154,15 +155,21 @@ export default function CustomerList() {
                                         {sortBy === 'loyalty_points' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
                                     </div>
                                 </th>
+                                <th className="p-4 text-center cursor-pointer hover:bg-gray-100" onClick={() => handleSort('wallet_balance')}>
+                                    <div className="flex items-center justify-center gap-1">
+                                        Cashback
+                                        {sortBy === 'wallet_balance' && (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+                                    </div>
+                                </th>
                                 <th className="p-4">Status</th>
                                 <th className="p-4 text-right">Ações</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
-                                <tr><td colSpan={7} className="p-8 text-center text-gray-500">Carregando...</td></tr>
+                                <tr><td colSpan={8} className="p-8 text-center text-gray-500">Carregando...</td></tr>
                             ) : customers.length === 0 ? (
-                                <tr><td colSpan={7} className="p-8 text-center text-gray-500">Nenhum cliente encontrado.</td></tr>
+                                <tr><td colSpan={8} className="p-8 text-center text-gray-500">Nenhum cliente encontrado.</td></tr>
                             ) : (
                                 customers.map((customer: any) => (
                                     <tr key={customer.id} className="hover:bg-gray-50">
@@ -179,7 +186,7 @@ export default function CustomerList() {
                                         </td>
                                         <td className="p-4 text-sm text-gray-600">
                                             <div className="flex items-center gap-2">
-                                                <Phone size={14} /> {customer.mobile || customer.phone || '-'}
+                                                <Phone size={14} /> {customer.mobile ? maskMobile(customer.mobile) : (customer.phone ? maskMobile(customer.phone) : '-')}
                                             </div>
                                             <div className="text-xs text-gray-400 mt-1">{customer.email}</div>
                                         </td>
@@ -196,6 +203,11 @@ export default function CustomerList() {
                                         <td className="p-4 text-center">
                                             <span className="font-bold text-blue-600">
                                                 {customer.loyalty_points || 0}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            <span className="font-bold text-green-600">
+                                                {Number(customer.wallet_balance || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                             </span>
                                         </td>
                                         <td className="p-4">
