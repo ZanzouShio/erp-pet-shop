@@ -1,5 +1,5 @@
-import { Package, Plus, TrendingDown, TrendingUp, AlertTriangle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Package, Plus, TrendingDown, TrendingUp, AlertTriangle, Search, X, ChevronDown } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
 
 import { API_URL } from '../services/api';
 
@@ -9,6 +9,10 @@ interface Product {
     stock_quantity: number;
     average_cost: number;
     last_cost: number;
+    internal_code: string;
+    sku: string;
+    ean: string;
+    parent_product_id: string | null;
 }
 
 interface StockMovement {
@@ -40,10 +44,15 @@ export default function StockMovements() {
 
     // Modal de entrada
     const [showEntryModal, setShowEntryModal] = useState(false);
-    const [selectedProduct, setSelectedProduct] = useState('');
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [quantity, setQuantity] = useState('');
     const [costPrice, setCostPrice] = useState('');
     const [notes, setNotes] = useState('');
+
+    // Searchable Combobox State
+    const [searchTerm, setSearchTerm] = useState('');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Modal de alerta de margem
     const [marginAlert, setMarginAlert] = useState<MarginAlert | null>(null);
@@ -52,6 +61,19 @@ export default function StockMovements() {
     useEffect(() => {
         loadMovements();
         loadProducts();
+    }, []);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
     }, []);
 
     const loadMovements = async () => {
@@ -90,7 +112,7 @@ export default function StockMovements() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    product_id: selectedProduct,
+                    product_id: selectedProduct.id,
                     type: 'in',
                     quantity: parseInt(quantity),
                     cost_price: parseFloat(costPrice),
@@ -116,7 +138,8 @@ export default function StockMovements() {
             }
 
             // Limpar form
-            setSelectedProduct('');
+            setSelectedProduct(null);
+            setSearchTerm('');
             setQuantity('');
             setCostPrice('');
             setNotes('');
@@ -164,6 +187,20 @@ export default function StockMovements() {
             default: return type;
         }
     };
+
+    // Filter products based on search term
+    const filteredProducts = products.filter(product => {
+        // Exclude child products (bulk) - they should be managed via "Open Package"
+        if (product.parent_product_id) return false;
+
+        const searchLower = searchTerm.toLowerCase();
+        return (
+            product.name.toLowerCase().includes(searchLower) ||
+            (product.internal_code && product.internal_code.toLowerCase().includes(searchLower)) ||
+            (product.sku && product.sku.toLowerCase().includes(searchLower)) ||
+            (product.ean && product.ean.includes(searchLower))
+        );
+    });
 
     return (
         <div className="p-8 space-y-6">
@@ -240,28 +277,93 @@ export default function StockMovements() {
             {/* Modal: Entrada de Estoque */}
             {showEntryModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+                    <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 overflow-visible">
                         <h2 className="text-2xl font-bold text-gray-900 mb-6">Nova Entrada de Estoque</h2>
 
                         <form onSubmit={handleSubmitEntry} className="space-y-4">
-                            {/* Produto */}
-                            <div>
+                            {/* Produto Searchable Combobox */}
+                            <div className="relative" ref={dropdownRef}>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Produto *
                                 </label>
-                                <select
-                                    value={selectedProduct}
-                                    onChange={(e) => setSelectedProduct(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                    required
+
+                                <div
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-green-500 focus-within:border-transparent cursor-text flex items-center justify-between bg-white"
+                                    onClick={() => setIsDropdownOpen(true)}
                                 >
-                                    <option value="">Selecione um produto</option>
-                                    {products.map((product) => (
-                                        <option key={product.id} value={product.id}>
-                                            {product.name} (Estoque: {product.stock_quantity})
-                                        </option>
-                                    ))}
-                                </select>
+                                    {selectedProduct ? (
+                                        <div className="flex-1 truncate">
+                                            <span className="font-medium text-gray-900">{selectedProduct.name}</span>
+                                            <span className="text-xs text-gray-500 ml-2">
+                                                (Estoque: {selectedProduct.stock_quantity})
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <span className="text-gray-400">Selecione um produto...</span>
+                                    )}
+                                    <div className="flex items-center gap-1">
+                                        {selectedProduct && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedProduct(null);
+                                                    setSearchTerm('');
+                                                }}
+                                                className="text-gray-400 hover:text-gray-600"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        )}
+                                        <ChevronDown size={16} className="text-gray-400" />
+                                    </div>
+                                </div>
+
+                                {isDropdownOpen && (
+                                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-hidden flex flex-col">
+                                        <div className="p-2 border-b border-gray-100">
+                                            <div className="relative">
+                                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                                                <input
+                                                    type="text"
+                                                    value={searchTerm}
+                                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                                    className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                                                    placeholder="Buscar por nome, código, SKU..."
+                                                    autoFocus
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="overflow-y-auto flex-1">
+                                            {filteredProducts.length === 0 ? (
+                                                <div className="p-4 text-center text-gray-500 text-sm">
+                                                    Nenhum produto encontrado
+                                                </div>
+                                            ) : (
+                                                filteredProducts.map((product) => (
+                                                    <button
+                                                        key={product.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedProduct(product);
+                                                            setIsDropdownOpen(false);
+                                                            setSearchTerm('');
+                                                        }}
+                                                        className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors"
+                                                    >
+                                                        <div className="font-medium text-gray-900">{product.name}</div>
+                                                        <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+                                                            <span>Estoque: {product.stock_quantity}</span>
+                                                            {product.sku && <span>SKU: {product.sku}</span>}
+                                                            {product.internal_code && <span>Cód: {product.internal_code}</span>}
+                                                        </div>
+                                                    </button>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Quantidade */}

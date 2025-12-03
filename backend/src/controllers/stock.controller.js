@@ -200,3 +200,128 @@ export const getStockMovements = async (req, res) => {
         res.status(500).json({ error: 'Erro ao buscar movimentações' });
     }
 };
+
+export const openPackage = async (req, res) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const { parentProductId, quantity, user_id } = req.body;
+        const qtyToOpen = parseInt(quantity);
+
+        if (!parentProductId || !qtyToOpen || qtyToOpen <= 0) {
+            return res.status(400).json({ error: 'Produto pai e quantidade válida são obrigatórios' });
+        }
+
+        // 1. Buscar produto pai e verificar estoque
+        const parentResult = await client.query(`
+            SELECT id, name, stock_quantity, cost_price, average_cost
+            FROM products WHERE id = $1
+        `, [parentProductId]);
+
+        if (parentResult.rowCount === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Produto pai não encontrado' });
+        }
+
+        const parentProduct = parentResult.rows[0];
+        if (parseFloat(parentProduct.stock_quantity) < qtyToOpen) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Estoque insuficiente do produto pai' });
+        }
+
+        // 2. Buscar produto filho (granel)
+        const childResult = await client.query(`
+            SELECT id, name, stock_quantity, conversion_factor, cost_price, average_cost
+            FROM products WHERE parent_product_id = $1 AND is_bulk = true
+        `, [parentProductId]);
+
+        if (childResult.rowCount === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Produto a granel não encontrado para este item' });
+        }
+
+        const childProduct = childResult.rows[0];
+        const conversionFactor = parseFloat(childProduct.conversion_factor);
+        const bulkQuantityToAdd = qtyToOpen * conversionFactor;
+
+        // Custo do pai por unidade
+        const parentCost = parseFloat(parentProduct.average_cost) || parseFloat(parentProduct.cost_price) || 0;
+        // Custo proporcional do filho (Custo Pai / Fator)
+        const childUnitCost = parentCost / conversionFactor;
+
+        // 3. Movimentação de SAÍDA do Pai
+        await client.query(`
+            INSERT INTO stock_movements (
+                product_id, type, quantity, cost_price,
+                reference_type, reference_id, user_id, notes, created_at
+            ) VALUES ($1, 'OUT', $2, $3, 'open_package', $4, $5, $6, NOW())
+        `, [
+            parentProduct.id,
+            -qtyToOpen,
+            parentCost,
+            childProduct.id, // Referência ao produto filho
+            user_id || null,
+            `Abertura de pacote para granel: ${childProduct.name}`
+        ]);
+
+        await client.query(`
+            UPDATE products SET 
+                stock_quantity = stock_quantity - $1,
+                updated_at = NOW()
+            WHERE id = $2
+        `, [qtyToOpen, parentProduct.id]);
+
+        // 4. Movimentação de ENTRADA do Filho
+        await client.query(`
+            INSERT INTO stock_movements (
+                product_id, type, quantity, cost_price,
+                reference_type, reference_id, user_id, notes, created_at
+            ) VALUES ($1, 'IN', $2, $3, 'open_package', $4, $5, $6, NOW())
+        `, [
+            childProduct.id,
+            bulkQuantityToAdd,
+            childUnitCost,
+            parentProduct.id, // Referência ao produto pai
+            user_id || null,
+            `Origem: Abertura de pacote ${parentProduct.name}`
+        ]);
+
+        // Atualizar estoque e custo do filho
+        // Recalcular custo médio do filho
+        const oldChildStock = parseFloat(childProduct.stock_quantity) || 0;
+        const oldChildAvgCost = parseFloat(childProduct.average_cost) || parseFloat(childProduct.cost_price) || 0;
+
+        let newChildAvgCost = childUnitCost;
+        const newChildStock = oldChildStock + bulkQuantityToAdd;
+
+        if (oldChildStock > 0) {
+            newChildAvgCost = ((oldChildStock * oldChildAvgCost) + (bulkQuantityToAdd * childUnitCost)) / newChildStock;
+        }
+
+        await client.query(`
+            UPDATE products SET 
+                stock_quantity = $1,
+                average_cost = $2,
+                last_cost = $3,
+                updated_at = NOW()
+            WHERE id = $4
+        `, [newChildStock, newChildAvgCost, childUnitCost, childProduct.id]);
+
+        await client.query('COMMIT');
+
+        res.json({
+            success: true,
+            message: `Pacote aberto com sucesso! Gerado ${bulkQuantityToAdd} do produto a granel.`,
+            parent_stock: parseFloat(parentProduct.stock_quantity) - qtyToOpen,
+            child_stock: newChildStock
+        });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('❌ Erro ao abrir pacote:', error);
+        res.status(500).json({ error: 'Erro ao abrir pacote: ' + error.message });
+    } finally {
+        client.release();
+    }
+};

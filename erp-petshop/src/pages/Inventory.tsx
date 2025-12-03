@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Package, Edit, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Package, Edit, Trash2, AlertTriangle, PackageOpen } from 'lucide-react';
 import ProductFormModal from '../components/ProductFormModal';
+import OpenPackageModal from '../components/OpenPackageModal';
 
 import { API_URL } from '../services/api';
 
@@ -38,6 +39,7 @@ export default function Inventory() {
 
     // Estados do modal
     const [showModal, setShowModal] = useState(false);
+    const [showOpenPackageModal, setShowOpenPackageModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
 
     useEffect(() => {
@@ -79,6 +81,9 @@ export default function Inventory() {
             if (response.ok) {
                 alert('Produto desativado com sucesso!');
                 loadProducts();
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Erro ao desativar produto');
             }
         } catch (error) {
             console.error('Erro ao desativar produto:', error);
@@ -127,13 +132,22 @@ export default function Inventory() {
                     <h1 className="text-2xl font-bold text-gray-900">Gestão de Estoque</h1>
                     <p className="text-gray-500 mt-1">Gerencie seus produtos e controle o inventário</p>
                 </div>
-                <button
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                    onClick={handleNew}
-                >
-                    <Plus size={20} />
-                    Novo Produto
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                        onClick={() => setShowOpenPackageModal(true)}
+                    >
+                        <PackageOpen size={20} />
+                        Abrir Pacote
+                    </button>
+                    <button
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                        onClick={handleNew}
+                    >
+                        <Plus size={20} />
+                        Novo Produto
+                    </button>
+                </div>
             </div>
 
             {/* Filters */}
@@ -316,6 +330,13 @@ export default function Inventory() {
                 onClose={handleModalClose}
                 onSuccess={handleModalSuccess}
                 product={editingProduct}
+            />
+
+            {/* Modal de Abertura de Pacote */}
+            <OpenPackageModal
+                isOpen={showOpenPackageModal}
+                onClose={() => setShowOpenPackageModal(false)}
+                onSuccess={handleModalSuccess}
             />
         </div>
     );
