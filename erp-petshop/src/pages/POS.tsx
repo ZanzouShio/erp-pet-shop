@@ -5,6 +5,7 @@ import ProductSearch from '../components/ProductSearch';
 import CustomerSearch from '../components/CustomerSearch';
 import Cart from '../components/Cart';
 import PaymentModal from '../components/PaymentModal';
+import SaleSuccessModal from '../components/SaleSuccessModal';
 
 import { API_URL } from '../services/api';
 
@@ -18,7 +19,16 @@ export default function POS({ onExit }: POSProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showPayment, setShowPayment] = useState(false);
   const [loading, setLoading] = useState(true);
+
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [lastSale, setLastSale] = useState<{
+    saleNumber: string;
+    total: number;
+    paymentMethod: string;
+    change: number;
+    items: any[];
+  } | null>(null);
 
 
   // Buscar produtos da API
@@ -150,7 +160,15 @@ export default function POS({ onExit }: POSProps) {
       const result = await response.json();
 
       // Mostrar confirmação
-      alert(`✅ Venda #${result.sale.sale_number} concluída!\n\nTotal: R$ ${total.toFixed(2)}\nPagamento: ${paymentMethod.toUpperCase()}\n\nObrigado pela preferência!`);
+      setLastSale({
+        saleNumber: result.sale.sale_number,
+        total: total,
+        paymentMethod: paymentMethod,
+        change: details?.change || 0,
+        items: [...cart]
+      });
+      setShowSuccessModal(true);
+      // alert(`✅ Venda #${result.sale.sale_number} concluída!\n\nTotal: R$ ${total.toFixed(2)}\nPagamento: ${paymentMethod.toUpperCase()}\n\nObrigado pela preferência!`);
 
       // Limpar carrinho e fechar modal
       setCart([]);
@@ -351,6 +369,18 @@ export default function POS({ onExit }: POSProps) {
           customer={selectedCustomer}
           onClose={() => setShowPayment(false)}
           onComplete={completeSale}
+        />
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && lastSale && (
+        <SaleSuccessModal
+          saleNumber={lastSale.saleNumber}
+          total={lastSale.total}
+          paymentMethod={lastSale.paymentMethod}
+          change={lastSale.change}
+          items={lastSale.items}
+          onClose={() => setShowSuccessModal(false)}
         />
       )}
 

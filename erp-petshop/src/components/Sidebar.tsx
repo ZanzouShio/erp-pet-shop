@@ -19,7 +19,8 @@ import {
     LineChart,
     Boxes,
     Link as LinkIcon,
-    Truck
+    Truck,
+    Building2
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -80,6 +81,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
                 { id: 'financial-payable', label: 'Contas a Pagar', icon: TrendingDown, enabled: true, path: '/admin/financial/payable' },
                 { id: 'financial-receivable', label: 'Contas a Receber', icon: TrendingUp, enabled: true, path: '/admin/financial/receivable' },
                 { id: 'financial-cashflow', label: 'Fluxo de Caixa', icon: LineChart, enabled: true, path: '/admin/financial/cash-flow' },
+                { id: 'fiscal-invoices', label: 'Notas Fiscais', icon: FileText, enabled: true, path: '/admin/financial/invoices' },
                 { id: 'financial-reconciliation', label: 'Conciliação Bancária', icon: LinkIcon, enabled: true, path: '/admin/financial/reconciliation' },
                 { id: 'financial-import', label: 'Importação NF-e', icon: Upload, enabled: true, path: '/admin/financial/import' },
             ]
@@ -93,6 +95,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             icon: Settings,
             enabled: true,
             subItems: [
+                { id: 'business-settings', label: 'Meu Negócio', icon: Building2, enabled: true, path: '/admin/settings/business' },
                 {
                     id: 'settings-financial',
                     label: 'Financeiro',

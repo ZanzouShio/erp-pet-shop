@@ -111,7 +111,10 @@ export default function PaymentModal({
             walletAmountUsed: walletDiscount
         };
 
-        if (selectedMethod !== 'cash') {
+        if (selectedMethod === 'cash') {
+            details.cashReceived = cashReceived ? parseFloat(cashReceived) : 0;
+            details.change = change;
+        } else {
             const config = getSelectedConfig();
             if (config) {
                 details.paymentConfigId = config.id;

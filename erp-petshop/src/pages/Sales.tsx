@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Search, Filter, Eye, Calendar, DollarSign } from 'lucide-react';
+import { Search, Filter, Eye, Calendar, DollarSign, FileText, Smartphone } from 'lucide-react';
+import NFCeEmissionModal from '../components/NFCeEmissionModal';
+import NFeEmissionModal from '../components/NFeEmissionModal';
 
 import { API_URL } from '../services/api';
 
@@ -46,10 +48,13 @@ interface SaleDetails {
 type DateFilter = 'today' | 'yesterday' | 'week' | 'month' | 'custom';
 
 const paymentMethodLabels: Record<string, string> = {
-    CASH: 'Dinheiro',
-    DEBIT_CARD: 'Débito',
-    CREDIT_CARD: 'Crédito',
-    PIX: 'PIX'
+    money: 'Dinheiro',
+    cash: 'Dinheiro',
+    debit_card: 'Débito',
+    credit_card: 'Crédito',
+    pix: 'PIX',
+    store_credit: 'Crediário',
+    cashback: 'Cashback'
 };
 
 export default function Sales() {
@@ -62,11 +67,13 @@ export default function Sales() {
     const [dateFilter, setDateFilter] = useState<DateFilter>('today');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
-    const [paymentMethod, setPaymentMethod] = useState<string>('ALL');
+    const [paymentMethod, setPaymentMethod] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState('');
 
     // Modal de detalhes
     const [selectedSale, setSelectedSale] = useState<SaleDetails | null>(null);
+    const [showNFCeModal, setShowNFCeModal] = useState(false);
+    const [showNFeModal, setShowNFeModal] = useState(false);
 
     useEffect(() => {
         loadSales();
@@ -122,7 +129,7 @@ export default function Sales() {
             const params = new URLSearchParams();
             if (start) params.append('startDate', start);
             if (end) params.append('endDate', end);
-            if (paymentMethod !== 'ALL') params.append('paymentMethod', paymentMethod);
+            if (paymentMethod !== 'all') params.append('paymentMethod', paymentMethod);
             if (searchTerm) params.append('search', searchTerm);
             params.append('limit', '50');
             params.append('offset', '0');
@@ -288,11 +295,11 @@ export default function Sales() {
                             onChange={(e) => setPaymentMethod(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         >
-                            <option value="ALL">Todas</option>
-                            <option value="CASH">Dinheiro</option>
-                            <option value="DEBIT_CARD">Débito</option>
-                            <option value="CREDIT_CARD">Crédito</option>
-                            <option value="PIX">PIX</option>
+                            <option value="all">Todas</option>
+                            <option value="cash">Dinheiro</option>
+                            <option value="debit_card">Débito</option>
+                            <option value="credit_card">Crédito</option>
+                            <option value="pix">PIX</option>
                         </select>
                     </div>
 
@@ -501,22 +508,60 @@ export default function Sales() {
                                 </div>
                             </div>
                         </div>
-                        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-8 py-4 flex justify-end gap-3">
-                            {selectedSale.status !== 'cancelled' && (
+                        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-8 py-4 flex justify-between items-center gap-3">
+                            <div className="flex gap-3">
                                 <button
-                                    onClick={handleCancelSale}
-                                    className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                                    onClick={() => setShowNFeModal(true)}
+                                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition flex items-center gap-2"
                                 >
-                                    Cancelar Venda
+                                    <FileText size={18} />
+                                    Emitir NF-e
                                 </button>
-                            )}
-                            <button onClick={() => setSelectedSale(null)} className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition">
-                                Fechar
-                            </button>
+                                <button
+                                    onClick={() => setShowNFCeModal(true)}
+                                    className="px-4 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition flex items-center gap-2"
+                                >
+                                    <Smartphone size={18} />
+                                    Emitir NFC-e
+                                </button>
+                            </div>
+                            <div className="flex gap-3">
+                                {selectedSale.status !== 'cancelled' && (
+                                    <button
+                                        onClick={handleCancelSale}
+                                        className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                                    >
+                                        Cancelar Venda
+                                    </button>
+                                )}
+                                <button onClick={() => setSelectedSale(null)} className="px-6 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition">
+                                    Fechar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
+
+            <NFCeEmissionModal
+                isOpen={showNFCeModal}
+                onClose={() => setShowNFCeModal(false)}
+                sale={selectedSale}
+                onEmit={() => {
+                    alert('NFC-e emitida com sucesso!');
+                    setShowNFCeModal(false);
+                }}
+            />
+
+            <NFeEmissionModal
+                isOpen={showNFeModal}
+                onClose={() => setShowNFeModal(false)}
+                onEmit={(data) => {
+                    console.log('Dados NF-e:', data);
+                    alert('NF-e emitida com sucesso!');
+                    setShowNFeModal(false);
+                }}
+            />
         </div>
     );
 }

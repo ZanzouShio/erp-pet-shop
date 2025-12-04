@@ -26,6 +26,19 @@ import BankAccountSettings from './pages/Settings/BankAccountSettings';
 import SuppliersList from './pages/Suppliers/SuppliersList';
 import SupplierForm from './pages/Suppliers/SupplierForm';
 import LoyaltySettings from './pages/Settings/LoyaltySettings';
+import CompanySettings from './pages/Settings/CompanySettings';
+import BusinessSettingsDashboard from './pages/Settings/BusinessSettingsDashboard';
+import InvoiceSettings from './pages/Settings/InvoiceSettings';
+import NFCeSettings from './pages/Settings/NFCeSettings';
+import NFCeCertificate from './pages/Settings/NFCeCertificate';
+import NFCeEmissionData from './pages/Settings/NFCeEmissionData';
+import NFCeTaxes from './pages/Settings/NFCeTaxes';
+import NFeSettings from './pages/Settings/NFeSettings';
+import NFeCertificate from './pages/Settings/NFeCertificate';
+import NFeEmissionData from './pages/Settings/NFeEmissionData';
+import NFeTaxes from './pages/Settings/NFeTaxes';
+import FiscalInvoices from './pages/Financial/FiscalInvoices';
+
 
 function App() {
   return (
@@ -64,6 +77,7 @@ function AdminRoutes() {
         <Route path="financial/receivable" element={<AccountsReceivable />} />
         <Route path="financial/categories" element={<ExpenseCategories />} />
         <Route path="financial/cash-flow" element={<CashFlow />} />
+        <Route path="financial/invoices" element={<FiscalInvoices />} />
         <Route path="financial/reconciliation" element={<BankReconciliation />} />
         <Route path="financial/import" element={<Finance />} />
 
@@ -93,6 +107,21 @@ function AdminRoutes() {
         <Route path="settings/payments" element={<PaymentSettings />} />
         <Route path="settings/bank-accounts" element={<BankAccountSettings />} />
         <Route path="settings/loyalty" element={<LoyaltySettings />} />
+        <Route path="settings/business" element={<BusinessSettingsDashboard />} />
+        <Route path="settings/company" element={<CompanySettings />} />
+        <Route path="settings/invoices" element={<InvoiceSettings />} />
+        <Route path="settings/invoices/nfce" element={<NFCeSettings />} />
+        <Route path="settings/invoices/nfce/certificate" element={<NFCeCertificate />} />
+        <Route path="settings/invoices/nfce/data" element={<NFCeEmissionData />} />
+        <Route path="settings/invoices/nfce/taxes" element={<NFCeTaxes />} />
+
+        <Route path="settings/invoices/nfe" element={<NFeSettings />} />
+        <Route path="settings/invoices/nfe/certificate" element={<NFeCertificate />} />
+        <Route path="settings/invoices/nfe/data" element={<NFeEmissionData />} />
+        <Route path="settings/invoices/nfe/taxes" element={<NFeTaxes />} />
+        {/* Placeholders for now */}
+        <Route path="settings/integrations" element={<div className="p-8">Configurações de Integrações (Em breve)</div>} />
+        <Route path="settings/stores" element={<div className="p-8">Gestão de Lojas e Caixas (Em breve)</div>} />
       </Routes>
     </AdminLayout>
   );
