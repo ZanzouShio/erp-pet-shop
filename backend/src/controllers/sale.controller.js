@@ -130,7 +130,7 @@ export const createSale = async (req, res) => {
             }
 
             const receivableMode = config?.receivable_mode || 'immediate';
-            const daysToLiquidate = config?.days_to_liquidate || (payment_method === 'credit_card' ? 30 : 1);
+            const daysToLiquidate = config?.days_to_liquidate !== undefined ? config.days_to_liquidate : (payment_method === 'credit_card' ? 30 : 1);
             const appliedFeePercent = feePercent !== undefined ? Number(feePercent) : 0;
 
             if (payment_method === 'store_credit') {
@@ -175,7 +175,9 @@ export const createSale = async (req, res) => {
                 let status = 'pending';
                 let paidDate = null;
 
-                if (payment_method === 'money' || payment_method === 'pix') { // Pix também geralmente é imediato
+                // Se dias para liquidar for 0, ou se for dinheiro/cash, já nasce pago
+                // Pix e Débito seguem a configuração (se for 1 dia, nasce pendente)
+                if (daysToLiquidate === 0 || payment_method === 'money' || payment_method === 'cash') {
                     status = 'paid';
                     paidDate = new Date();
                 }
@@ -204,17 +206,30 @@ export const createSale = async (req, res) => {
                 ]);
 
                 if (status === 'paid') {
+                    // Verificar se deve atualizar saldo bancário (apenas se tiver config com banco)
+                    let bankAccountId = null;
+                    if (config && config.bank_account_id) {
+                        bankAccountId = config.bank_account_id;
+                        // Atualizar saldo bancário
+                        await client.query(`
+                            UPDATE bank_accounts 
+                            SET current_balance = current_balance + $1 
+                            WHERE id = $2
+                        `, [netAmount, bankAccountId]);
+                    }
+
                     await client.query(`
                         INSERT INTO financial_transactions 
-                        (type, amount, description, date, issue_date, due_date, category, payment_method, payment_config_id, status, customer_id)
-                        VALUES ('revenue', $1, $2, $3, $4, $5, 'Venda de Produtos', $6, $7, 'paid', $8)
+                        (type, amount, description, date, issue_date, due_date, category, payment_method, payment_config_id, status, customer_id, bank_account_id)
+                        VALUES ('revenue', $1, $2, $3, $4, $5, 'Venda de Produtos', $6, $7, 'paid', $8, $9)
                     `, [
                         netAmount,
                         `Recebimento Venda #${sale_number}`,
                         paidDate, paidDate, paidDate,
                         payment_method,
                         paymentConfigId || null,
-                        customer_id || null
+                        customer_id || null,
+                        bankAccountId
                     ]);
                 }
             } else {
@@ -224,9 +239,11 @@ export const createSale = async (req, res) => {
                 for (let i = 1; i <= installments; i++) {
                     const feeAmount = (installmentValue * appliedFeePercent) / 100;
                     const netAmount = installmentValue - feeAmount;
-                    const daysToAdd = (i * 30) + daysToLiquidate;
+                    const daysToAdd = (i * 30) + daysToLiquidate; // TODO: Revisar logica de dias para fluxo se necessário
                     const dueDate = new Date();
                     dueDate.setDate(dueDate.getDate() + daysToAdd);
+
+                    // Se dias para liquidar for 0 (embora raro em fluxo parcelado), poderia nascer pago, mas assumindo fluxo normal
 
                     await client.query(`
                         INSERT INTO accounts_receivable (
@@ -365,7 +382,7 @@ export const getAllSales = async (req, res) => {
 
         if (paymentMethod && paymentMethod !== 'all') {
             params.push(paymentMethod);
-            whereClause += ` AND s.payment_method = $${paramCount}`;
+            whereClause += ` AND sp.payment_method = $${paramCount}`;
             paramCount++;
         }
 
@@ -565,6 +582,50 @@ export const cancelSale = async (req, res) => {
             SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
             WHERE id = $1
         `, [id]);
+
+        // 5. Cancelar Contas a Receber associadas
+        await client.query(`
+            UPDATE accounts_receivable
+            SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
+            WHERE sale_id = $1 AND status != 'paid'
+        `, [id]);
+
+        // 6. Estornar/Remover Transações Financeiras (se houver)
+        // Se já foi pago, precisamos estornar (criar uma saída) ou remover a entrada se foi erro?
+        // Assumindo que se cancelou a venda, o dinheiro deve ser devolvido ou o registro anulado.
+        // Vamos buscar se tem transações pagas vinculadas a essa venda (via accounts_receivable ou direto)
+        // Simplificação: Se a venda foi cancelada, removemos a previsão de receita.
+        // Se já houve recebimento (status='paid'), o ideal seria lançar uma despesa de estorno, mas por enquanto vamos apenas cancelar o título se não foi pago.
+        // Se foi pago (dinheiro/pix), o usuário devolve o dinheiro. O sistema deve registrar essa saída?
+        // Por hora, vamos focar em cancelar o que está pendente.
+
+        // Se houver transações financeiras vinculadas a esta venda (ex: dinheiro/pix que gerou receita imediata), deveríamos estornar?
+        // O usuário pediu: "eu cancelei uma venda (#64) e ela continuou como paga no Contas a Receber, teoricamente eu perco esse valor porque cancelou"
+        // Se estava PAGO, precisamos mudar para CANCELADO ou ESTORNADO.
+        await client.query(`
+            UPDATE accounts_receivable
+            SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
+            WHERE sale_id = $1
+        `, [id]);
+
+        // Remover transações financeiras de receita geradas por essa venda (para limpar o fluxo de caixa)
+        // Isso assume que o dinheiro foi devolvido.
+        // Buscar transações pela descrição ou metadados seria ideal, mas não temos link direto forte além da descrição ou data/valor.
+        // Mas espere, na criação nós não salvamos o sale_id na financial_transactions.
+        // Mas salvamos na accounts_receivable. E quando baixamos accounts_receivable, criamos financial_transactions.
+        // Se foi venda a vista (dinheiro), criamos financial_transactions direto no controller.
+
+        // Vamos tentar remover transações que tenham descrição "Recebimento Venda #${sale_number}"
+        // Primeiro precisamos do sale_number
+        const saleNumber = sale.sale_number; // Já buscamos o sale antes? Não, buscamos só id e status.
+
+        const saleDetails = await client.query('SELECT sale_number FROM sales WHERE id = $1', [id]);
+        const sn = saleDetails.rows[0].sale_number;
+
+        await client.query(`
+            DELETE FROM financial_transactions 
+            WHERE description LIKE $1 AND type = 'revenue'
+        `, [`%Venda #${sn}%`]);
 
         await client.query('COMMIT');
 

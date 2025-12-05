@@ -18,6 +18,7 @@ import paymentConfigurationRoutes from './routes/paymentConfiguration.routes.js'
 import bankAccountRoutes from './routes/bankAccount.routes.js';
 import suppliersRoutes from './routes/suppliers.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
+import invoiceRoutes from './routes/invoices.routes.js';
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use('/api/payment-config', paymentConfigurationRoutes);
 app.use('/api/bank-accounts', bankAccountRoutes);
 app.use('/api/suppliers', suppliersRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/invoices', invoiceRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

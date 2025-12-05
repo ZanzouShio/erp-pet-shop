@@ -122,10 +122,23 @@ export const accountsPayableController = {
                 });
 
                 // Buscar nome da categoria para histórico
-                const category = await tx.expense_categories.findUnique({
-                    where: { id: bill.category_id },
-                    select: { name: true }
-                });
+                let categoryName = 'Pagamento de Conta';
+                if (bill.category_id) {
+                    const category = await tx.expense_categories.findUnique({
+                        where: { id: bill.category_id },
+                        select: { name: true }
+                    });
+                    if (category) categoryName = category.name;
+                }
+
+                // Atualizar saldo bancário se informado
+                let bankAccountId = account_id || null;
+                if (bankAccountId) {
+                    await tx.bank_accounts.update({
+                        where: { id: bankAccountId },
+                        data: { current_balance: { decrement: Number(amount_paid) } }
+                    });
+                }
 
                 // 4. Registrar transação financeira (saída)
                 await tx.financial_transactions.create({
@@ -136,16 +149,17 @@ export const accountsPayableController = {
                         date: pDate,
                         issue_date: pDate,
                         due_date: bill.due_date,
-                        category: category ? category.name : 'Pagamento de Conta',
+                        category: categoryName,
                         payment_method: payment_method,
                         account_payable_id: id,
                         status: 'paid',
                         supplier_id: bill.supplier_id,
-                        cost_center_id: null // Não temos centro de custo vinculado diretamente ainda
+                        cost_center_id: null,
+                        bank_account_id: bankAccountId
                     }
                 });
 
-                return updatedBill;
+                return { updatedBill, bankAccountId };
             });
 
             res.json({ message: 'Pagamento registrado com sucesso' });

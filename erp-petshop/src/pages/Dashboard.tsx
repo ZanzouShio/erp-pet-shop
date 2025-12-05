@@ -64,7 +64,7 @@ export default function Dashboard() {
                     change: 5 // TODO: calcular vs ontem
                 },
                 newCustomers: {
-                    value: 32, // TODO: implementar endpoint
+                    value: stats.new_customers_count,
                     trend: 'Neste mês'
                 },
                 lowStock: {

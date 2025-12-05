@@ -34,6 +34,8 @@ export default function CashFlow() {
     const [period, setPeriod] = useState<Period>('month');
     const [loading, setLoading] = useState(true);
 
+    const [isAccumulated, setIsAccumulated] = useState(false);
+
     useEffect(() => {
         loadData();
     }, [period]);
@@ -106,6 +108,18 @@ export default function CashFlow() {
     const totalIn = dailyView.filter(t => t.type === 'in').reduce((acc, curr) => acc + curr.amount, 0);
     const totalOut = dailyView.filter(t => t.type === 'out').reduce((acc, curr) => acc + curr.amount, 0);
     const periodBalance = totalIn - totalOut;
+
+    // Dados para o gráfico (Acumulado ou Diário)
+    const chartData = isAccumulated ? projections.reduce((acc: Projection[], curr) => {
+        const prev = acc.length > 0 ? acc[acc.length - 1] : { in: 0, out: 0, balance: 0 };
+        acc.push({
+            date: curr.date,
+            in: prev.in + curr.in,
+            out: prev.out + curr.out,
+            balance: prev.balance + curr.balance // Not really used in chart but good to have
+        });
+        return acc;
+    }, []) : projections;
 
     return (
         <div className="p-6 space-y-6">
@@ -190,10 +204,32 @@ export default function CashFlow() {
 
             {/* Gráfico de Receitas vs Despesas */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <h2 className="text-lg font-bold text-gray-800 mb-4">Evolução Financeira (Receitas vs Despesas)</h2>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-bold text-gray-800">Evolução Financeira (Receitas vs Despesas)</h2>
+                    <div className="flex bg-gray-100 p-1 rounded-lg">
+                        <button
+                            onClick={() => setIsAccumulated(false)}
+                            className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${!isAccumulated
+                                ? 'bg-white text-gray-900 shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                        >
+                            Diário
+                        </button>
+                        <button
+                            onClick={() => setIsAccumulated(true)}
+                            className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${isAccumulated
+                                ? 'bg-white text-gray-900 shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                        >
+                            Acumulado
+                        </button>
+                    </div>
+                </div>
                 <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={projections}>
+                        <AreaChart data={chartData}>
                             <defs>
                                 <linearGradient id="colorIn" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#16a34a" stopOpacity={0.1} />

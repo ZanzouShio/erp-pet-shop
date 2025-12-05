@@ -28,7 +28,20 @@ export const updateSettings = async (req, res) => {
             loyalty_points_per_real,
             cashback_enabled,
             cashback_percentage,
-            cashback_expire_days
+            cashback_expire_days,
+            company_name,
+            trade_name,
+            cnpj,
+            state_registration,
+            email,
+            phone,
+            zip_code,
+            address,
+            number,
+            neighborhood,
+            city,
+            state,
+            logo_url
         } = req.body;
 
         // Verifica se existe
@@ -38,38 +51,78 @@ export const updateSettings = async (req, res) => {
         if (check.rows.length === 0) {
             // Insert
             result = await pool.query(`
-                INSERT INTO company_settings (
-                    loyalty_enabled, loyalty_points_per_real,
-                    cashback_enabled, cashback_percentage, cashback_expire_days,
-                    company_name, cnpj
-                ) VALUES ($1, $2, $3, $4, $5, 'Minha Empresa', '00000000000000')
-                RETURNING *
-            `, [
+                    INSERT INTO company_settings (
+                        loyalty_enabled, loyalty_points_per_real,
+                        cashback_enabled, cashback_percentage, cashback_expire_days,
+                        company_name, trade_name, cnpj, state_registration,
+                        email, phone, zip_code, address, number, neighborhood, city, state, logo_url
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+                    RETURNING *
+                `, [
                 loyalty_enabled,
                 loyalty_points_per_real || 1,
                 cashback_enabled,
                 cashback_percentage || 0,
-                cashback_expire_days || 90
+                cashback_expire_days || 90,
+                company_name || 'Minha Empresa',
+                trade_name,
+                cnpj || '00000000000000',
+                state_registration,
+                email,
+                phone,
+                zip_code,
+                address,
+                number,
+                neighborhood,
+                city,
+                state,
+                logo_url
             ]);
         } else {
             // Update
             const id = check.rows[0].id;
             result = await pool.query(`
-                UPDATE company_settings
-                SET loyalty_enabled = $1,
-                    loyalty_points_per_real = $2,
-                    cashback_enabled = $3,
-                    cashback_percentage = $4,
-                    cashback_expire_days = $5,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = $6
-                RETURNING *
-            `, [
+                    UPDATE company_settings
+                    SET loyalty_enabled = $1,
+                        loyalty_points_per_real = $2,
+                        cashback_enabled = $3,
+                        cashback_percentage = $4,
+                        cashback_expire_days = $5,
+                        company_name = $6,
+                        trade_name = $7,
+                        cnpj = $8,
+                        state_registration = $9,
+                        email = $10,
+                        phone = $11,
+                        zip_code = $12,
+                        address = $13,
+                        number = $14,
+                        neighborhood = $15,
+                        city = $16,
+                        state = $17,
+                        logo_url = $18,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = $19
+                    RETURNING *
+                `, [
                 loyalty_enabled,
                 loyalty_points_per_real,
                 cashback_enabled,
                 cashback_percentage,
                 cashback_expire_days,
+                company_name,
+                trade_name,
+                cnpj,
+                state_registration,
+                email,
+                phone,
+                zip_code,
+                address,
+                number,
+                neighborhood,
+                city,
+                state,
+                logo_url,
                 id
             ]);
         }

@@ -7,6 +7,79 @@ class AccountsReceivableController {
         console.log('📥 GET /accounts-receivable - Filtros:', { start_date, end_date, status, customer_id });
 
         try {
+            // --- AUTO-SETTLEMENT LOGIC ---
+            // Verifica títulos vencidos de cartões/pix que devem ser baixados automaticamente
+            // Isso garante que ao abrir o sistema no dia seguinte, o que era D+1 esteja pago.
+            const autoSettleMethods = ['credit_card', 'debit_card', 'pix'];
+
+            const pendingAutoSettle = await prisma.accounts_receivable.findMany({
+                where: {
+                    status: 'pending',
+                    due_date: { lte: new Date() }, // Vencidos ou vencendo hoje
+                    payment_method: { in: autoSettleMethods }
+                }
+            });
+
+            if (pendingAutoSettle.length > 0) {
+                console.log(`🔄 Auto-settling ${pendingAutoSettle.length} titles...`);
+
+                await prisma.$transaction(async (tx) => {
+                    for (const title of pendingAutoSettle) {
+                        const pDate = new Date(); // Data da baixa é hoje (momento que o sistema "percebeu") ou deveria ser a due_date?
+                        // Geralmente a conciliação ocorre quando o dinheiro cai. Se era D+1, caiu na due_date.
+                        // Vamos usar a due_date como data de pagamento para ficar coerente com a previsão, 
+                        // ou NOW() se quisermos registrar quando o sistema processou.
+                        // O usuário disse "baixar automaticamente quando eu abrir o sistema amanhã".
+                        // Se eu abrir dia 05 e venceu dia 04, o dinheiro caiu dia 04.
+                        const settlementDate = title.due_date;
+
+                        // Atualizar título
+                        await tx.accounts_receivable.update({
+                            where: { id: title.id },
+                            data: {
+                                status: 'paid',
+                                paid_date: settlementDate,
+                                updated_at: new Date()
+                            }
+                        });
+
+                        // Criar transação financeira
+                        const config = await tx.payment_methods_config.findUnique({
+                            where: { id: title.payment_config_id }
+                        });
+
+                        let bankAccountId = null;
+                        if (config && config.bank_account_id) {
+                            bankAccountId = config.bank_account_id;
+                            // Atualizar saldo bancário
+                            await tx.bank_accounts.update({
+                                where: { id: bankAccountId },
+                                data: { current_balance: { increment: title.net_amount } }
+                            });
+                        }
+
+                        await tx.financial_transactions.create({
+                            data: {
+                                type: 'revenue',
+                                amount: title.net_amount,
+                                description: `Recebimento Automático: ${title.description}`,
+                                date: settlementDate,
+                                issue_date: settlementDate,
+                                due_date: title.due_date,
+                                category: 'Recebimento de Cliente',
+                                payment_method: title.payment_method,
+                                status: 'paid',
+                                customer_id: title.customer_id,
+                                payment_config_id: title.payment_config_id,
+                                bank_account_id: bankAccountId
+                            }
+                        });
+                    }
+                });
+                console.log('✅ Auto-settlement complete.');
+            }
+            // -----------------------------
+
             const where = {};
 
             if (start_date) {
@@ -15,7 +88,7 @@ class AccountsReceivableController {
             if (end_date) {
                 where.due_date = { ...where.due_date, lte: new Date(end_date) };
             }
-            if (status) {
+            if (status && status !== 'Todos') { // Frontend envia 'Todos' as vezes
                 where.status = status;
             }
             if (customer_id) {
@@ -105,7 +178,24 @@ class AccountsReceivableController {
                     }
                 });
 
-                // 3. Registrar transação financeira (Entrada)
+                // 3. Verificar configuração de pagamento para atualização bancária
+                let bankAccountId = null;
+                if (title.payment_config_id) {
+                    const config = await tx.payment_methods_config.findUnique({
+                        where: { id: title.payment_config_id }
+                    });
+
+                    if (config && config.bank_account_id) {
+                        bankAccountId = config.bank_account_id;
+                        // Atualizar saldo bancário
+                        await tx.bank_accounts.update({
+                            where: { id: bankAccountId },
+                            data: { current_balance: { increment: title.net_amount } }
+                        });
+                    }
+                }
+
+                // 4. Registrar transação financeira (Entrada)
                 await tx.financial_transactions.create({
                     data: {
                         type: 'revenue',
@@ -117,7 +207,9 @@ class AccountsReceivableController {
                         category: 'Recebimento de Cliente',
                         payment_method: title.payment_method,
                         status: 'paid',
-                        customer_id: title.customer_id
+                        customer_id: title.customer_id,
+                        payment_config_id: title.payment_config_id,
+                        bank_account_id: bankAccountId
                     }
                 });
             });

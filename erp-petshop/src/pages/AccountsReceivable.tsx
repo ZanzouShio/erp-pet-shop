@@ -29,6 +29,10 @@ export default function AccountsReceivable() {
     const [statusFilter, setStatusFilter] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [descriptionFilter, setDescriptionFilter] = useState('');
+
+    // Ordenação
+    const [sortConfig, setSortConfig] = useState<{ key: keyof ReceivableTitle; direction: 'asc' | 'desc' } | null>(null);
 
     useEffect(() => {
         loadTitles();
@@ -71,6 +75,14 @@ export default function AccountsReceivable() {
         }
     };
 
+    const handleSort = (key: keyof ReceivableTitle) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'paid': return 'bg-green-100 text-green-700';
@@ -87,6 +99,28 @@ export default function AccountsReceivable() {
             case 'cancelled': return 'Cancelado';
             default: return 'Pendente';
         }
+    };
+
+    // Aplicar filtros client-side (descrição) e ordenação
+    const filteredAndSortedTitles = titles
+        .filter(title =>
+            title.description.toLowerCase().includes(descriptionFilter.toLowerCase()) ||
+            title.customer_name?.toLowerCase().includes(descriptionFilter.toLowerCase())
+        )
+        .sort((a, b) => {
+            if (!sortConfig) return 0;
+
+            const aValue = a[sortConfig.key];
+            const bValue = b[sortConfig.key];
+
+            if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+    const SortIcon = ({ column }: { column: keyof ReceivableTitle }) => {
+        if (sortConfig?.key !== column) return <span className="text-gray-300 ml-1">↕</span>;
+        return sortConfig.direction === 'asc' ? <span className="ml-1">↑</span> : <span className="ml-1">↓</span>;
     };
 
     return (
@@ -118,6 +152,16 @@ export default function AccountsReceivable() {
 
             {/* Filtros */}
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-4 items-end">
+                <div className="flex-1 min-w-[200px]">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Buscar por Descrição/Cliente</label>
+                    <input
+                        type="text"
+                        value={descriptionFilter}
+                        onChange={(e) => setDescriptionFilter(e.target.value)}
+                        placeholder="Ex: Venda #123"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select
@@ -150,7 +194,7 @@ export default function AccountsReceivable() {
                     />
                 </div>
                 <button
-                    onClick={() => { setStatusFilter(''); setStartDate(''); setEndDate(''); }}
+                    onClick={() => { setStatusFilter(''); setStartDate(''); setEndDate(''); setDescriptionFilter(''); }}
                     className="px-4 py-2 text-sm text-gray-600 hover:text-indigo-600 font-medium"
                 >
                     Limpar Filtros
@@ -161,25 +205,37 @@ export default function AccountsReceivable() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-gray-50 border-b border-gray-100">
+                        <thead className="bg-gray-50 border-b border-gray-100 cursor-pointer select-none">
                             <tr>
-                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Vencimento</th>
-                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Descrição</th>
-                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Cliente</th>
-                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Valor Bruto</th>
+                                <th onClick={() => handleSort('due_date')} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase hover:bg-gray-100 transition-colors">
+                                    Vencimento <SortIcon column="due_date" />
+                                </th>
+                                <th onClick={() => handleSort('description')} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase hover:bg-gray-100 transition-colors">
+                                    Descrição <SortIcon column="description" />
+                                </th>
+                                <th onClick={() => handleSort('customer_name')} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase hover:bg-gray-100 transition-colors">
+                                    Cliente <SortIcon column="customer_name" />
+                                </th>
+                                <th onClick={() => handleSort('amount')} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase hover:bg-gray-100 transition-colors">
+                                    Valor Bruto <SortIcon column="amount" />
+                                </th>
                                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Taxa</th>
-                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Líquido</th>
-                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
+                                <th onClick={() => handleSort('net_amount')} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase hover:bg-gray-100 transition-colors">
+                                    Líquido <SortIcon column="net_amount" />
+                                </th>
+                                <th onClick={() => handleSort('status')} className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase hover:bg-gray-100 transition-colors">
+                                    Status <SortIcon column="status" />
+                                </th>
                                 <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase text-right">Ações</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                             {loading ? (
                                 <tr><td colSpan={8} className="text-center py-8 text-gray-500">Carregando...</td></tr>
-                            ) : titles.length === 0 ? (
+                            ) : filteredAndSortedTitles.length === 0 ? (
                                 <tr><td colSpan={8} className="text-center py-8 text-gray-500">Nenhum título encontrado</td></tr>
                             ) : (
-                                titles.map((title) => (
+                                filteredAndSortedTitles.map((title) => (
                                     <tr key={title.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 text-sm text-gray-600">
                                             {format(new Date(title.due_date), 'dd/MM/yyyy')}

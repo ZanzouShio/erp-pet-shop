@@ -221,6 +221,21 @@ const BankAccountSettings: React.FC = () => {
                                         className="w-full border rounded-lg p-2"
                                     />
                                 </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Status da Conta</label>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <input
+                                            type="checkbox"
+                                            id="is_active"
+                                            checked={formData.is_active}
+                                            onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
+                                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                        />
+                                        <label htmlFor="is_active" className="text-sm text-gray-700">
+                                            {formData.is_active ? 'Conta Ativa' : 'Conta Inativa'}
+                                        </label>
+                                    </div>
+                                </div>
                                 {!editingId && (
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Saldo Inicial (R$)</label>
@@ -291,6 +306,7 @@ const BankAccountSettings: React.FC = () => {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Banco</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agência / Conta</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Saldo Atual</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pix</th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                         </tr>
@@ -298,15 +314,15 @@ const BankAccountSettings: React.FC = () => {
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
                             <tr>
-                                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">Carregando...</td>
+                                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">Carregando...</td>
                             </tr>
                         ) : accounts.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">Nenhuma conta cadastrada</td>
+                                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">Nenhuma conta cadastrada</td>
                             </tr>
                         ) : (
                             accounts.map((account) => (
-                                <tr key={account.id} className="hover:bg-gray-50">
+                                <tr key={account.id} className={`hover:bg-gray-50 ${!account.is_active ? 'opacity-60 bg-gray-50' : ''}`}>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="font-medium text-gray-900">{account.name}</div>
                                         <div className="text-xs text-gray-500">
@@ -328,13 +344,24 @@ const BankAccountSettings: React.FC = () => {
                                         R$ {Number(account.current_balance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {account.pix_enabled ? (
+                                        {account.is_active ? (
                                             <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                Ativo
+                                                Ativa
                                             </span>
                                         ) : (
-                                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                                                Inativo
+                                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                Inativa
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {account.pix_enabled ? (
+                                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                Pix Ativo
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs text-gray-400">
+                                                -
                                             </span>
                                         )}
                                     </td>

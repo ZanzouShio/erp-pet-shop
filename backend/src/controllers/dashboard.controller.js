@@ -42,11 +42,19 @@ export const getSummary = async (req, res) => {
             LIMIT 5
             `);
 
+        // 5. Novos clientes no mês
+        const newCustomers = await pool.query(`
+            SELECT COUNT(*) as count
+            FROM customers
+            WHERE DATE(created_at AT TIME ZONE 'America/Sao_Paulo') >= DATE_TRUNC('month', NOW() AT TIME ZONE 'America/Sao_Paulo')
+        `);
+
         res.json({
             sales_today: {
                 total: parseFloat(salesToday.rows[0].total) || 0,
                 count: parseInt(salesToday.rows[0].count) || 0
             },
+            new_customers_count: parseInt(newCustomers.rows[0].count) || 0,
             low_stock_count: parseInt(lowStock.rows[0].count) || 0,
             out_of_stock_count: parseInt(outOfStock.rows[0].count) || 0,
             alerts: alerts.rows.map(a => ({

@@ -68,7 +68,7 @@ export const uploadNfe = async (req, res) => {
 
             if (prod.cEAN && prod.cEAN !== 'SEM GTIN') {
                 product = await prisma.products.findFirst({
-                    where: { ean: prod.cEAN }
+                    where: { ean: String(prod.cEAN) }
                 });
 
                 if (product) {
@@ -78,7 +78,7 @@ export const uploadNfe = async (req, res) => {
 
             items.push({
                 code: prod.cProd,
-                ean: prod.cEAN,
+                ean: String(prod.cEAN),
                 name: prod.xProd,
                 quantity: parseFloat(prod.qCom),
                 unitPrice: parseFloat(prod.vUnCom),
@@ -142,7 +142,7 @@ export const confirmEntry = async (req, res) => {
                     // Verificar se já existe por EAN antes de criar
                     if (item.ean && item.ean !== 'SEM GTIN') {
                         const existing = await tx.products.findFirst({
-                            where: { ean: item.ean }
+                            where: { ean: String(item.ean) }
                         });
                         if (existing) {
                             productId = existing.id;
@@ -155,7 +155,7 @@ export const confirmEntry = async (req, res) => {
                             data: {
                                 name: item.name,
                                 description: `Importado via NFe ${nfeData.number}`,
-                                ean: item.ean !== 'SEM GTIN' ? item.ean : null,
+                                ean: item.ean !== 'SEM GTIN' ? String(item.ean) : null,
                                 sale_price: parseFloat(item.unitPrice) * 1.5,
                                 cost_price: parseFloat(item.unitPrice),
                                 stock_quantity: 0,

@@ -21,6 +21,7 @@ interface BankAccount {
     id: string;
     name: string;
     bank_name: string;
+    is_active: boolean;
 }
 
 export default function PaymentSettings() {
@@ -220,9 +221,13 @@ export default function PaymentSettings() {
                                     onChange={e => setEditingConfig({ ...editingConfig, bank_account_id: e.target.value })}
                                 >
                                     <option value="">Selecione uma conta...</option>
-                                    {bankAccounts.map(acc => (
-                                        <option key={acc.id} value={acc.id}>{acc.name} ({acc.bank_name})</option>
-                                    ))}
+                                    {bankAccounts
+                                        .filter(acc => acc.is_active || acc.id === editingConfig.bank_account_id)
+                                        .map(acc => (
+                                            <option key={acc.id} value={acc.id}>
+                                                {acc.name} ({acc.bank_name}) {!acc.is_active && '(Inativa)'}
+                                            </option>
+                                        ))}
                                 </select>
                             </div>
                             <div>

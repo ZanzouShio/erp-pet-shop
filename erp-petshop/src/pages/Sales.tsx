@@ -206,6 +206,51 @@ export default function Sales() {
         }
     };
 
+    const handleEmitInvoice = async (type: 'NFC-e' | 'NF-e', buyerData?: any) => {
+        console.log('🚀 handleEmitInvoice called', { type, buyerData });
+        if (!selectedSale) {
+            console.error('❌ No selected sale');
+            return;
+        }
+
+        try {
+            console.log('📡 Sending request to', `${API_URL}/invoices`);
+            const response = await fetch(`${API_URL}/invoices`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    saleId: selectedSale.id,
+                    type,
+                    buyerData
+                })
+            });
+
+            console.log('📥 Response status:', response.status);
+
+            if (!response.ok) {
+                const error = await response.json();
+                console.error('❌ Error response:', error);
+                throw new Error(error.error || 'Erro ao emitir nota fiscal');
+            }
+
+            const data = await response.json();
+            console.log('✅ Success data:', data);
+            alert(data.message);
+
+            if (type === 'NFC-e') setShowNFCeModal(false);
+            else setShowNFeModal(false);
+
+            // Reload sale details to show updated status
+            loadSaleDetails(selectedSale.id);
+            loadSales();
+        } catch (error) {
+            console.error('Erro ao emitir nota:', error);
+            alert('Erro ao emitir nota: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         if (status === 'completed') {
             return <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Concluída</span>;
@@ -547,20 +592,13 @@ export default function Sales() {
                 isOpen={showNFCeModal}
                 onClose={() => setShowNFCeModal(false)}
                 sale={selectedSale}
-                onEmit={() => {
-                    alert('NFC-e emitida com sucesso!');
-                    setShowNFCeModal(false);
-                }}
+                onEmit={(data) => handleEmitInvoice('NFC-e', data)}
             />
 
             <NFeEmissionModal
                 isOpen={showNFeModal}
                 onClose={() => setShowNFeModal(false)}
-                onEmit={(data) => {
-                    console.log('Dados NF-e:', data);
-                    alert('NF-e emitida com sucesso!');
-                    setShowNFeModal(false);
-                }}
+                onEmit={(data) => handleEmitInvoice('NF-e', data)}
             />
         </div>
     );

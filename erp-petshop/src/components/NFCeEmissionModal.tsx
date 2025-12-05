@@ -6,7 +6,7 @@ interface NFCeEmissionModalProps {
     isOpen: boolean;
     onClose: () => void;
     sale: any;
-    onEmit: () => void;
+    onEmit: (data?: any) => void;
 }
 
 export default function NFCeEmissionModal({ isOpen, onClose, sale, onEmit }: NFCeEmissionModalProps) {
@@ -153,7 +153,7 @@ export default function NFCeEmissionModal({ isOpen, onClose, sale, onEmit }: NFC
                     <div className="text-right text-xs text-gray-400 mt-1">0 / 500</div>
 
                     <button
-                        onClick={onEmit}
+                        onClick={() => onEmit(buyerData)}
                         className="w-full mt-8 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors"
                     >
                         Emitir NFC-e
