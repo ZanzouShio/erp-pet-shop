@@ -236,8 +236,8 @@ export default function PaymentSettings() {
                                     type="number"
                                     min="0"
                                     className="w-full p-2 border rounded-lg"
-                                    value={editingConfig.days_to_liquidate || 0}
-                                    onChange={e => setEditingConfig({ ...editingConfig, days_to_liquidate: parseInt(e.target.value) })}
+                                    value={editingConfig.days_to_liquidate ?? 1}
+                                    onChange={e => setEditingConfig({ ...editingConfig, days_to_liquidate: e.target.value === '' ? 0 : parseInt(e.target.value) })}
                                 />
                             </div>
 

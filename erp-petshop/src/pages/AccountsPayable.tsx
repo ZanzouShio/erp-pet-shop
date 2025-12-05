@@ -16,12 +16,23 @@ interface AccountPayable {
     payment_date?: string;
 }
 
+import { format } from 'date-fns';
+
 export default function AccountsPayable() {
     const [accounts, setAccounts] = useState<AccountPayable[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Filtros
+    type Period = 'today' | 'week' | 'month' | 'next30' | 'custom';
+    const [period, setPeriod] = useState<Period>('month');
     const [filterStatus, setFilterStatus] = useState('ALL');
     const [searchTerm, setSearchTerm] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+
+    // Contas Bancárias
+    const [bankAccounts, setBankAccounts] = useState<{ id: string; name: string }[]>([]);
 
     // Dados para o modal de criação
     const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
@@ -41,23 +52,61 @@ export default function AccountsPayable() {
     const [paymentData, setPaymentData] = useState({
         amount: '',
         date: new Date().toISOString().split('T')[0],
-        method: 'PIX'
+        date: new Date().toISOString().split('T')[0],
+        method: 'PIX',
+        account_id: ''
     });
     const [processingPayment, setProcessingPayment] = useState(false);
 
+    // Atualizar datas quando o período mudar
+    useEffect(() => {
+        const today = new Date();
+        let start = new Date();
+        let end = new Date();
+
+        switch (period) {
+            case 'today':
+                break; // Start and End are already today
+            case 'week':
+                const day = today.getDay();
+                const diff = today.getDate() - day; // Sunday
+                start.setDate(diff);
+                end.setDate(start.getDate() + 6); // Saturday
+                break;
+            case 'month':
+                start.setDate(1);
+                end = new Date(today.getFullYear(), today.getMonth() + 1, 0); // Last day of month
+                break;
+            case 'next30':
+                end.setDate(today.getDate() + 30);
+                break;
+            case 'custom':
+                return; // Do not auto-update dates for custom
+        }
+
+        // Atualiza os estados de data (para period !== 'custom')
+        setStartDate(format(start, 'yyyy-MM-dd'));
+        setEndDate(format(end, 'yyyy-MM-dd'));
+    }, [period]);
+
     useEffect(() => {
         loadAccounts();
+    }, [filterStatus, startDate, endDate]);
+
+    useEffect(() => {
         loadDependencies();
-    }, [filterStatus]);
+    }, []);
 
     const loadAccounts = async () => {
         try {
             setLoading(true);
-            let url = `${API_URL}/accounts-payable`;
-            if (filterStatus !== 'ALL') {
-                url += `?status=${filterStatus}`;
-            }
-            const response = await fetch(url);
+            setLoading(true);
+            const params = new URLSearchParams();
+            if (filterStatus !== 'ALL') params.append('status', filterStatus);
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+
+            const response = await fetch(`${API_URL}/accounts-payable?${params}`);
             if (!response.ok) {
                 throw new Error('Erro ao carregar contas');
             }
@@ -73,12 +122,17 @@ export default function AccountsPayable() {
 
     const loadDependencies = async () => {
         try {
-            const [catRes, supRes] = await Promise.all([
+            const [catRes, supRes, bankRes] = await Promise.all([
                 fetch(`${API_URL}/accounts-payable/categories`),
-                fetch(`${API_URL}/financial/suppliers`)
+                fetch(`${API_URL}/financial/suppliers`),
+                fetch(`${API_URL}/financial/bank-accounts`)
             ]);
             if (catRes.ok) setCategories(await catRes.json());
             if (supRes.ok) setSuppliers(await supRes.json());
+            if (bankRes.ok) {
+                const banks = await bankRes.json();
+                setBankAccounts(banks.filter((b: any) => b.is_active));
+            }
         } catch (error) {
             console.error('Erro ao carregar dependências:', error);
         }
@@ -127,7 +181,8 @@ export default function AccountsPayable() {
                 body: JSON.stringify({
                     amount_paid: Number(paymentData.amount),
                     payment_date: paymentData.date,
-                    payment_method: paymentData.method
+                    payment_method: paymentData.method,
+                    account_id: paymentData.method === 'DINHEIRO' ? null : paymentData.account_id
                 })
             });
 
@@ -357,6 +412,23 @@ export default function AccountsPayable() {
                                 </div>
                             </div>
 
+                            {paymentData.method !== 'DINHEIRO' && (
+                                <div className="animate-fadeIn">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Conta de Saída</label>
+                                    <select
+                                        required={paymentData.method !== 'DINHEIRO'}
+                                        className="w-full p-2 border rounded-lg"
+                                        value={paymentData.account_id}
+                                        onChange={e => setPaymentData({ ...paymentData, account_id: e.target.value })}
+                                    >
+                                        <option value="">Selecione uma conta...</option>
+                                        {bankAccounts.map(bank => (
+                                            <option key={bank.id} value={bank.id}>{bank.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
                             <div className="flex justify-end gap-2 mt-6">
                                 <button
                                     type="button"
@@ -399,13 +471,52 @@ export default function AccountsPayable() {
 
             {/* Tabela */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-4 border-b border-gray-200 flex gap-4">
-                    <div className="relative flex-1">
+                <div className="p-4 border-b border-gray-200 flex flex-col md:flex-row gap-4 justify-between items-center">
+                    {/* Filtros de Data */}
+                    <div className="flex flex-wrap gap-2 items-center">
+                        <div className="flex bg-gray-50 p-1 rounded-lg border border-gray-200">
+                            {(['today', 'week', 'month', 'next30', 'custom'] as Period[]).map((p) => (
+                                <button
+                                    key={p}
+                                    onClick={() => setPeriod(p)}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${period === p
+                                        ? 'bg-white text-indigo-700 shadow-sm border border-gray-100'
+                                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    {p === 'today' && 'Hoje'}
+                                    {p === 'week' && 'Esta Semana'}
+                                    {p === 'month' && 'Este Mês'}
+                                    {p === 'next30' && 'Próx 30 Dias'}
+                                    {p === 'custom' && 'Personalizado'}
+                                </button>
+                            ))}
+                        </div>
+                        {period === 'custom' && (
+                            <div className="flex gap-2 items-center">
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                />
+                                <span className="text-gray-400">-</span>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="relative w-full md:w-auto">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                         <input
                             type="text"
                             placeholder="Buscar por descrição ou fornecedor..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full md:w-80 pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                         />
@@ -434,7 +545,7 @@ export default function AccountsPayable() {
                                 accounts.map((account) => (
                                     <tr key={account.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                                            {formatDate(account.due_date)}
+                                            {account.due_date ? account.due_date.toString().split('T')[0].split('-').reverse().join('/') : '-'}
                                         </td>
                                         <td className="px-6 py-4">
                                             <p className="text-sm font-medium text-gray-900">{account.description}</p>

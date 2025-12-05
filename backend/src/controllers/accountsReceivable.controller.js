@@ -86,7 +86,10 @@ class AccountsReceivableController {
                 where.due_date = { ...where.due_date, gte: new Date(start_date) };
             }
             if (end_date) {
-                where.due_date = { ...where.due_date, lte: new Date(end_date) };
+                // Ajustar para final do dia para garantir inclusão de todos os registros
+                const end = new Date(end_date);
+                end.setUTCHours(23, 59, 59, 999);
+                where.due_date = { ...where.due_date, lte: end };
             }
             if (status && status !== 'Todos') { // Frontend envia 'Todos' as vezes
                 where.status = status;
@@ -154,7 +157,7 @@ class AccountsReceivableController {
     // Baixar título (Recebimento)
     async receive(req, res) {
         const { id } = req.params;
-        const { payment_date } = req.body;
+        const { payment_date, bank_account_id, payment_method } = req.body;
 
         try {
             await prisma.$transaction(async (tx) => {
@@ -178,21 +181,28 @@ class AccountsReceivableController {
                     }
                 });
 
-                // 3. Verificar configuração de pagamento para atualização bancária
-                let bankAccountId = null;
-                if (title.payment_config_id) {
+                // 3. Determinar conta bancária
+                let finalBankAccountId = bank_account_id || null;
+
+                // Se não foi enviado ID da conta, tenta pegar da config (comportamento original)
+                if (!finalBankAccountId && title.payment_config_id) {
                     const config = await tx.payment_methods_config.findUnique({
                         where: { id: title.payment_config_id }
                     });
-
                     if (config && config.bank_account_id) {
-                        bankAccountId = config.bank_account_id;
-                        // Atualizar saldo bancário
-                        await tx.bank_accounts.update({
-                            where: { id: bankAccountId },
-                            data: { current_balance: { increment: title.net_amount } }
-                        });
+                        finalBankAccountId = config.bank_account_id;
                     }
+                }
+
+                // Se o método for dinheiro, garantir que não vá para banco (exceto se o usuário forçou, mas a regra é "dinheiro fica em caixa")
+                // O frontend deve enviar bank_account_id null se for dinheiro.
+
+                if (finalBankAccountId) {
+                    // Atualizar saldo bancário
+                    await tx.bank_accounts.update({
+                        where: { id: finalBankAccountId },
+                        data: { current_balance: { increment: title.net_amount } }
+                    });
                 }
 
                 // 4. Registrar transação financeira (Entrada)
@@ -205,11 +215,11 @@ class AccountsReceivableController {
                         issue_date: pDate,
                         due_date: pDate,
                         category: 'Recebimento de Cliente',
-                        payment_method: title.payment_method,
+                        payment_method: payment_method || title.payment_method, // Permitir override ou usar original
                         status: 'paid',
                         customer_id: title.customer_id,
                         payment_config_id: title.payment_config_id,
-                        bank_account_id: bankAccountId
+                        bank_account_id: finalBankAccountId
                     }
                 });
             });

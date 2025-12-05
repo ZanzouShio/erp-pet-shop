@@ -3,6 +3,7 @@ import {
     DollarSign, CheckCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
+import ConfirmReceiptModal from '../components/ConfirmReceiptModal';
 
 interface ReceivableTitle {
     id: string;
@@ -25,8 +26,11 @@ export default function AccountsReceivable() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'titles' | 'customers'>('titles');
 
-    // Filtros
+
+    // Filtros e Período
+    type Period = 'today' | 'week' | 'month' | 'next30' | 'custom';
     const [statusFilter, setStatusFilter] = useState('');
+    const [period, setPeriod] = useState<Period>('month');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [descriptionFilter, setDescriptionFilter] = useState('');
@@ -34,9 +38,45 @@ export default function AccountsReceivable() {
     // Ordenação
     const [sortConfig, setSortConfig] = useState<{ key: keyof ReceivableTitle; direction: 'asc' | 'desc' } | null>(null);
 
+    // Modal de Recebimento
+    const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+    const [selectedTitle, setSelectedTitle] = useState<{ id: string; description: string; amount: string; net_amount: string } | null>(null);
+
+    // Atualizar datas quando o período mudar
+    useEffect(() => {
+        const today = new Date();
+        let start = new Date();
+        let end = new Date();
+
+        switch (period) {
+            case 'today':
+                break; // Start and End are already today
+            case 'week':
+                const day = today.getDay();
+                const diff = today.getDate() - day; // Sunday
+                start.setDate(diff);
+                end.setDate(start.getDate() + 6); // Saturday
+                break;
+            case 'month':
+                start.setDate(1);
+                end = new Date(today.getFullYear(), today.getMonth() + 1, 0); // Last day of month
+                break;
+            case 'next30':
+                end.setDate(today.getDate() + 30);
+                break;
+            case 'custom':
+                return; // Do not auto-update dates for custom
+        }
+
+
+        // Atualiza os estados de data (para period !== 'custom')
+        setStartDate(format(start, 'yyyy-MM-dd'));
+        setEndDate(format(end, 'yyyy-MM-dd'));
+    }, [period]);
+
     useEffect(() => {
         loadTitles();
-    }, [statusFilter, startDate, endDate]);
+    }, [statusFilter, startDate, endDate]); // Trigger load when dates change (by period or manual)
 
     const loadTitles = async () => {
         setLoading(true);
@@ -56,19 +96,31 @@ export default function AccountsReceivable() {
         }
     };
 
-    const handleReceive = async (id: string, description: string) => {
-        if (!confirm(`Confirmar recebimento de: ${description}?`)) return;
+    const handleReceive = (title: ReceivableTitle) => {
+        setSelectedTitle({
+            id: title.id,
+            description: title.description,
+            amount: title.amount,
+            net_amount: title.net_amount
+        });
+        setReceiptModalOpen(true);
+    };
+
+    const confirmReceipt = async (data: { payment_date: string; bank_account_id: string | null; payment_method: string }) => {
+        if (!selectedTitle) return;
 
         try {
-            const response = await fetch(`${API_URL}/accounts-receivable/${id}/receive`, {
+            const response = await fetch(`${API_URL}/accounts-receivable/${selectedTitle.id}/receive`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ payment_date: new Date() })
+                body: JSON.stringify(data)
             });
 
             if (!response.ok) throw new Error('Erro ao baixar título');
 
             alert('Título baixado com sucesso!');
+            setReceiptModalOpen(false);
+            setSelectedTitle(null);
             loadTitles();
         } catch (error) {
             alert('Erro ao processar recebimento');
@@ -175,31 +227,61 @@ export default function AccountsReceivable() {
                         <option value="paid">Pagos</option>
                     </select>
                 </div>
+
+                {/* Seletor de Período */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Data Inicial</label>
-                    <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Período</label>
+                    <div className="flex bg-gray-50 p-1 rounded-lg border border-gray-200">
+                        {(['today', 'week', 'month', 'next30', 'custom'] as Period[]).map((p) => (
+                            <button
+                                key={p}
+                                onClick={() => setPeriod(p)}
+                                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${period === p
+                                    ? 'bg-white text-indigo-700 shadow-sm border border-gray-100'
+                                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                                    }`}
+                            >
+                                {p === 'today' && 'Hoje'}
+                                {p === 'week' && 'Esta Semana'}
+                                {p === 'month' && 'Este Mês'}
+                                {p === 'next30' && 'Próx 30 Dias'}
+                                {p === 'custom' && 'Personalizado'}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Data Final</label>
-                    <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
-                </div>
+
+                {period === 'custom' && (
+                    <>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Data Inicial</label>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Data Final</label>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            />
+                        </div>
+                    </>
+                )}
+
                 <button
-                    onClick={() => { setStatusFilter(''); setStartDate(''); setEndDate(''); setDescriptionFilter(''); }}
+                    onClick={() => { setStatusFilter(''); setPeriod('month'); setDescriptionFilter(''); }}
                     className="px-4 py-2 text-sm text-gray-600 hover:text-indigo-600 font-medium"
                 >
                     Limpar Filtros
                 </button>
             </div>
+
 
             {/* Tabela */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -238,7 +320,7 @@ export default function AccountsReceivable() {
                                 filteredAndSortedTitles.map((title) => (
                                     <tr key={title.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 text-sm text-gray-600">
-                                            {format(new Date(title.due_date), 'dd/MM/yyyy')}
+                                            {title.due_date ? title.due_date.toString().split('T')[0].split('-').reverse().join('/') : '-'}
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="text-sm font-medium text-gray-900">{title.description}</div>
@@ -264,7 +346,7 @@ export default function AccountsReceivable() {
                                         <td className="px-6 py-4 text-right">
                                             {title.status !== 'paid' && title.status !== 'cancelled' && (
                                                 <button
-                                                    onClick={() => handleReceive(title.id, title.description)}
+                                                    onClick={() => handleReceive(title)}
                                                     className="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center gap-1 justify-end ml-auto"
                                                     title="Dar Baixa"
                                                 >
@@ -280,6 +362,13 @@ export default function AccountsReceivable() {
                     </table>
                 </div>
             </div>
+            {receiptModalOpen && selectedTitle && (
+                <ConfirmReceiptModal
+                    title={selectedTitle}
+                    onClose={() => setReceiptModalOpen(false)}
+                    onConfirm={confirmReceipt}
+                />
+            )}
         </div>
     );
 }

@@ -45,7 +45,7 @@ class PaymentConfigurationController {
                     type,
                     name,
                     bank_account_id: sanitizedBankAccountId,
-                    days_to_liquidate: parseInt(days_to_liquidate || 1),
+                    days_to_liquidate: days_to_liquidate !== undefined && days_to_liquidate !== '' ? parseInt(days_to_liquidate) : 1,
                     receivable_mode: receivable_mode || 'immediate',
                     flat_fee_percent: flat_fee_percent ? parseFloat(flat_fee_percent) : 0,
                     max_installments: max_installments ? parseInt(max_installments) : 1,
@@ -85,7 +85,7 @@ class PaymentConfigurationController {
                 data: {
                     name,
                     bank_account_id: sanitizedBankAccountId,
-                    days_to_liquidate: days_to_liquidate ? parseInt(days_to_liquidate) : undefined,
+                    days_to_liquidate: days_to_liquidate !== undefined ? parseInt(days_to_liquidate) : undefined,
                     receivable_mode: receivable_mode,
                     flat_fee_percent: flat_fee_percent !== undefined ? parseFloat(flat_fee_percent) : undefined,
                     max_installments: max_installments ? parseInt(max_installments) : undefined,
