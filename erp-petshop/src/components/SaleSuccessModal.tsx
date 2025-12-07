@@ -8,6 +8,7 @@ interface SaleSuccessModalProps {
     paymentMethod: string;
     change?: number;
     items?: any[];
+    installments?: number;
     onClose: () => void;
 }
 
@@ -17,6 +18,7 @@ export default function SaleSuccessModal({
     paymentMethod,
     change = 0,
     items = [],
+    installments,
     onClose
 }: SaleSuccessModalProps) {
     const [company, setCompany] = useState<any>(null);
@@ -97,90 +99,90 @@ export default function SaleSuccessModal({
 
         printWindow.document.write(`
             <html>
-                <head>
-                    <title>Cupom #${saleNumber}</title>
-                    <style>
-                        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
-                        body { 
-                            font-family: 'Roboto', sans-serif; 
-                            font-size: 12px; 
-                            margin: 0; 
-                            padding: 10px; 
-                            color: #000;
+            <head>
+                <title>Cupom #${saleNumber}</title>
+                <style>
+                    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+                    body {
+                        font - family: 'Roboto', sans-serif;
+                    font-size: 12px;
+                    margin: 0;
+                    padding: 10px;
+                    color: #000;
                         }
-                        .header { 
-                            display: flex; 
-                            align-items: center; 
-                            gap: 10px; 
-                            margin-bottom: 20px; 
+                    .header {
+                        display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    margin-bottom: 20px; 
                         }
-                        .logo { max-width: 100px; }
-                        .company-name { font-weight: bold; font-size: 16px; }
-                        
-                        .section-title { 
-                            font-weight: bold; 
-                            font-size: 14px; 
-                            text-transform: uppercase; 
-                            margin-bottom: 2px;
+                    .logo {max - width: 100px; }
+                    .company-name {font - weight: bold; font-size: 16px; }
+
+                    .section-title {
+                        font - weight: bold;
+                    font-size: 14px;
+                    text-transform: uppercase;
+                    margin-bottom: 2px;
                         }
-                        .date { margin-bottom: 15px; color: #333; }
-                        
-                        .table-header { 
-                            display: flex; 
-                            justify-content: space-between; 
-                            font-weight: bold; 
-                            border-bottom: 2px solid #000; 
-                            padding-bottom: 5px; 
-                            margin-bottom: 10px;
+                    .date {margin - bottom: 15px; color: #333; }
+
+                    .table-header {
+                        display: flex;
+                    justify-content: space-between;
+                    font-weight: bold;
+                    border-bottom: 2px solid #000;
+                    padding-bottom: 5px;
+                    margin-bottom: 10px;
                         }
-                        
-                        .item-row { margin-bottom: 8px; }
-                        .item-name { font-weight: bold; font-size: 13px; }
-                        .item-details { 
-                            display: flex; 
-                            justify-content: space-between; 
-                            font-size: 12px; 
+
+                    .item-row {margin - bottom: 8px; }
+                    .item-name {font - weight: bold; font-size: 13px; }
+                    .item-details {
+                        display: flex;
+                    justify-content: space-between;
+                    font-size: 12px; 
                         }
-                        
-                        .totals-section { 
-                            margin-top: 20px; 
-                            border-top: 2px solid #000; 
-                            padding-top: 10px; 
+
+                    .totals-section {
+                        margin - top: 20px;
+                    border-top: 2px solid #000;
+                    padding-top: 10px; 
                         }
-                        
-                        .total-row { 
-                            display: flex; 
-                            justify-content: space-between; 
-                            align-items: center;
-                            margin-top: 10px;
+
+                    .total-row {
+                        display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-top: 10px;
                         }
-                        .total-label { font-size: 20px; font-weight: bold; }
-                        .total-value { font-size: 24px; font-weight: bold; }
-                        
-                        .footer { 
-                            margin-top: 30px; 
-                            border-top: 1px solid #000; 
-                            padding-top: 10px; 
-                            font-size: 11px; 
+                    .total-label {font - size: 20px; font-weight: bold; }
+                    .total-value {font - size: 24px; font-weight: bold; }
+
+                    .footer {
+                        margin - top: 30px;
+                    border-top: 1px solid #000;
+                    padding-top: 10px;
+                    font-size: 11px; 
                         }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        ${logo}
-                        <div class="company-name">${companyName}</div>
-                    </div>
-                    
-                    <div class="section-title">DETALHE DE PRODUTOS</div>
-                    <div class="date">${date}</div>
-                    
-                    <div class="table-header">
-                        <span>Prod. e Quant.</span>
-                        <span>Valor Subtotal</span>
-                    </div>
-                    
-                    <div class="items-list">
-                        ${items.map(item => `
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    ${logo}
+                    <div class="company-name">${companyName}</div>
+                </div>
+
+                <div class="section-title">DETALHE DE PRODUTOS</div>
+                <div class="date">${date}</div>
+
+                <div class="table-header">
+                    <span>Prod. e Quant.</span>
+                    <span>Valor Subtotal</span>
+                </div>
+
+                <div class="items-list">
+                    ${items.map(item => `
                         <div class="item-row">
                             <div class="item-name">${item.name}</div>
                             <div class="item-details">
@@ -190,32 +192,37 @@ export default function SaleSuccessModal({
                             </div>
                         </div>
                         `).join('')}
-                    </div>
-                    
-                    <div class="totals-section">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <span>Quant. total de itens</span>
-                            <span>${items.length}</span>
-                        </div>
-                        
-                        <div class="total-row">
-                            <span class="total-label">Total R$</span>
-                            <span class="total-value">${formatCurrency(total)}</span>
-                        </div>
+                </div>
+
+                <div class="totals-section">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Quant. total de itens</span>
+                        <span>${items.length}</span>
                     </div>
 
-                    <div class="footer">
-                        <div>${companyName}</div>
-                        <div>${fullAddress}</div>
-                        <div style="margin-top: 10px; font-weight: bold; text-align: center;">SEM VALOR FISCAL</div>
+                    <div class="total-row">
+                        <span class="total-label">Total R$</span>
+                        <span class="total-value">${formatCurrency(total)}</span>
                     </div>
-                    
-                    <script>
-                        window.print();
-                        // window.onafterprint = function() { window.close(); } 
-                    </script>
-                </body>
-            </html>
+
+                    <div style="margin-top: 10px; font-size: 13px;">
+                        <strong>Forma de Pagamento:</strong> ${translatePaymentMethod(paymentMethod)}
+                        ${installments && installments > 1 ? `<br/><strong>Parcelamento:</strong> ${installments}x de ${formatCurrency(total / installments)}` : ''}
+                    </div>
+                </div>
+
+                <div class="footer">
+                    <div>${companyName}</div>
+                    <div>${fullAddress}</div>
+                    <div style="margin-top: 10px; font-weight: bold; text-align: center;">SEM VALOR FISCAL</div>
+                </div>
+
+                <script>
+                    window.print();
+                        // window.onafterprint = function() {window.close(); }
+                </script>
+            </body>
+        </html>
         `);
         printWindow.document.close();
     };
@@ -242,7 +249,10 @@ export default function SaleSuccessModal({
                     <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-100">
                         <div className="flex justify-between items-center">
                             <span className="text-gray-600">Pagamento via</span>
-                            <span className="font-medium text-gray-900">{translatePaymentMethod(paymentMethod)}</span>
+                            <span className="font-medium text-gray-900">
+                                {translatePaymentMethod(paymentMethod)}
+                                {installments && installments > 1 ? ` (${installments}x)` : ''}
+                            </span>
                         </div>
                         {change > 0 && (
                             <div className="flex justify-between items-center pt-2 border-t border-gray-200">
@@ -272,5 +282,6 @@ export default function SaleSuccessModal({
                 </div>
             </div>
         </div>
+
     );
 }

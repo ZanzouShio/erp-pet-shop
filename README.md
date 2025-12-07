@@ -33,6 +33,10 @@ Sistema de gestão completo para Pet Shops, desenvolvido com tecnologias moderna
 - **Impressão de Cupom:** Layout térmico otimizado com correções de valores.
 - **Busca Inteligente:** Clientes e Produtos com filtros rápidos.
 - **Histórico no Caixa:** Exibe últimas 3 compras do cliente com detalhes (hover).
+- **Métodos de Pagamento:** Dinheiro, Débito, Crédito, Pix
+- **Configuração de Pagamento:** Taxas, prazos de liquidação (D+0, D+1, D+30).
+- **Cashback:** Configuração de cashback por operador.
+- **Pontos de Fidelidade:** Configuração de pontos por operador.
 
 ### 📦 Gestão de Estoque
 - **Movimentações:** Entrada e saída manual com histórico e justificativas.
@@ -41,16 +45,18 @@ Sistema de gestão completo para Pet Shops, desenvolvido com tecnologias moderna
 - **Cadastro Completo:** Controle de margem, preço de custo/venda.
 - **Alertas:** Notificação automática de margem de lucro baixa e estoque mínimo.
 
-### 👥 Clientes e Fidelidade
-- **Cadastro Detalhado:** Dados pessoais, endereço e documentos.
-- **Carteira do Cliente:** Saldo de Cashback e Pontos de Fidelidade.
-- **Histórico de Compras:** Rastreabilidade total de vendas por cliente com detalhes de itens.
+### 💰 Gestão de Vendas
+- **PDV (Ponto de Venda):** Interface ágil para vendas rápidas.
+- **Histórico:** Listagem completa de vendas com filtros avançados.
+- **Detalhes:** Visualização detalhada de itens, pagamentos e descontos.
+- **Cancelamento:** Estorno automático de estoque ao cancelar venda.
 
 ### 📊 Dashboard & Relatórios
 - **Resumo Diário:** Vendas do dia, ticket médio.
 - **Top Produtos:** Ranking dos produtos mais vendidos.
 - **Relatórios Financeiros:** Taxas por operador, posição de caixa e performance.
 - **Evolução Financeira:** Gráficos de Entradas vs Saídas.
+- **Alertas:** Produtos com estoque baixo ou zerado.
 
 ### 🤝 Gestão de Fornecedores
 - **Cadastro Completo:** Dados cadastrais, contato e condições comerciais.

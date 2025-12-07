@@ -28,26 +28,26 @@ model accounts_payable {
 }
 
 model accounts_receivable {
-  id                 String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                 String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   description        String
-  amount             Decimal    @db.Decimal(10, 2)
-  net_amount         Decimal    @db.Decimal(10, 2)
-  tax_amount         Decimal?   @default(0) @db.Decimal(10, 2)
-  tax_rate           Decimal?   @default(0) @db.Decimal(5, 2)
-  due_date           DateTime   @db.Date
-  paid_date          DateTime?  @db.Date
-  status             String     @default("pending") @db.VarChar(20)
-  customer_id        String?    @db.Uuid
-  sale_id            String?    @db.Uuid
+  amount             Decimal                 @db.Decimal(10, 2)
+  net_amount         Decimal                 @db.Decimal(10, 2)
+  tax_amount         Decimal?                @default(0) @db.Decimal(10, 2)
+  tax_rate           Decimal?                @default(0) @db.Decimal(5, 2)
+  due_date           DateTime                @db.Date
+  paid_date          DateTime?               @db.Date
+  status             String                  @default("pending") @db.VarChar(20)
+  customer_id        String?                 @db.Uuid
+  sale_id            String?                 @db.Uuid
   installment_number Int?
   total_installments Int?
-  payment_method     String?    @db.VarChar(50)
-  payment_config_id  String?    @db.Uuid
-  origin_type        String?    @default("sale") @db.VarChar(20)
-  created_at         DateTime?  @default(now()) @db.Timestamp(6)
-  updated_at         DateTime?  @default(now()) @db.Timestamp(6)
-  customers          customers? @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  sales              sales?     @relation(fields: [sale_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  payment_method     String?                 @db.VarChar(50)
+  payment_config_id  String?                 @db.Uuid
+  origin_type        String?                 @default("sale") @db.VarChar(20)
+  created_at         DateTime?               @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?               @default(now()) @db.Timestamp(6)
+  customers          customers?              @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sales              sales?                  @relation(fields: [sale_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   payment_config     payment_methods_config? @relation(fields: [payment_config_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([customer_id], map: "idx_receivables_customer")
@@ -237,6 +237,7 @@ model customers {
   pets                   pets[]
   quotes                 quotes[]
   sales                  sales[]
+  appointments           appointments[]
 
   @@index([cpf_cnpj], map: "idx_customers_cpf_cnpj")
   @@index([phone], map: "idx_customers_phone")
@@ -422,21 +423,21 @@ model payment_rates {
 }
 
 model payment_methods_config {
-  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type              String         @db.VarChar(20) // credit_card, debit_card, pix
-  name              String         @db.VarChar(100) // Nome do provedor (ex: Stone, Cielo)
-  is_active         Boolean        @default(true)
-  bank_account_id   String?        @db.Uuid
-  days_to_liquidate Int            @default(1)
-  receivable_mode   String?        @default("immediate") @db.VarChar(20) // immediate, flow
-  flat_fee_percent  Decimal?       @default(0) @db.Decimal(5, 2) // Para Débito e Pix
-  max_installments  Int?           @default(1) // Para Crédito
-  installment_fees  Json?          // Array de taxas: [{ installment: 1, fee: 2.5 }, ...]
-  color             String?        @default("#3b82f6") @db.VarChar(20) // Cor para gráficos
-  created_at        DateTime?      @default(now()) @db.Timestamp(6)
-  updated_at        DateTime?      @default(now()) @db.Timestamp(6)
-  bank_accounts     bank_accounts? @relation(fields: [bank_account_id], references: [id], onUpdate: NoAction)
-  accounts_receivable accounts_receivable[]
+  id                     String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type                   String                   @db.VarChar(20) // credit_card, debit_card, pix
+  name                   String                   @db.VarChar(100) // Nome do provedor (ex: Stone, Cielo)
+  is_active              Boolean                  @default(true)
+  bank_account_id        String?                  @db.Uuid
+  days_to_liquidate      Int                      @default(1)
+  receivable_mode        String?                  @default("immediate") @db.VarChar(20) // immediate, flow
+  flat_fee_percent       Decimal?                 @default(0) @db.Decimal(5, 2) // Para Débito e Pix
+  max_installments       Int?                     @default(1) // Para Crédito
+  installment_fees       Json? // Array de taxas: [{ installment: 1, fee: 2.5 }, ...]
+  color                  String?                  @default("#3b82f6") @db.VarChar(20) // Cor para gráficos
+  created_at             DateTime?                @default(now()) @db.Timestamp(6)
+  updated_at             DateTime?                @default(now()) @db.Timestamp(6)
+  bank_accounts          bank_accounts?           @relation(fields: [bank_account_id], references: [id], onUpdate: NoAction)
+  accounts_receivable    accounts_receivable[]
   financial_transactions financial_transactions[]
 
   @@index([type], map: "idx_payment_config_type")
@@ -460,19 +461,24 @@ model pdv_terminals {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model pets {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  customer_id String    @db.Uuid
-  name        String    @db.VarChar(100)
-  species     String?   @db.VarChar(50)
-  breed       String?   @db.VarChar(100)
-  size        String?   @db.VarChar(20)
-  gender      String?   @db.VarChar(10)
-  birth_date  DateTime? @db.Date
-  photo_url   String?
-  notes       String?
-  created_at  DateTime? @default(now()) @db.Timestamp(6)
-  updated_at  DateTime? @default(now()) @db.Timestamp(6)
-  customers   customers @relation(fields: [customer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id    String         @db.Uuid
+  name           String         @db.VarChar(100)
+  species        String?        @db.VarChar(50)
+  breed_id       String?        @db.Uuid
+  breed          String?        @db.VarChar(100) // Legacy
+  size           String?        @db.VarChar(20) // P, M, G, GIG
+  coat_type      String?        @db.VarChar(20) // curto, longo, duplo
+  behavior_flags Json? // ["aggressive", "elderly"]
+  gender         String?        @db.VarChar(10)
+  birth_date     DateTime?      @db.Date
+  photo_url      String?
+  notes          String?
+  created_at     DateTime?      @default(now()) @db.Timestamp(6)
+  updated_at     DateTime?      @default(now()) @db.Timestamp(6)
+  customers      customers      @relation(fields: [customer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  pet_breeds     pet_breeds?    @relation(fields: [breed_id], references: [id])
+  appointments   appointments[]
 }
 
 model pet_species {
@@ -832,6 +838,118 @@ model users {
   stock_movements                 stock_movements[]
   user_sessions                   user_sessions[]
 
+  // Groomer fields
+  is_groomer      Boolean? @default(false)
+  seniority_level String?  @db.VarChar(20) // junior, mid, senior
+  speed_factor    Decimal? @default(1.0) @db.Decimal(3, 2)
+  commission_rate Decimal? @default(0) @db.Decimal(5, 2) // Percentage
+
+  // Grooming Relations
+  appointment_services appointment_services[]
+
   @@index([email], map: "idx_users_email")
   @@index([role], map: "idx_users_role")
+}
+
+// ---------------------------------------------------------
+// GROOMING MODULE (AGENDAMENTO)
+// ---------------------------------------------------------
+
+model pet_breeds {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  species_id String    @db.Uuid
+  name       String    @db.VarChar(100)
+  size       String?   @db.VarChar(5) // P, M, G, GIG
+  coat_type  String?   @db.VarChar(20) // curto, longo, duplo
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+
+  pets pets[]
+}
+
+model services {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String    @db.VarChar(100)
+  description String?
+  base_price  Decimal   @default(0) @db.Decimal(10, 2)
+  is_active   Boolean   @default(true)
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+
+  service_matrix service_matrix[]
+  items          appointment_services[]
+}
+
+model service_matrix {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  service_id    String   @db.Uuid
+  breed_size    String   @db.VarChar(5) // P, M, G, GIG
+  coat_type     String   @db.VarChar(20) // curto, longo, duplo
+  base_duration Int      @default(30) // Minutes
+  price_adder   Decimal? @default(0) @db.Decimal(10, 2)
+
+  services services @relation(fields: [service_id], references: [id], onDelete: Cascade)
+
+  @@unique([service_id, breed_size, coat_type])
+}
+
+model resources {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String  @db.VarChar(100)
+  type      String  @db.VarChar(20) // BANHEIRA, MESA, SECADOR
+  is_active Boolean @default(true)
+
+  appointments appointment_resources[]
+}
+
+model appointments {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customer_id String    @db.Uuid
+  pet_id      String    @db.Uuid
+  date        DateTime  @db.Date
+  start_time  DateTime  @db.Timestamp(6)
+  end_time    DateTime  @db.Timestamp(6)
+  status      String    @default("scheduled") @db.VarChar(20) // scheduled, confirmed, check_in, bathing, drying, finished, picked_up
+  total_price Decimal   @default(0) @db.Decimal(10, 2)
+  notes       String?
+  conditions  Json? // ["aggressive", "matted"]
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  updated_at  DateTime? @default(now()) @db.Timestamp(6)
+
+  customers customers @relation(fields: [customer_id], references: [id])
+  pets      pets      @relation(fields: [pet_id], references: [id])
+
+  services  appointment_services[]
+  resources appointment_resources[]
+
+  @@index([start_time])
+  @@index([status])
+}
+
+model appointment_services {
+  id                       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  appointment_id           String   @db.Uuid
+  service_id               String   @db.Uuid
+  professional_id          String?  @db.Uuid
+  price                    Decimal  @db.Decimal(10, 2)
+  commission_rate_snapshot Decimal? @db.Decimal(5, 2)
+  calculated_commission    Decimal? @default(0) @db.Decimal(10, 2)
+  
+  // Payment tracking
+  commission_status        String?   @default("pending") @db.VarChar(20) // pending, paid, cancelled
+  commission_paid_at       DateTime? @db.Timestamp(6)
+  commission_transaction_id String?  @db.Uuid
+
+  appointments appointments @relation(fields: [appointment_id], references: [id], onDelete: Cascade)
+  services     services     @relation(fields: [service_id], references: [id])
+  professional users?       @relation(fields: [professional_id], references: [id])
+}
+
+model appointment_resources {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  appointment_id String    @db.Uuid
+  resource_id    String    @db.Uuid
+  start_time     DateTime? // Can be different from main appt if resource is used only for a part
+  end_time       DateTime?
+
+  appointments appointments @relation(fields: [appointment_id], references: [id], onDelete: Cascade)
+  resources    resources    @relation(fields: [resource_id], references: [id])
 }

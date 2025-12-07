@@ -71,7 +71,7 @@ export default function Dashboard() {
                     value: stats.low_stock_count + stats.out_of_stock_count
                 },
                 appointments: {
-                    value: 12 // TODO: implementar
+                    value: stats.appointments_today_count || 0
                 }
             });
 

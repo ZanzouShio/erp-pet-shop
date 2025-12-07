@@ -25,8 +25,17 @@ export const createSale = async (req, res) => {
         const saleNumberResult = await client.query('SELECT COALESCE(MAX(CAST(sale_number AS INTEGER)), 0) + 1 as next_number FROM sales WHERE sale_number ~ \'^[0-9]+$\'');
         const sale_number = saleNumberResult.rows[0].next_number.toString();
 
-        // User ID - Admin PDV (usuário existente no banco)
-        const user_id = 'e94460f4-6207-4156-918a-6e42b2978f6d';
+        // User ID - Admin PDV (Dynamic fetch)
+        let user_id = req.user_id; // Try to get from request (middleware)
+        if (!user_id) {
+            const userResult = await client.query('SELECT id FROM users LIMIT 1');
+            user_id = userResult.rows[0]?.id;
+        }
+
+        if (!user_id) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Nenhum usuário encontrado no sistema para vincular a venda' });
+        }
 
         // 1. Criar Venda
         const saleResult = await client.query(`
@@ -116,9 +125,9 @@ export const createSale = async (req, res) => {
         if (amountToPay > 0) {
             await client.query(`
                 INSERT INTO sale_payments (
-                    sale_id, payment_method, amount
-                ) VALUES ($1, $2, $3)
-            `, [sale.id, payment_method, amountToPay]);
+                    sale_id, payment_method, amount, installments
+                ) VALUES ($1, $2, $3, $4)
+            `, [sale.id, payment_method, amountToPay, installments || 1]);
         }
 
         // 5. Gerar Contas a Receber (Apenas sobre o valor pago em dinheiro/cartão/etc)
@@ -239,7 +248,7 @@ export const createSale = async (req, res) => {
                 for (let i = 1; i <= installments; i++) {
                     const feeAmount = (installmentValue * appliedFeePercent) / 100;
                     const netAmount = installmentValue - feeAmount;
-                    const daysToAdd = (i * 30) + daysToLiquidate; // TODO: Revisar logica de dias para fluxo se necessário
+                    const daysToAdd = i * 30;
                     const dueDate = new Date();
                     dueDate.setDate(dueDate.getDate() + daysToAdd);
 
@@ -519,10 +528,32 @@ export const getSaleById = async (req, res) => {
         const paymentsResult = await pool.query(`
             SELECT 
                 payment_method,
-                amount
+                amount,
+                installments
             FROM sale_payments
             WHERE sale_id = $1
         `, [id]);
+
+        // 3.5 Buscar parcelas (installments) do contas a receber
+        const installmentsResult = await pool.query(`
+            SELECT 
+                installment_number,
+                total_installments,
+                amount,
+                payment_method
+            FROM accounts_receivable
+            WHERE sale_id = $1
+            ORDER BY installment_number
+        `, [id]);
+
+        // Agrupar parcelas por método (se houver misto, mas geralmente é um só de crédito para parcelas)
+        // Simplificação: Vamos anexar as parcelas ao objeto de resposta
+        const installments = installmentsResult.rows.map(inst => ({
+            number: inst.installment_number,
+            total: inst.total_installments,
+            amount: parseFloat(inst.amount),
+            method: inst.payment_method
+        }));
 
         // 4. Montar resposta
         res.json({
@@ -545,8 +576,10 @@ export const getSaleById = async (req, res) => {
             })),
             payments: paymentsResult.rows.map(payment => ({
                 payment_method: payment.payment_method,
-                amount: parseFloat(payment.amount)
-            }))
+                amount: parseFloat(payment.amount),
+                installments: payment.installments || 1
+            })),
+            installments: installments // New field
         });
 
     } catch (error) {

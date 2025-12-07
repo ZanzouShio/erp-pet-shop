@@ -19,12 +19,21 @@ import bankAccountRoutes from './routes/bankAccount.routes.js';
 import suppliersRoutes from './routes/suppliers.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import invoiceRoutes from './routes/invoices.routes.js';
+import appointmentRoutes from './routes/appointments.routes.js';
+import groomingRoutes from './routes/grooming.routes.js';
+import groomersRoutes from './routes/groomers.routes.js';
+import groomingServicesRoutes from './routes/groomingServices.routes.js';
+import groomingResourcesRoutes from './routes/groomingResources.routes.js';
+import serviceMatrixRoutes from './routes/serviceMatrix.routes.js';
+import commissionsRoutes from './routes/commissions.routes.js';
 
 const app = express();
 
 // Middlewares
 app.use(cors({
     origin: [process.env.FRONTEND_URL || 'http://localhost:5173', 'http://localhost:5174'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
     credentials: true,
 }));
 app.use(express.json());
@@ -49,6 +58,26 @@ app.use('/api/bank-accounts', bankAccountRoutes);
 app.use('/api/suppliers', suppliersRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/invoices', invoiceRoutes);
+app.use('/api/appointments', appointmentRoutes);
+app.use('/api/grooming', groomingRoutes);
+app.use('/api/groomers', groomersRoutes);
+app.use('/api/grooming-services', groomingServicesRoutes);
+app.use('/api/grooming-resources', groomingResourcesRoutes);
+app.use('/api/service-matrix', serviceMatrixRoutes);
+import authRoutes from './routes/auth.routes.js';
+import { optionalAuthMiddleware, authMiddleware } from './middleware/auth.middleware.js';
+
+// ... (existing codes)
+
+app.use('/api/auth', authRoutes);
+
+// Aplicar middleware opcional nas vendas para maximizar compatibilidade enquanto migramos
+// Ou forçar authMiddleware se quizermos rigidez. O usuário pediu "pegar o ID do usuário logado".
+// Vamos usar o optionalAuthMiddleware globalmente ou especificamente.
+// Como o controller já verifica `req.user_id` e faz fallback se não tiver,
+// o optional vai preencher se o frontend mandar.
+app.use('/api/sales', optionalAuthMiddleware, saleRoutes);
+
 
 // Health check
 app.get('/api/health', (req, res) => {

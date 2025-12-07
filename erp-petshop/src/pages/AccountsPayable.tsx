@@ -52,7 +52,6 @@ export default function AccountsPayable() {
     const [paymentData, setPaymentData] = useState({
         amount: '',
         date: new Date().toISOString().split('T')[0],
-        date: new Date().toISOString().split('T')[0],
         method: 'PIX',
         account_id: ''
     });
@@ -99,7 +98,6 @@ export default function AccountsPayable() {
 
     const loadAccounts = async () => {
         try {
-            setLoading(true);
             setLoading(true);
             const params = new URLSearchParams();
             if (filterStatus !== 'ALL') params.append('status', filterStatus);
@@ -164,7 +162,8 @@ export default function AccountsPayable() {
         setPaymentData({
             amount: remaining.toFixed(2),
             date: new Date().toISOString().split('T')[0],
-            method: 'PIX'
+            method: 'PIX',
+            account_id: ''
         });
         setIsPaymentModalOpen(true);
     };

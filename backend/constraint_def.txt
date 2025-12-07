@@ -1,5 +1,0 @@
-[
-  {
-    "constraint_def": "CHECK (((gender)::text = ANY ((ARRAY['male'::character varying, 'female'::character varying])::text[])))"
-  }
-]

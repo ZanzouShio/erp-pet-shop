@@ -32,6 +32,7 @@ export default function POS({ onExit }: POSProps) {
     paymentMethod: string;
     change: number;
     items: any[];
+    installments?: number;
   } | null>(null);
 
 
@@ -169,7 +170,8 @@ export default function POS({ onExit }: POSProps) {
         total: total,
         paymentMethod: paymentMethod,
         change: details?.change || 0,
-        items: [...cart]
+        items: [...cart],
+        installments: details?.installments
       });
       setShowSuccessModal(true);
       // alert(`✅ Venda #${result.sale.sale_number} concluída!\n\nTotal: R$ ${total.toFixed(2)}\nPagamento: ${paymentMethod.toUpperCase()}\n\nObrigado pela preferência!`);
@@ -421,6 +423,7 @@ export default function POS({ onExit }: POSProps) {
           paymentMethod={lastSale.paymentMethod}
           change={lastSale.change}
           items={lastSale.items}
+          installments={lastSale.installments}
           onClose={() => setShowSuccessModal(false)}
         />
       )}

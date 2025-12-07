@@ -20,7 +20,8 @@ import {
     Boxes,
     Link as LinkIcon,
     Truck,
-    Building2
+    Building2,
+    Scissors
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -62,6 +63,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, enabled: true, path: '/admin/dashboard' },
         { id: 'pos', label: 'PDV', icon: ShoppingCart, enabled: true, path: '/pos' },
         { id: 'sales', label: 'Vendas', icon: Receipt, enabled: true, path: '/admin/sales' },
+        { id: 'scheduler', label: 'Agendamento', icon: Scissors, enabled: true, path: '/admin/scheduler' },
         {
             id: 'stock',
             label: 'Estoque',
@@ -82,6 +84,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
                 { id: 'financial-receivable', label: 'Contas a Receber', icon: TrendingUp, enabled: true, path: '/admin/financial/receivable' },
                 { id: 'financial-cashflow', label: 'Fluxo de Caixa', icon: LineChart, enabled: true, path: '/admin/financial/cash-flow' },
                 { id: 'fiscal-invoices', label: 'Notas Fiscais', icon: FileText, enabled: true, path: '/admin/financial/invoices' },
+                { id: 'financial-commissions', label: 'Comissões', icon: UserCog, enabled: true, path: '/admin/financial/commissions' },
                 { id: 'financial-reconciliation', label: 'Conciliação Bancária', icon: LinkIcon, enabled: true, path: '/admin/financial/reconciliation' },
                 { id: 'financial-import', label: 'Importação NF-e', icon: Upload, enabled: true, path: '/admin/financial/import' },
             ]

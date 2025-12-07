@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
+import Scheduler from './pages/Scheduler';
 import StockMovements from './pages/StockMovements';
 import Finance from './pages/Finance';
 import ExpenseCategories from './pages/ExpenseCategories';
@@ -38,22 +39,45 @@ import NFeCertificate from './pages/Settings/NFeCertificate';
 import NFeEmissionData from './pages/Settings/NFeEmissionData';
 import NFeTaxes from './pages/Settings/NFeTaxes';
 import FiscalInvoices from './pages/Financial/FiscalInvoices';
+import Commissions from './pages/Financial/Commissions';
+import GroomingManagement from './pages/GroomingManagement';
 
+
+// ... imports
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Login from './pages/Login';
+
+function ProtectedRoute({ children }: { children: JSX.Element }) {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return <div>Carregando...</div>;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return children;
+}
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Rota raiz redireciona para admin/dashboard */}
-        <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
 
-        {/* PDV - Tela cheia, sem AdminLayout */}
-        <Route path="/pos" element={<POSPage />} />
+          <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
 
-        {/* Rotas administrativas - com AdminLayout */}
-        <Route path="/admin/*" element={<AdminRoutes />} />
-      </Routes>
-    </BrowserRouter>
+          {/* Rotas Protegidas */}
+          <Route path="/pos" element={
+            <ProtectedRoute>
+              <POSPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/*" element={
+            <ProtectedRoute>
+              <AdminRoutes />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
@@ -69,6 +93,7 @@ function AdminRoutes() {
       <Routes>
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="sales" element={<Sales />} />
+        <Route path="scheduler" element={<Scheduler />} />
         <Route path="inventory" element={<Inventory />} />
         <Route path="stock-movements" element={<StockMovements />} />
 
@@ -79,6 +104,7 @@ function AdminRoutes() {
         <Route path="financial/cash-flow" element={<CashFlow />} />
         <Route path="financial/invoices" element={<FiscalInvoices />} />
         <Route path="financial/reconciliation" element={<BankReconciliation />} />
+        <Route path="financial/commissions" element={<Commissions />} />
         <Route path="financial/import" element={<Finance />} />
 
         {/* Relatórios */}
@@ -119,6 +145,10 @@ function AdminRoutes() {
         <Route path="settings/invoices/nfe/certificate" element={<NFeCertificate />} />
         <Route path="settings/invoices/nfe/data" element={<NFeEmissionData />} />
         <Route path="settings/invoices/nfe/taxes" element={<NFeTaxes />} />
+
+        {/* Grooming Management */}
+        <Route path="grooming-settings" element={<GroomingManagement />} />
+
         {/* Placeholders for now */}
         <Route path="settings/integrations" element={<div className="p-8">Configurações de Integrações (Em breve)</div>} />
         <Route path="settings/stores" element={<div className="p-8">Gestão de Lojas e Caixas (Em breve)</div>} />

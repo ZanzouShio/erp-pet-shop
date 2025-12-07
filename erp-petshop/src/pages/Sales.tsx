@@ -30,6 +30,14 @@ interface SaleItem {
 interface SalePayment {
     payment_method: string;
     amount: number;
+    installments?: number;
+}
+
+interface SaleInstallment {
+    number: number;
+    total: number;
+    amount: number;
+    method: string;
 }
 
 interface SaleDetails {
@@ -43,7 +51,12 @@ interface SaleDetails {
     user_name: string;
     items: SaleItem[];
     payments: SalePayment[];
+    installments?: SaleInstallment[]; // New field
 }
+
+// ... existing code ...
+
+
 
 type DateFilter = 'today' | 'yesterday' | 'week' | 'month' | 'custom';
 
@@ -520,16 +533,29 @@ export default function Sales() {
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Pagamentos</h3>
                                     <div className="space-y-2">
-                                        {selectedSale.payments.map((payment, index) => (
-                                            <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                                <span className="text-sm text-gray-700">
-                                                    {paymentMethodLabels[payment.payment_method] || payment.payment_method}
-                                                </span>
-                                                <span className="text-sm font-medium text-gray-900">
-                                                    {formatCurrency(payment.amount)}
-                                                </span>
-                                            </div>
-                                        ))}
+                                        {selectedSale.payments.map((payment, index) => {
+                                            const installmentCount = payment.installments || 1;
+                                            const installmentValue = payment.amount / installmentCount;
+
+                                            return (
+                                                <div key={index} className="bg-gray-50 rounded-lg p-3">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="text-sm text-gray-700 font-medium">
+                                                            {paymentMethodLabels[payment.payment_method] || payment.payment_method}
+                                                        </span>
+                                                        <span className="text-sm font-bold text-gray-900">
+                                                            {formatCurrency(payment.amount)}
+                                                        </span>
+                                                    </div>
+                                                    {installmentCount > 1 && (
+                                                        <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-200 pt-1 mt-1">
+                                                            <span>Parcelado em {installmentCount}x</span>
+                                                            <span>{installmentCount}x de {formatCurrency(installmentValue)}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                                 <div>

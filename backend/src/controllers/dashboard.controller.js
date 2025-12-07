@@ -49,6 +49,14 @@ export const getSummary = async (req, res) => {
             WHERE DATE(created_at AT TIME ZONE 'America/Sao_Paulo') >= DATE_TRUNC('month', NOW() AT TIME ZONE 'America/Sao_Paulo')
         `);
 
+        // 6. Agendamentos de hoje
+        const appointmentsToday = await pool.query(`
+            SELECT COUNT(*) as count
+            FROM appointments
+            WHERE date = DATE(NOW() AT TIME ZONE 'America/Sao_Paulo')
+              AND status != 'cancelled'
+        `);
+
         res.json({
             sales_today: {
                 total: parseFloat(salesToday.rows[0].total) || 0,
@@ -57,6 +65,7 @@ export const getSummary = async (req, res) => {
             new_customers_count: parseInt(newCustomers.rows[0].count) || 0,
             low_stock_count: parseInt(lowStock.rows[0].count) || 0,
             out_of_stock_count: parseInt(outOfStock.rows[0].count) || 0,
+            appointments_today_count: parseInt(appointmentsToday.rows[0].count) || 0,
             alerts: alerts.rows.map(a => ({
                 type: a.stock === 0 ? 'out_of_stock' : 'low_stock',
                 product_name: a.product_name,
