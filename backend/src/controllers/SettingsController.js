@@ -45,7 +45,7 @@ export const updateSettings = async (req, res) => {
         } = req.body;
 
         // Verifica se existe
-        const check = await pool.query('SELECT id FROM company_settings LIMIT 1');
+        const check = await pool.query('SELECT * FROM company_settings LIMIT 1');
 
         let result;
         if (check.rows.length === 0) {
@@ -80,7 +80,9 @@ export const updateSettings = async (req, res) => {
             ]);
         } else {
             // Update
-            const id = check.rows[0].id;
+            const existing = check.rows[0];
+            const id = existing.id;
+
             result = await pool.query(`
                     UPDATE company_settings
                     SET loyalty_enabled = $1,
@@ -105,24 +107,24 @@ export const updateSettings = async (req, res) => {
                     WHERE id = $19
                     RETURNING *
                 `, [
-                loyalty_enabled,
-                loyalty_points_per_real,
-                cashback_enabled,
-                cashback_percentage,
-                cashback_expire_days,
-                company_name,
-                trade_name,
-                cnpj,
-                state_registration,
-                email,
-                phone,
-                zip_code,
-                address,
-                number,
-                neighborhood,
-                city,
-                state,
-                logo_url,
+                loyalty_enabled !== undefined ? loyalty_enabled : existing.loyalty_enabled,
+                loyalty_points_per_real !== undefined ? loyalty_points_per_real : existing.loyalty_points_per_real,
+                cashback_enabled !== undefined ? cashback_enabled : existing.cashback_enabled,
+                cashback_percentage !== undefined ? cashback_percentage : existing.cashback_percentage,
+                cashback_expire_days !== undefined ? cashback_expire_days : existing.cashback_expire_days,
+                company_name !== undefined ? company_name : existing.company_name,
+                trade_name !== undefined ? trade_name : existing.trade_name,
+                cnpj !== undefined ? cnpj : existing.cnpj,
+                state_registration !== undefined ? state_registration : existing.state_registration,
+                email !== undefined ? email : existing.email,
+                phone !== undefined ? phone : existing.phone,
+                zip_code !== undefined ? zip_code : existing.zip_code,
+                address !== undefined ? address : existing.address,
+                number !== undefined ? number : existing.number,
+                neighborhood !== undefined ? neighborhood : existing.neighborhood,
+                city !== undefined ? city : existing.city,
+                state !== undefined ? state : existing.state,
+                logo_url !== undefined ? logo_url : existing.logo_url,
                 id
             ]);
         }
