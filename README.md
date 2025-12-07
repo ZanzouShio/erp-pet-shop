@@ -5,35 +5,52 @@ Sistema de gestão completo para Pet Shops, desenvolvido com tecnologias moderna
 ## 🚀 Tecnologias
 
 ### Frontend
-- **React + Vite:** Performance e desenvolvimento ágil.
-- **Tailwind CSS:** Estilização moderna e responsiva.
-- **Lucide React:** Ícones vetoriais leves.
-- **React Router:** Navegação SPA.
+- **React 19:** Última versão da biblioteca para interfaces modernas.
+- **Vite:** Build tool extremamente rápido.
+- **Tailwind CSS v3:** Estilização utilitária e responsiva.
+- **Lucide React:** Ícones vetoriais leves e consistentes.
+- **Recharts:** Biblioteca de gráficos para dashboards financeiros.
+- **React Router v7:** Roteamento avançado para SPA.
 
 ### Backend
-- **Node.js + Express:** Servidor robusto e escalável.
-- **Arquitetura MVC:** Código organizado em Controllers e Routes.
-- **PostgreSQL:** Banco de dados relacional confiável.
-- **pg (node-postgres):** Driver de conexão otimizado.
+- **Node.js + Express:** API RESTful robusta.
+- **Prisma ORM:** Tipagem forte e migrações de banco de dados modernas.
+- **PostgreSQL:** Banco de dados relacional confiável (via Docker).
+- **Fast XML Parser:** Manipulação de notas fiscais (NFC-e/NF-e).
+- **Multer:** Upload de arquivos (Certificados, XMLs).
+- **Date-fns:** Manipulação precisa de datas e fuso horários.
 
-## ✨ Funcionalidades Principais
+## ✨ Funcionalidades Principais (Em Operação)
+
+### 💰 Financeiro Completo
+- **Contas a Pagar/Receber:** Controle detalhado com vencimentos.
+- **Fluxo de Caixa:** Visão projetada e realizada, incluindo saldo bancário real.
+- **Conciliação Bancária:** Ajuste de saldos e controle de contas.
+- **Configuração de Pagamento:** Taxas, prazos de liquidação (D+0, D+1, D+30).
+
+### 🛒 Ponto de Venda (PDV)
+- **Venda Ágil:** Atalhos de teclado (F2 Buscar Produto, F8 Buscar Cliente, F4/F9 Finalizar).
+- **Impressão de Cupom:** Layout térmico otimizado com correções de valores.
+- **Busca Inteligente:** Clientes e Produtos com filtros rápidos.
+- **Histórico no Caixa:** Exibe últimas 3 compras do cliente com detalhes (hover).
 
 ### 📦 Gestão de Estoque
-- **Movimentações:** Entrada e saída manual com histórico.
+- **Movimentações:** Entrada e saída manual com histórico e justificativas.
 - **Custo Médio:** Cálculo automático do custo médio ponderado.
+- **Produtos a Granel:** Estrutura pronta para conversão de pacotes.
+- **Cadastro Completo:** Controle de margem, preço de custo/venda.
 - **Alertas:** Notificação automática de margem de lucro baixa e estoque mínimo.
 
-### 💰 Gestão de Vendas
-- **PDV (Ponto de Venda):** Interface ágil para vendas rápidas.
-- **Histórico:** Listagem completa de vendas com filtros avançados.
-- **Detalhes:** Visualização detalhada de itens, pagamentos e descontos.
-- **Cancelamento:** Estorno automático de estoque ao cancelar venda.
+### 👥 Clientes e Fidelidade
+- **Cadastro Detalhado:** Dados pessoais, endereço e documentos.
+- **Carteira do Cliente:** Saldo de Cashback e Pontos de Fidelidade.
+- **Histórico de Compras:** Rastreabilidade total de vendas por cliente com detalhes de itens.
 
 ### 📊 Dashboard & Relatórios
 - **Resumo Diário:** Vendas do dia, ticket médio.
 - **Top Produtos:** Ranking dos produtos mais vendidos.
 - **Relatórios Financeiros:** Taxas por operador, posição de caixa e performance.
-- **Alertas:** Produtos com estoque baixo ou zerado.
+- **Evolução Financeira:** Gráficos de Entradas vs Saídas.
 
 ### 🤝 Gestão de Fornecedores
 - **Cadastro Completo:** Dados cadastrais, contato e condições comerciais.

@@ -434,8 +434,42 @@ export const getAllSales = async (req, res) => {
             payment_method: row.payment_method || 'N/A',
             status: row.status,
             created_at: row.created_at,
-            item_count: parseInt(row.item_count)
+            item_count: parseInt(row.item_count),
+            items: [] // Placeholder
         }));
+
+        if (req.query.includeItems === 'true' && sales.length > 0) {
+            const saleIds = sales.map(s => s.id);
+            const itemsResult = await pool.query(`
+                SELECT 
+                    si.sale_id,
+                    si.product_id,
+                    si.quantity,
+                    si.unit_price,
+                    si.total,
+                    p.name as product_name
+                FROM sale_items si
+                JOIN products p ON si.product_id = p.id
+                WHERE si.sale_id = ANY($1)
+            `, [saleIds]);
+
+            // Map items to sales
+            const itemsBySale = {};
+            itemsResult.rows.forEach(item => {
+                if (!itemsBySale[item.sale_id]) {
+                    itemsBySale[item.sale_id] = [];
+                }
+                itemsBySale[item.sale_id].push({
+                    name: item.product_name,
+                    quantity: item.quantity,
+                    total: parseFloat(item.total)
+                });
+            });
+
+            sales.forEach(sale => {
+                sale.items = itemsBySale[sale.id] || [];
+            });
+        }
 
         res.json(sales);
     } catch (error) {

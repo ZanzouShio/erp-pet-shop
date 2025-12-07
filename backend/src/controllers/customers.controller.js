@@ -20,11 +20,14 @@ class CustomersController {
                     { mobile: { contains: search } }
                 ];
 
-                // Se a busca for numérica e tiver tamanho de CPF ou CNPJ, tenta buscar formatado
-                if (searchDigits.length === 11) {
-                    where.OR.push({ cpf_cnpj: { contains: formatCPF(searchDigits) } });
-                } else if (searchDigits.length === 14) {
-                    where.OR.push({ cpf_cnpj: { contains: formatCNPJ(searchDigits) } });
+                // Busca inteligente de CPF/CNPJ parcial ou completo
+                if (searchDigits.length > 2) {
+                    if (searchDigits.length <= 11) {
+                        where.OR.push({ cpf_cnpj: { contains: formatCPF(searchDigits) } });
+                    }
+                    if (searchDigits.length >= 11) { // Sobreposição intencional para cobrir transição
+                        where.OR.push({ cpf_cnpj: { contains: formatCNPJ(searchDigits) } });
+                    }
                 }
             }
 
@@ -120,22 +123,29 @@ class CustomersController {
         try {
             const data = req.body;
 
-            // Validar CPF se informado
-            if (data.cpf_cnpj) {
-                if (!isValidCPF(data.cpf_cnpj)) {
-                    return res.status(400).json({ error: 'CPF inválido' });
-                }
+            // Validação de CPF (Obrigatório)
+            if (!data.cpf_cnpj) {
+                return res.status(400).json({ error: 'CPF é obrigatório.' });
+            }
 
-                const existing = await prisma.customers.findUnique({
-                    where: { cpf_cnpj: data.cpf_cnpj }
-                });
-                if (existing) {
-                    return res.status(400).json({ error: 'CPF/CNPJ já cadastrado' });
-                }
+            if (!isValidCPF(data.cpf_cnpj)) {
+                return res.status(400).json({ error: 'CPF inválido' });
+            }
+
+            const existing = await prisma.customers.findUnique({
+                where: { cpf_cnpj: data.cpf_cnpj }
+            });
+            if (existing) {
+                return res.status(400).json({ error: 'CPF/CNPJ já cadastrado' });
             }
 
             // Separar dados de pets se vierem no corpo
             const { pets, ...customerData } = data;
+
+            // Se nome não for informado, usa o CPF como nome ou "Cliente <CPF>"
+            if (!customerData.name) {
+                customerData.name = `Cliente ${customerData.cpf_cnpj}`;
+            }
 
             const customer = await prisma.customers.create({
                 data: {
@@ -160,7 +170,7 @@ class CustomersController {
             const { id } = req.params;
             const data = req.body;
 
-            // Validar CPF se alterado
+            // Validar CPF se alterado/informado
             if (data.cpf_cnpj) {
                 if (!isValidCPF(data.cpf_cnpj)) {
                     return res.status(400).json({ error: 'CPF inválido' });
@@ -175,6 +185,17 @@ class CustomersController {
                 if (existing) {
                     return res.status(400).json({ error: 'CPF/CNPJ já cadastrado em outro cliente' });
                 }
+            }
+
+            // Nota: No update, não vamos forçar o nome, pois assume-se que já existe.
+            // Se o usuário tentar limpar o nome, o frontend deve enviar string vazia?
+            // Se enviar string vazia, vamos manter "Cliente <CPF>"?
+            // Por simplicidade, se vier name vazio, preenchemos.
+
+            if (data.name === '') {
+                // Tenta pegar cpf existente ou new cpf
+                const currentCpf = data.cpf_cnpj || (await prisma.customers.findUnique({ where: { id }, select: { cpf_cnpj: true } }))?.cpf_cnpj;
+                data.name = `Cliente ${currentCpf || 'Sem Nome'}`;
             }
 
             // Remover campos que não devem ser atualizados diretamente ou que são relacionamentos

@@ -12,7 +12,10 @@ export const accountsPayableController = {
                 where.due_date = { ...where.due_date, gte: new Date(startDate) };
             }
             if (endDate) {
-                where.due_date = { ...where.due_date, lte: new Date(endDate) };
+                // Ajustar para final do dia para garantir inclusão de todos os registros
+                const end = new Date(endDate);
+                end.setUTCHours(23, 59, 59, 999);
+                where.due_date = { ...where.due_date, lte: end };
             }
             if (status && status !== 'ALL') {
                 where.status = status;

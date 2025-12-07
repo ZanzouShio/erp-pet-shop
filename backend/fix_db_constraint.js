@@ -1,31 +1,25 @@
+
 import { prisma } from './src/db.js';
 
-async function main() {
+async function fixConstraint() {
     try {
-        console.log('Dropping constraints...');
+        console.log('🔧 Dropping old constraint...');
+        await prisma.$executeRaw`
+      ALTER TABLE sale_payments DROP CONSTRAINT IF EXISTS sale_payments_payment_method_check;
+    `;
 
-        // Drop status check if exists
-        try {
-            await prisma.$executeRawUnsafe(`ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_status_check;`);
-            console.log('Dropped invoices_status_check');
-        } catch (e) {
-            console.log('Error dropping invoices_status_check (might not exist):', e.message);
-        }
+        console.log('✅ Adding new constraint with cashback...');
+        await prisma.$executeRaw`
+      ALTER TABLE sale_payments ADD CONSTRAINT sale_payments_payment_method_check 
+      CHECK (payment_method IN ('cash', 'debit_card', 'credit_card', 'pix', 'bank_slip', 'store_credit', 'cashback'));
+    `;
 
-        // Drop type check if exists
-        try {
-            await prisma.$executeRawUnsafe(`ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_type_check;`);
-            console.log('Dropped invoices_type_check');
-        } catch (e) {
-            console.log('Error dropping invoices_type_check (might not exist):', e.message);
-        }
-
-        console.log('Constraints dropped successfully.');
+        console.log('🎉 Constraint updated successfully!');
     } catch (error) {
-        console.error('Critical Error:', error);
+        console.error('❌ Error updating constraint:', error);
     } finally {
         await prisma.$disconnect();
     }
 }
 
-main();
+fixConstraint();

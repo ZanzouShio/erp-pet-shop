@@ -147,6 +147,11 @@ export default function CustomerForm() {
         e.preventDefault();
 
         // Validação de CPF
+        if (!formData.cpf_cnpj) {
+            alert('CPF é obrigatório.');
+            return;
+        }
+
         if (formData.cpf_cnpj && !isValidCPF(formData.cpf_cnpj)) {
             alert('CPF inválido. Por favor, verifique o número digitado.');
             return;
@@ -313,18 +318,19 @@ export default function CustomerForm() {
                             )}
 
                             <div className="col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Nome Completo *</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
                                 <input
-                                    required
                                     type="text"
                                     className="w-full p-2 border rounded-lg"
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                    placeholder="Opcional se CPF for informado"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">CPF/CNPJ</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">CPF/CNPJ *</label>
                                 <input
+                                    required
                                     type="text"
                                     className="w-full p-2 border rounded-lg"
                                     value={formData.cpf_cnpj}

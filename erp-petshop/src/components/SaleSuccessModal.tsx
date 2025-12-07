@@ -185,8 +185,8 @@ export default function SaleSuccessModal({
                             <div class="item-name">${item.name}</div>
                             <div class="item-details">
                                 <span>x${item.quantity} ${item.unit || 'un.'}</span>
-                                <span>${formatCurrency(item.sale_price)}/${item.unit || 'un.'}</span>
-                                <span>${formatCurrency(item.total)}</span>
+                                <span>${formatCurrency(item.sale_price || item.price || 0)}/${item.unit || 'un.'}</span>
+                                <span>${formatCurrency(item.total || item.subtotal || 0)}</span>
                             </div>
                         </div>
                         `).join('')}

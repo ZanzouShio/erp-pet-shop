@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
+import { User } from 'lucide-react';
 import type { Product, CartItem, PaymentMethod } from '../types/index';
 // import { mockProducts } from '../data/mockProducts'; // Não usar mais mock
 import ProductSearch from '../components/ProductSearch';
 import CustomerSearch from '../components/CustomerSearch';
+import QuickCustomerModal from '../components/QuickCustomerModal';
 import Cart from '../components/Cart';
 import PaymentModal from '../components/PaymentModal';
 import SaleSuccessModal from '../components/SaleSuccessModal';
+import CustomerLastSales from '../components/CustomerLastSales';
 
 import { API_URL } from '../services/api';
 
@@ -21,6 +24,7 @@ export default function POS({ onExit }: POSProps) {
   const [loading, setLoading] = useState(true);
 
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [showQuickCustomerModal, setShowQuickCustomerModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastSale, setLastSale] = useState<{
     saleNumber: string;
@@ -173,6 +177,7 @@ export default function POS({ onExit }: POSProps) {
       // Limpar carrinho e fechar modal
       setCart([]);
       setShowPayment(false);
+      setSelectedCustomer(null); // Resetar cliente após venda
 
       // Recarregar produtos (estoque foi atualizado)
       fetchProducts();
@@ -185,18 +190,27 @@ export default function POS({ onExit }: POSProps) {
   // Atalhos de teclado
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      // F2 - Foco na busca
+      // F2 - Foco na busca de produtos
       if (e.key === 'F2') {
         e.preventDefault();
         document.getElementById('product-search')?.focus();
       }
-      // F4 - Finalizar venda
-      if (e.key === 'F4' && cart.length > 0) {
+
+      // F8 - Foco na busca de clientes
+      if (e.key === 'F8') {
+        e.preventDefault();
+        document.getElementById('customer-search')?.focus();
+      }
+
+      // F4 or F9 - Finalizar venda
+      if ((e.key === 'F4' || e.key === 'F9') && cart.length > 0) {
         e.preventDefault();
         setShowPayment(true);
       }
+
       // ESC - Cancelar
       if (e.key === 'Escape') {
+        e.preventDefault();
         setShowPayment(false);
       }
     };
@@ -330,7 +344,19 @@ export default function POS({ onExit }: POSProps) {
         }}>
           {/* Coluna Esquerda: Grid de Produtos */}
           <div>
-            <div className="mb-6">
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <User size={20} className="text-blue-600" />
+                  Cliente
+                </h2>
+                <button
+                  onClick={() => setShowQuickCustomerModal(true)}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1"
+                >
+                  <span>+</span> Novo
+                </button>
+              </div>
               <CustomerSearch
                 onSelectCustomer={setSelectedCustomer}
                 selectedCustomer={selectedCustomer}
@@ -358,6 +384,11 @@ export default function POS({ onExit }: POSProps) {
               onApplyDiscount={applyDiscount}
               onCheckout={() => setShowPayment(true)}
             />
+            {selectedCustomer && (
+              <div className="mt-4">
+                <CustomerLastSales customerId={selectedCustomer.id} />
+              </div>
+            )}
           </div>
         </div>
       </main>
@@ -373,6 +404,16 @@ export default function POS({ onExit }: POSProps) {
       )}
 
       {/* Success Modal */}
+      {showQuickCustomerModal && (
+        <QuickCustomerModal
+          onClose={() => setShowQuickCustomerModal(false)}
+          onSuccess={(customer) => {
+            setSelectedCustomer(customer);
+            setShowQuickCustomerModal(false);
+          }}
+        />
+      )}
+
       {showSuccessModal && lastSale && (
         <SaleSuccessModal
           saleNumber={lastSale.saleNumber}
@@ -397,7 +438,7 @@ export default function POS({ onExit }: POSProps) {
         boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
       }}>
         <p style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Atalhos:</p>
-        <p>F2 - Buscar | F4 - Finalizar | ESC - Cancelar</p>
+        <p>F2 - Buscar Prod. | F8 - Buscar Cliente | F4/F9 - Finalizar | ESC - Cancelar</p>
       </div>
     </div>
   );
