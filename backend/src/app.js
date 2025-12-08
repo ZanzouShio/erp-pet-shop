@@ -26,6 +26,8 @@ import groomingServicesRoutes from './routes/groomingServices.routes.js';
 import groomingResourcesRoutes from './routes/groomingResources.routes.js';
 import serviceMatrixRoutes from './routes/serviceMatrix.routes.js';
 import commissionsRoutes from './routes/commissions.routes.js';
+import auditLogRoutes from './routes/auditLog.routes.js';
+import cashRegisterRoutes from './routes/cashRegister.routes.js';
 
 const app = express();
 
@@ -64,6 +66,8 @@ app.use('/api/groomers', groomersRoutes);
 app.use('/api/grooming-services', groomingServicesRoutes);
 app.use('/api/grooming-resources', groomingResourcesRoutes);
 app.use('/api/service-matrix', serviceMatrixRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/cash-registers', cashRegisterRoutes);
 import authRoutes from './routes/auth.routes.js';
 import { optionalAuthMiddleware, authMiddleware } from './middleware/auth.middleware.js';
 

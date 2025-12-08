@@ -279,6 +279,7 @@ model expense_categories {
   name             String             @db.VarChar(100)
   description      String?
   color            String?            @default("#6B7280") @db.VarChar(20)
+  is_fixed         Boolean?           @default(false)
   created_at       DateTime?          @default(now()) @db.Timestamptz(6)
   updated_at       DateTime?          @default(now()) @db.Timestamptz(6)
   accounts_payable accounts_payable[]
@@ -953,3 +954,4 @@ model appointment_resources {
   appointments appointments @relation(fields: [appointment_id], references: [id], onDelete: Cascade)
   resources    resources    @relation(fields: [resource_id], references: [id])
 }
+

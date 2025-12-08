@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, FileText, CreditCard, Share2, Store, Mail } from 'lucide-react';
+import { Building2, FileText, CreditCard, Share2, Store, Mail, FileSearch } from 'lucide-react';
 
 export default function BusinessSettingsDashboard() {
     const navigate = useNavigate();
@@ -41,6 +41,12 @@ export default function BusinessSettingsDashboard() {
             description: 'Informações, meios de pagamento, caixas e colaboradores de cada loja.',
             icon: <Store className="w-6 h-6 text-gray-600" />,
             path: '/admin/settings/stores'
+        },
+        {
+            title: 'Logs de Auditoria',
+            description: 'Histórico de ações críticas: cancelamentos, exclusões e alterações.',
+            icon: <FileSearch className="w-6 h-6 text-red-600" />,
+            path: '/admin/settings/audit-logs'
         }
     ];
 

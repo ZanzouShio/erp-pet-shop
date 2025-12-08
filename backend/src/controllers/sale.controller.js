@@ -50,17 +50,25 @@ export const createSale = async (req, res) => {
 
         // 2. Inserir Itens
         for (const item of items) {
+            // Buscar custo do produto
+            const productResult = await client.query(
+                'SELECT cost_price FROM products WHERE id = $1',
+                [item.product_id]
+            );
+            const productCost = productResult.rows[0]?.cost_price || 0;
+
             await client.query(`
                 INSERT INTO sale_items (
-                    sale_id, product_id, quantity, unit_price, discount, total
-                ) VALUES ($1, $2, $3, $4, $5, $6)
+                    sale_id, product_id, quantity, unit_price, discount, total, cost_price
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7)
             `, [
                 sale.id,
                 item.product_id,
                 item.quantity,
                 item.unit_price,
                 item.discount || 0,
-                (item.unit_price * item.quantity) - (item.discount || 0)
+                (item.unit_price * item.quantity) - (item.discount || 0),
+                productCost
             ]);
 
             // Atualizar Estoque
@@ -80,7 +88,7 @@ export const createSale = async (req, res) => {
             `, [
                 item.product_id,
                 item.quantity,
-                0, // TODO: Buscar preço de custo do produto
+                productCost,
                 sale.id
             ]);
         }

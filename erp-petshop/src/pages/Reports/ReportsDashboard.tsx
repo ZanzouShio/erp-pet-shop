@@ -1,4 +1,4 @@
-import { FileText, DollarSign, TrendingUp, AlertTriangle, Package } from 'lucide-react';
+import { FileText, DollarSign, TrendingUp, AlertTriangle, Package, Activity, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function ReportsDashboard() {
@@ -46,6 +46,27 @@ export default function ReportsDashboard() {
             description: 'Análise de taxas por operador e parcelas.',
             icon: <DollarSign size={32} className="text-red-600" />,
             color: 'bg-red-50 border-red-200 hover:border-red-400'
+        },
+        {
+            id: 'breakeven',
+            title: 'Ponto de Equilíbrio',
+            description: 'Quanto você precisa vender para cobrir os custos fixos.',
+            icon: <Activity size={32} className="text-teal-600" />,
+            color: 'bg-teal-50 border-teal-200 hover:border-teal-400'
+        },
+        {
+            id: 'average-ticket',
+            title: 'Ticket Médio',
+            description: 'Valor médio por venda, por dia da semana e categoria.',
+            icon: <DollarSign size={32} className="text-cyan-600" />,
+            color: 'bg-cyan-50 border-cyan-200 hover:border-cyan-400'
+        },
+        {
+            id: 'revenue-analysis',
+            title: 'Análise de Receita',
+            description: 'Receita total, crescimento e margem de lucro.',
+            icon: <BarChart3 size={32} className="text-emerald-600" />,
+            color: 'bg-emerald-50 border-emerald-200 hover:border-emerald-400'
         }
     ];
 

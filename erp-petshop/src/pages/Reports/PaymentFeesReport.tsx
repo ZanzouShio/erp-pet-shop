@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
     Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
 import {
     DollarSign, Filter, Download, CreditCard,
-    Percent
+    Percent, ArrowLeft
 } from 'lucide-react';
 
 interface PaymentFeeData {
@@ -35,6 +36,7 @@ interface ReportResponse {
 }
 
 const PaymentFeesReport: React.FC = () => {
+    const navigate = useNavigate();
     const [startDate, setStartDate] = useState(
         new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]
     );
@@ -79,6 +81,15 @@ const PaymentFeesReport: React.FC = () => {
 
     return (
         <div className="space-y-6 p-6">
+            {/* Back Button */}
+            <button
+                onClick={() => navigate('/admin/reports')}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+                <ArrowLeft size={20} />
+                <span>Voltar para Relatórios</span>
+            </button>
+
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-gray-800">Relatório de Taxas de Pagamento</h1>
             </div>

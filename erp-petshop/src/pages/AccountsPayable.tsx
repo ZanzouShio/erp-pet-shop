@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Filter, CheckCircle, AlertCircle, Clock, Search, X, CreditCard, Wallet, Banknote } from 'lucide-react';
+import { Plus, Filter, CheckCircle, AlertCircle, Clock, Search, X, CreditCard, Wallet, Banknote, XCircle } from 'lucide-react';
 
 import { API_URL } from '../services/api';
 
@@ -56,6 +56,11 @@ export default function AccountsPayable() {
         account_id: ''
     });
     const [processingPayment, setProcessingPayment] = useState(false);
+
+    // Modal de cancelamento
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+    const [cancelReason, setCancelReason] = useState('');
+    const [processingCancel, setProcessingCancel] = useState(false);
 
     // Atualizar datas quando o período mudar
     useEffect(() => {
@@ -203,6 +208,37 @@ export default function AccountsPayable() {
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    };
+
+    const handleCancel = async () => {
+        if (!selectedAccount) return;
+        setProcessingCancel(true);
+        try {
+            const response = await fetch(`${API_URL}/accounts-payable/${selectedAccount.id}/cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: cancelReason })
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Erro ao cancelar');
+            }
+            alert('Conta cancelada com sucesso!');
+            setIsCancelModalOpen(false);
+            setSelectedAccount(null);
+            setCancelReason('');
+            loadAccounts();
+        } catch (error: any) {
+            alert(error.message || 'Erro ao cancelar conta');
+        } finally {
+            setProcessingCancel(false);
+        }
+    };
+
+    const handleOpenCancel = (account: AccountPayable) => {
+        setSelectedAccount(account);
+        setCancelReason('');
+        setIsCancelModalOpen(true);
     };
 
     const formatDate = (dateString: string) => {
@@ -450,6 +486,66 @@ export default function AccountsPayable() {
                 </div>
             )}
 
+            {/* Modal de Cancelamento */}
+            {isCancelModalOpen && selectedAccount && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-red-600 flex items-center gap-2">
+                                <XCircle size={24} />
+                                Cancelar Conta
+                            </h2>
+                            <button onClick={() => setIsCancelModalOpen(false)} className="text-gray-500 hover:text-gray-700">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                            <p className="text-sm text-red-800">
+                                Você está prestes a cancelar a conta:
+                            </p>
+                            <p className="font-bold text-red-900 mt-1">
+                                {selectedAccount.description}
+                            </p>
+                            <p className="text-sm text-red-700 mt-1">
+                                Valor: {formatCurrency(Number(selectedAccount.amount))}
+                            </p>
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Motivo do cancelamento
+                            </label>
+                            <textarea
+                                className="w-full p-2 border rounded-lg"
+                                rows={3}
+                                placeholder="Ex: Conta duplicada, negociação cancelada..."
+                                value={cancelReason}
+                                onChange={e => setCancelReason(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setIsCancelModalOpen(false)}
+                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                                disabled={processingCancel}
+                            >
+                                Voltar
+                            </button>
+                            <button
+                                onClick={handleCancel}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
+                                disabled={processingCancel}
+                            >
+                                {processingCancel ? 'Cancelando...' : 'Confirmar Cancelamento'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Filtros Rápidos */}
             <div className="flex gap-2 overflow-x-auto pb-2">
                 {['ALL', 'pending', 'paid', 'overdue'].map(status => (
@@ -574,12 +670,20 @@ export default function AccountsPayable() {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             {account.status !== 'paid' && account.status !== 'cancelled' && (
-                                                <button
-                                                    onClick={() => handleOpenPayment(account)}
-                                                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                                                >
-                                                    Pagar
-                                                </button>
+                                                <div className="flex gap-2 justify-end">
+                                                    <button
+                                                        onClick={() => handleOpenPayment(account)}
+                                                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                    >
+                                                        Pagar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleOpenCancel(account)}
+                                                        className="text-red-600 hover:text-red-800 text-sm font-medium"
+                                                    >
+                                                        Cancelar
+                                                    </button>
+                                                </div>
                                             )}
                                         </td>
                                     </tr>

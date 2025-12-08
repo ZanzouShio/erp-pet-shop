@@ -16,13 +16,14 @@ export const expenseCategoryController = {
 
     // Criar nova categoria
     async create(req, res) {
-        const { name, description, color } = req.body;
+        const { name, description, color, is_fixed } = req.body;
         try {
             const category = await prisma.expense_categories.create({
                 data: {
                     name,
                     description,
-                    color
+                    color,
+                    is_fixed: is_fixed ?? false
                 }
             });
             res.status(201).json(category);
@@ -35,7 +36,7 @@ export const expenseCategoryController = {
     // Atualizar categoria
     async update(req, res) {
         const { id } = req.params;
-        const { name, description, color } = req.body;
+        const { name, description, color, is_fixed } = req.body;
         try {
             const category = await prisma.expense_categories.update({
                 where: { id },
@@ -43,6 +44,7 @@ export const expenseCategoryController = {
                     name,
                     description,
                     color,
+                    is_fixed: is_fixed ?? false,
                     updated_at: new Date()
                 }
             });

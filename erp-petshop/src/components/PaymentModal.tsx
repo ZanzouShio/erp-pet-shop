@@ -148,6 +148,16 @@ export default function PaymentModal({
 
     const maxGlobalInstallments = configs.reduce((max, c) => Math.max(max, c.max_installments || 1), 1);
 
+    const handleCashInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const rawValue = e.target.value.replace(/\D/g, '');
+        if (!rawValue) {
+            setCashReceived('');
+            return;
+        }
+        const amount = parseInt(rawValue, 10) / 100;
+        setCashReceived(amount.toFixed(2));
+    };
+
     return (
         <div style={{
             position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -313,12 +323,12 @@ export default function PaymentModal({
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Valor Recebido</label>
                                     <input
-                                        type="number"
-                                        step="0.01"
+                                        type="text"
+                                        inputMode="numeric"
                                         value={cashReceived}
-                                        onChange={(e) => setCashReceived(e.target.value)}
+                                        onChange={handleCashInputChange}
                                         className="w-full p-3 text-xl font-bold border rounded-lg"
-                                        placeholder="0,00"
+                                        placeholder="0.00"
                                         autoFocus
                                     />
                                     {cashReceived && (

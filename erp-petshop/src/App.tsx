@@ -19,16 +19,19 @@ import FinancialSituationReport from './pages/Reports/FinancialSituationReport';
 import StockAlertsReport from './pages/Reports/StockAlertsReport';
 import ProductPerformanceReport from './pages/Reports/ProductPerformanceReport';
 import PaymentFeesReport from './pages/Reports/PaymentFeesReport';
+import BreakevenReport from './pages/Reports/BreakevenReport';
+import AverageTicketReport from './pages/Reports/AverageTicketReport';
+import RevenueAnalysisReport from './pages/Reports/RevenueAnalysisReport';
 import CustomerList from './pages/Customers/CustomerList';
 import CustomerForm from './pages/Customers/CustomerForm';
+import SuppliersList from './pages/Suppliers/SuppliersList';
+import SupplierForm from './pages/Suppliers/SupplierForm';
 import PetSpeciesSettings from './pages/Settings/PetSpeciesSettings';
 import PaymentSettings from './pages/Settings/PaymentSettings';
 import BankAccountSettings from './pages/Settings/BankAccountSettings';
-import SuppliersList from './pages/Suppliers/SuppliersList';
-import SupplierForm from './pages/Suppliers/SupplierForm';
 import LoyaltySettings from './pages/Settings/LoyaltySettings';
-import CompanySettings from './pages/Settings/CompanySettings';
 import BusinessSettingsDashboard from './pages/Settings/BusinessSettingsDashboard';
+import CompanySettings from './pages/Settings/CompanySettings';
 import InvoiceSettings from './pages/Settings/InvoiceSettings';
 import NFCeSettings from './pages/Settings/NFCeSettings';
 import NFCeCertificate from './pages/Settings/NFCeCertificate';
@@ -38,12 +41,10 @@ import NFeSettings from './pages/Settings/NFeSettings';
 import NFeCertificate from './pages/Settings/NFeCertificate';
 import NFeEmissionData from './pages/Settings/NFeEmissionData';
 import NFeTaxes from './pages/Settings/NFeTaxes';
+import AuditLogs from './pages/Settings/AuditLogs';
 import FiscalInvoices from './pages/Financial/FiscalInvoices';
 import Commissions from './pages/Financial/Commissions';
 import GroomingManagement from './pages/GroomingManagement';
-
-
-// ... imports
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 
@@ -115,6 +116,9 @@ function AdminRoutes() {
         <Route path="reports/stock-alerts" element={<StockAlertsReport />} />
         <Route path="reports/product-performance" element={<ProductPerformanceReport />} />
         <Route path="reports/payment-fees" element={<PaymentFeesReport />} />
+        <Route path="reports/breakeven" element={<BreakevenReport />} />
+        <Route path="reports/average-ticket" element={<AverageTicketReport />} />
+        <Route path="reports/revenue-analysis" element={<RevenueAnalysisReport />} />
 
         {/* Clientes */}
         <Route path="customers" element={<CustomerList />} />
@@ -145,6 +149,7 @@ function AdminRoutes() {
         <Route path="settings/invoices/nfe/certificate" element={<NFeCertificate />} />
         <Route path="settings/invoices/nfe/data" element={<NFeEmissionData />} />
         <Route path="settings/invoices/nfe/taxes" element={<NFeTaxes />} />
+        <Route path="settings/audit-logs" element={<AuditLogs />} />
 
         {/* Grooming Management */}
         <Route path="grooming-settings" element={<GroomingManagement />} />

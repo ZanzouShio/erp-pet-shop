@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User } from 'lucide-react';
+import { User, AlertTriangle } from 'lucide-react';
 import type { Product, CartItem, PaymentMethod } from '../types/index';
 // import { mockProducts } from '../data/mockProducts'; // Não usar mais mock
 import ProductSearch from '../components/ProductSearch';
@@ -9,6 +9,15 @@ import Cart from '../components/Cart';
 import PaymentModal from '../components/PaymentModal';
 import SaleSuccessModal from '../components/SaleSuccessModal';
 import CustomerLastSales from '../components/CustomerLastSales';
+
+// Cash Operations
+import useCashRegister from '../hooks/useCashRegister';
+import CashOperationsMenu from '../components/CashOperationsMenu';
+import CashOpenModal from '../components/CashOpenModal';
+import CashCloseModal from '../components/CashCloseModal';
+import SangriaModal from '../components/SangriaModal';
+import SuprimentoModal from '../components/SuprimentoModal';
+import CashReportModal from '../components/CashReportModal';
 
 import { API_URL } from '../services/api';
 
@@ -35,6 +44,18 @@ export default function POS({ onExit }: POSProps) {
     installments?: number;
   } | null>(null);
 
+  // Cash Register State
+  const TERMINAL_ID = 'terminal-01'; // ID do terminal (pode vir de config futuramente)
+  const { state: cashState, checkStatus, openCash, closeCash, sangria, suprimento, getReport } = useCashRegister();
+  const [showCashOpenModal, setShowCashOpenModal] = useState(false);
+  const [showCashCloseModal, setShowCashCloseModal] = useState(false);
+  const [showSangriaModal, setShowSangriaModal] = useState(false);
+  const [showSuprimentoModal, setShowSuprimentoModal] = useState(false);
+  const [cashLoading, setCashLoading] = useState(false);
+  const [cashReport, setCashReport] = useState<any>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [closingSummary, setClosingSummary] = useState<any>(null);
+
 
   // Buscar produtos da API
   const fetchProducts = async () => {
@@ -60,6 +81,78 @@ export default function POS({ onExit }: POSProps) {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // Verificar status do caixa ao carregar
+  useEffect(() => {
+    checkStatus(TERMINAL_ID);
+  }, [checkStatus]);
+
+  // Handlers para operações de caixa
+  const handleOpenCash = async (openingBalance: number, notes?: string) => {
+    setCashLoading(true);
+    const success = await openCash(TERMINAL_ID, openingBalance, notes);
+    setCashLoading(false);
+    if (success) {
+      setShowCashOpenModal(false);
+    }
+  };
+
+  const handleCloseCash = async (closingBalance: number, notes?: string) => {
+    setCashLoading(true);
+    const result = await closeCash(closingBalance, notes);
+    setCashLoading(false);
+    if (result.success) {
+      setShowCashCloseModal(false);
+      alert(`Caixa fechado com sucesso!\nDiferença: R$ ${result.summary?.difference?.toFixed(2) || '0.00'}`);
+    }
+  };
+
+  const handleSangria = async (amount: number, reason: string) => {
+    setCashLoading(true);
+    const success = await sangria(amount, reason);
+    setCashLoading(false);
+    if (success) {
+      setShowSangriaModal(false);
+      alert('Sangria realizada com sucesso!');
+    }
+  };
+
+  const handleSuprimento = async (amount: number, reason?: string) => {
+    setCashLoading(true);
+    const success = await suprimento(amount, reason);
+    setCashLoading(false);
+    if (success) {
+      setShowSuprimentoModal(false);
+      alert('Suprimento realizado com sucesso!');
+    }
+  };
+
+  const handlePreCloseCash = async () => {
+    try {
+      setCashLoading(true);
+      const report = await getReport();
+      setClosingSummary(report);
+      setShowCashCloseModal(true);
+    } catch (error) {
+      console.error('Error fetching report for close:', error);
+      alert('Erro ao preparar fechamento de caixa');
+    } finally {
+      setCashLoading(false);
+    }
+  };
+
+  const handleViewReport = async () => {
+    try {
+      setCashLoading(true);
+      const report = await getReport();
+      setCashReport(report);
+      setShowReportModal(true);
+    } catch (error) {
+      alert('Erro ao obter relatório');
+    } finally {
+      setCashLoading(false);
+    }
+  };
 
   // Calcular totais do carrinho
   const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
@@ -280,6 +373,18 @@ export default function POS({ onExit }: POSProps) {
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {/* Cash Operations Menu */}
+            <CashOperationsMenu
+              terminalId={TERMINAL_ID}
+              onOpenCash={() => setShowCashOpenModal(true)}
+              onCloseCash={handlePreCloseCash}
+              onSangria={() => setShowSangriaModal(true)}
+              onSuprimento={() => setShowSuprimentoModal(true)}
+              onViewReport={handleViewReport}
+              isOpen={cashState.isOpen}
+              currentBalance={parseFloat(cashState.register?.currentBalance || '0')}
+              operatorName={cashState.register?.operatorName}
+            />
             {onExit && (
               <button
                 onClick={onExit}
@@ -443,6 +548,97 @@ export default function POS({ onExit }: POSProps) {
         <p style={{ fontWeight: '600', marginBottom: '0.25rem' }}>Atalhos:</p>
         <p>F2 - Buscar Prod. | F8 - Buscar Cliente | F4/F9 - Finalizar | ESC - Cancelar</p>
       </div>
+
+      {/* Cash Open Modal */}
+      <CashOpenModal
+        isOpen={showCashOpenModal}
+        onClose={() => setShowCashOpenModal(false)}
+        onConfirm={handleOpenCash}
+        isLoading={cashLoading}
+      />
+
+      {/* Cash Close Modal */}
+      <CashCloseModal
+        isOpen={showCashCloseModal}
+        onClose={() => setShowCashCloseModal(false)}
+        onConfirm={handleCloseCash}
+        expectedBalance={parseFloat(cashState.register?.currentBalance || '0')}
+        openingBalance={parseFloat(cashState.register?.openingBalance?.toString() || '0')}
+        totalSales={closingSummary?.salesByMethod?.cash || 0}
+        totalSangrias={closingSummary?.summary?.totalSangrias || 0}
+        totalSuprimentos={closingSummary?.summary?.totalSuprimentos || 0}
+        isLoading={cashLoading}
+      />
+
+      {/* Sangria Modal */}
+      <SangriaModal
+        isOpen={showSangriaModal}
+        onClose={() => setShowSangriaModal(false)}
+        onConfirm={handleSangria}
+        currentBalance={parseFloat(cashState.register?.currentBalance || '0')}
+        isLoading={cashLoading}
+      />
+
+      {/* Suprimento Modal */}
+      <SuprimentoModal
+        isOpen={showSuprimentoModal}
+        onClose={() => setShowSuprimentoModal(false)}
+        onConfirm={handleSuprimento}
+        currentBalance={parseFloat(cashState.register?.currentBalance || '0')}
+        isLoading={cashLoading}
+      />
+
+      {/* Cash Report Modal */}
+      <CashReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        report={cashReport}
+      />
+
+      {/* Cash Closed Alert Overlay */}
+      {!cashState.isOpen && !cashState.loading && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 40
+        }}>
+          <div style={{
+            backgroundColor: '#1e293b',
+            padding: '2rem',
+            borderRadius: '1rem',
+            textAlign: 'center',
+            maxWidth: '400px',
+            border: '1px solid #334155'
+          }}>
+            <AlertTriangle style={{ width: '4rem', height: '4rem', color: '#f59e0b', marginBottom: '1rem', margin: '0 auto 1rem auto' }} />
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white', marginBottom: '0.5rem' }}>
+              Caixa Fechado
+            </h2>
+            <p style={{ color: '#94a3b8', marginBottom: '1.5rem' }}>
+              É necessário abrir o caixa antes de realizar vendas.
+            </p>
+            <button
+              onClick={() => setShowCashOpenModal(true)}
+              style={{
+                padding: '0.75rem 2rem',
+                background: 'linear-gradient(to right, #16a34a, #22c55e)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '1rem'
+              }}
+            >
+              Abrir Caixa
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -563,6 +563,414 @@ class ReportsController {
             res.status(500).json({ error: 'Erro ao gerar relatório de taxas' });
         }
     }
+
+    // 7. Relatório de Breakeven (Ponto de Equilíbrio)
+    async getBreakeven(req, res) {
+        try {
+            const { startDate, endDate } = req.query;
+
+            // Date Filters
+            const dateFilter = {};
+            if (startDate && endDate) {
+                dateFilter.date = {
+                    gte: new Date(startDate + 'T00:00:00'),
+                    lte: new Date(endDate + 'T23:59:59')
+                };
+            }
+
+            // 1. Calculate Revenue (Total Sales)
+            // Only completed sales
+            const sales = await prisma.sales.findMany({
+                where: {
+                    status: 'completed',
+                    created_at: startDate && endDate ? {
+                        gte: new Date(startDate),
+                        lte: new Date(endDate)
+                    } : undefined
+                },
+                include: {
+                    sale_items: {
+                        include: {
+                            products: {
+                                select: {
+                                    cost_price: true
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const revenue = sales.reduce((acc, sale) => acc + Number(sale.total), 0);
+
+            // 2. Calculate Variable Costs
+            // Sales Items Cost (CMV) - use item cost_price, fallback to product cost_price
+            let variableCosts = 0;
+            sales.forEach(sale => {
+                sale.sale_items.forEach(item => {
+                    const qty = Number(item.quantity);
+                    // Use cost from sale_item, or fallback to product's current cost
+                    const cost = Number(item.cost_price) || Number(item.products?.cost_price) || 0;
+                    variableCosts += (cost * qty);
+                });
+            });
+
+            // 3. Calculate Margin %
+            // Margin = (Revenue - Variable Costs) / Revenue
+            let marginPercentage = 0;
+            if (revenue > 0) {
+                const margin = revenue - variableCosts;
+                marginPercentage = (margin / revenue); // Decimal (e.g., 0.40)
+            }
+
+            // 4. Calculate OPEX (Fixed Costs)
+            // First, get all fixed expense categories
+            const fixedCategories = await prisma.expense_categories.findMany({
+                where: {
+                    is_fixed: true
+                },
+                select: {
+                    id: true
+                }
+            });
+
+            const fixedCategoryIds = fixedCategories.map(c => c.id);
+
+            const expenseDateFilter = startDate && endDate ? {
+                due_date: {
+                    gte: new Date(startDate),
+                    lte: new Date(endDate)
+                }
+            } : {};
+
+            const fixedExpenses = await prisma.accounts_payable.findMany({
+                where: {
+                    ...expenseDateFilter,
+                    status: { not: 'cancelled' },
+                    category_id: {
+                        in: fixedCategoryIds
+                    }
+                }
+            });
+
+            const opex = fixedExpenses.reduce((acc, exp) => acc + Number(exp.amount), 0);
+
+            // 5. Calculate Breakeven Point
+            // Breakeven = OPEX / Margin %
+            let breakevenPoint = 0;
+            if (marginPercentage > 0) {
+                breakevenPoint = opex / marginPercentage;
+            }
+
+            res.json({
+                revenue,
+                variableCosts,
+                margin: revenue - variableCosts,
+                marginPercentage,
+                opex,
+                breakevenPoint,
+                salesCount: sales.length,
+                fixedExpensesCount: fixedExpenses.length
+            });
+
+        } catch (error) {
+            console.error('Error calculating breakeven:', error);
+            console.error('Error details:', error.message);
+            console.error('Error stack:', error.stack);
+            res.status(500).json({ error: 'Internal server error', details: error.message });
+        }
+    }
+
+    // GET /api/reports/average-ticket
+    async getAverageTicket(req, res) {
+        try {
+            const { startDate, endDate } = req.query;
+
+            // Default: current month
+            const start = startDate
+                ? new Date(startDate + 'T00:00:00')
+                : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+            const end = endDate
+                ? new Date(endDate + 'T23:59:59')
+                : new Date();
+
+            // Also calculate for previous period (same duration, prior)
+            const duration = end.getTime() - start.getTime();
+            const prevStart = new Date(start.getTime() - duration);
+            const prevEnd = new Date(end.getTime() - duration);
+
+            // 1. Current Period Sales
+            const currentSales = await prisma.sales.findMany({
+                where: {
+                    status: 'completed',
+                    created_at: {
+                        gte: start,
+                        lte: end
+                    }
+                },
+                include: {
+                    sale_items: {
+                        include: {
+                            products: {
+                                select: {
+                                    category_id: true,
+                                    product_categories: {
+                                        select: { name: true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. Previous Period Sales
+            const prevSales = await prisma.sales.findMany({
+                where: {
+                    status: 'completed',
+                    created_at: {
+                        gte: prevStart,
+                        lte: prevEnd
+                    }
+                }
+            });
+
+            // General Metrics - Current
+            const currentRevenue = currentSales.reduce((acc, s) => acc + Number(s.total), 0);
+            const currentCount = currentSales.length;
+            const currentTicket = currentCount > 0 ? currentRevenue / currentCount : 0;
+
+            // General Metrics - Previous
+            const prevRevenue = prevSales.reduce((acc, s) => acc + Number(s.total), 0);
+            const prevCount = prevSales.length;
+            const prevTicket = prevCount > 0 ? prevRevenue / prevCount : 0;
+
+            // Variation
+            const ticketVariation = prevTicket > 0
+                ? ((currentTicket - prevTicket) / prevTicket) * 100
+                : (currentTicket > 0 ? 100 : 0);
+
+            // 3. By Day of Week
+            const dayNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+            const byDayOfWeek = Array(7).fill(null).map((_, i) => ({
+                day: dayNames[i],
+                dayIndex: i,
+                count: 0,
+                revenue: 0,
+                ticket: 0
+            }));
+
+            currentSales.forEach(sale => {
+                const dayIndex = new Date(sale.created_at).getDay();
+                byDayOfWeek[dayIndex].count += 1;
+                byDayOfWeek[dayIndex].revenue += Number(sale.total);
+            });
+
+            byDayOfWeek.forEach(day => {
+                day.ticket = day.count > 0 ? day.revenue / day.count : 0;
+            });
+
+            // 4. By Category
+            const categoryMap = new Map();
+
+            currentSales.forEach(sale => {
+                sale.sale_items.forEach(item => {
+                    const categoryName = item.products?.product_categories?.name || 'Sem Categoria';
+                    const itemTotal = Number(item.total) || 0;
+
+                    if (!categoryMap.has(categoryName)) {
+                        categoryMap.set(categoryName, {
+                            name: categoryName,
+                            revenue: 0,
+                            count: 0,
+                            itemCount: 0
+                        });
+                    }
+
+                    const cat = categoryMap.get(categoryName);
+                    cat.revenue += itemTotal;
+                    cat.itemCount += 1;
+                });
+            });
+
+            // Calculate ticket per category (revenue / items)
+            const byCategory = Array.from(categoryMap.values())
+                .map(cat => ({
+                    ...cat,
+                    ticketPerItem: cat.itemCount > 0 ? cat.revenue / cat.itemCount : 0
+                }))
+                .sort((a, b) => b.revenue - a.revenue)
+                .slice(0, 10);
+
+            res.json({
+                period: {
+                    start: start.toISOString(),
+                    end: end.toISOString()
+                },
+                general: {
+                    revenue: currentRevenue,
+                    salesCount: currentCount,
+                    averageTicket: currentTicket,
+                    previousTicket: prevTicket,
+                    variation: ticketVariation
+                },
+                byDayOfWeek,
+                byCategory
+            });
+
+        } catch (error) {
+            console.error('Error calculating average ticket:', error);
+            res.status(500).json({ error: 'Internal server error', details: error.message });
+        }
+    }
+
+    // GET /api/reports/revenue-analysis
+    async getRevenueAnalysis(req, res) {
+        try {
+            const { startDate, endDate } = req.query;
+
+            // Default: current month
+            const start = startDate
+                ? new Date(startDate + 'T00:00:00')
+                : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+            const end = endDate
+                ? new Date(endDate + 'T23:59:59')
+                : new Date();
+
+            // Previous period calculation
+            const duration = end.getTime() - start.getTime();
+            const prevStart = new Date(start.getTime() - duration);
+            const prevEnd = new Date(end.getTime() - duration);
+
+            // 1. Current Period Revenue (Sales)
+            const currentSales = await prisma.sales.findMany({
+                where: {
+                    status: 'completed',
+                    created_at: {
+                        gte: start,
+                        lte: end
+                    }
+                },
+                include: {
+                    sale_items: {
+                        include: {
+                            products: {
+                                select: { cost_price: true }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. Previous Period Revenue
+            const prevSales = await prisma.sales.findMany({
+                where: {
+                    status: 'completed',
+                    created_at: {
+                        gte: prevStart,
+                        lte: prevEnd
+                    }
+                }
+            });
+
+            // 3. Current Period Expenses (for net profit)
+            const currentExpenses = await prisma.accounts_payable.findMany({
+                where: {
+                    status: 'paid',
+                    payment_date: {
+                        gte: start,
+                        lte: end
+                    }
+                }
+            });
+
+            // Calculate metrics
+            const currentRevenue = currentSales.reduce((acc, s) => acc + Number(s.total), 0);
+            const prevRevenue = prevSales.reduce((acc, s) => acc + Number(s.total), 0);
+
+            // Cost of goods sold (CMV)
+            let totalCMV = 0;
+            currentSales.forEach(sale => {
+                sale.sale_items.forEach(item => {
+                    const cost = Number(item.cost_price) || Number(item.products?.cost_price) || 0;
+                    totalCMV += cost * Number(item.quantity);
+                });
+            });
+
+            // Total expenses
+            const totalExpenses = currentExpenses.reduce((acc, e) => acc + Number(e.amount), 0);
+
+            // Gross Profit (Receita - CMV)
+            const grossProfit = currentRevenue - totalCMV;
+
+            // Net Profit (Lucro Bruto - Despesas)
+            const netProfit = grossProfit - totalExpenses;
+
+            // Growth Rate
+            const growthRate = prevRevenue > 0
+                ? ((currentRevenue - prevRevenue) / prevRevenue) * 100
+                : (currentRevenue > 0 ? 100 : 0);
+
+            // Net Profit Margin
+            const netProfitMargin = currentRevenue > 0
+                ? (netProfit / currentRevenue) * 100
+                : 0;
+
+            // Gross Profit Margin
+            const grossProfitMargin = currentRevenue > 0
+                ? (grossProfit / currentRevenue) * 100
+                : 0;
+
+            // Monthly breakdown for chart (last 6 months)
+            const monthlyData = [];
+            for (let i = 5; i >= 0; i--) {
+                const monthStart = new Date(end.getFullYear(), end.getMonth() - i, 1);
+                const monthEnd = new Date(end.getFullYear(), end.getMonth() - i + 1, 0);
+
+                const monthSales = await prisma.sales.aggregate({
+                    where: {
+                        status: 'completed',
+                        created_at: {
+                            gte: monthStart,
+                            lte: monthEnd
+                        }
+                    },
+                    _sum: { total: true },
+                    _count: true
+                });
+
+                monthlyData.push({
+                    month: monthStart.toLocaleString('pt-BR', { month: 'short', year: '2-digit' }),
+                    revenue: Number(monthSales._sum.total) || 0,
+                    count: monthSales._count
+                });
+            }
+
+            res.json({
+                period: {
+                    start: start.toISOString(),
+                    end: end.toISOString()
+                },
+                metrics: {
+                    totalRevenue: currentRevenue,
+                    previousRevenue: prevRevenue,
+                    growthRate,
+                    grossProfit,
+                    grossProfitMargin,
+                    netProfit,
+                    netProfitMargin,
+                    totalCMV,
+                    totalExpenses,
+                    salesCount: currentSales.length
+                },
+                monthlyData
+            });
+
+        } catch (error) {
+            console.error('Error calculating revenue analysis:', error);
+            res.status(500).json({ error: 'Internal server error', details: error.message });
+        }
+    }
 }
 
 export default new ReportsController();

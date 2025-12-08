@@ -14,6 +14,7 @@ router.delete('/categories/:id', expenseCategoryController.delete);
 router.get('/', accountsPayableController.list);
 router.post('/', accountsPayableController.create);
 router.post('/:id/pay', accountsPayableController.pay); // Registrar pagamento
+router.post('/:id/cancel', accountsPayableController.cancel); // Cancelar conta
 router.delete('/:id', accountsPayableController.delete);
 
 export default router;

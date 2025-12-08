@@ -188,5 +188,65 @@ export const accountsPayableController = {
             }
             res.status(500).json({ error: 'Erro ao excluir conta' });
         }
+    },
+
+    // Cancelar conta (soft delete com auditoria)
+    async cancel(req, res) {
+        const { id } = req.params;
+        const { reason } = req.body;
+
+        try {
+            await prisma.$transaction(async (tx) => {
+                // 1. Buscar conta atual
+                const bill = await tx.accounts_payable.findUnique({
+                    where: { id }
+                });
+
+                if (!bill) {
+                    throw new Error('Conta não encontrada');
+                }
+
+                if (bill.status === 'cancelled') {
+                    throw new Error('Conta já está cancelada');
+                }
+
+                if (bill.status === 'paid') {
+                    throw new Error('Não é possível cancelar uma conta já paga');
+                }
+
+                // 2. Atualizar status para cancelado
+                await tx.accounts_payable.update({
+                    where: { id },
+                    data: {
+                        status: 'cancelled',
+                        updated_at: new Date()
+                    }
+                });
+
+                // 3. Registrar log de auditoria
+                await tx.audit_logs.create({
+                    data: {
+                        action: 'CANCEL',
+                        entity_type: 'accounts_payable',
+                        entity_id: id,
+                        description: `Conta cancelada: ${bill.description} - R$ ${Number(bill.amount).toFixed(2)}`,
+                        reason: reason || 'Sem motivo informado',
+                        metadata: {
+                            old_status: bill.status,
+                            amount: bill.amount,
+                            due_date: bill.due_date,
+                            supplier_id: bill.supplier_id,
+                            category_id: bill.category_id
+                        }
+                    }
+                });
+            });
+
+            res.json({ message: 'Conta cancelada com sucesso' });
+
+        } catch (error) {
+            console.error('Erro ao cancelar conta:', error);
+            res.status(500).json({ error: error.message || 'Erro ao cancelar conta' });
+        }
     }
 };

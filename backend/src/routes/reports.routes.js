@@ -10,4 +10,9 @@ router.get('/stock-alerts', ReportsController.getStockAlerts);
 router.get('/product-performance', ReportsController.getProductPerformance);
 router.get('/payment-fees', ReportsController.getPaymentFeesReport);
 
+// New Route
+router.get('/breakeven', ReportsController.getBreakeven);
+router.get('/average-ticket', ReportsController.getAverageTicket);
+router.get('/revenue-analysis', ReportsController.getRevenueAnalysis);
+
 export default router;

@@ -21,7 +21,9 @@ import {
     Link as LinkIcon,
     Truck,
     Building2,
-    Scissors
+    Scissors,
+    FileSearch,
+    Monitor
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -118,6 +120,15 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
                     subItems: [
                         { id: 'pet-species', label: 'Cadastro de Espécies', icon: ChevronRight, enabled: true, path: '/admin/settings/pet-species' },
                         { id: 'loyalty-settings', label: 'Fidelidade e Cashback', icon: ChevronRight, enabled: true, path: '/admin/settings/loyalty' },
+                    ]
+                },
+                {
+                    id: 'settings-system',
+                    label: 'Sistema',
+                    icon: Monitor,
+                    enabled: true,
+                    subItems: [
+                        { id: 'audit-logs', label: 'Auditoria de Logs', icon: FileSearch, enabled: true, path: '/admin/settings/audit-logs' },
                     ]
                 }
             ]
