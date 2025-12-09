@@ -4,7 +4,6 @@ import {
     Package,
     Users,
     DollarSign,
-    BarChart3,
     UserCog,
     Settings,
     LogOut,
@@ -43,88 +42,127 @@ interface MenuItem {
     subItems?: MenuItem[];
 }
 
+// Role-based menu access configuration
+const roleMenuAccess: Record<string, string[]> = {
+    admin: ['*'], // Full access
+    gerente: ['dashboard', 'pos', 'sales', 'scheduler', 'stock', 'financial', 'reports', 'customers', 'suppliers', 'settings'],
+    caixa: ['dashboard', 'pos', 'sales', 'customers'],
+    financeiro: ['dashboard', 'financial', 'reports', 'customers', 'suppliers'],
+    estoque: ['dashboard', 'stock', 'reports', 'suppliers'],
+};
+
 export default function Sidebar({ onNavigate }: SidebarProps) {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [expandedMenus, setExpandedMenus] = useState<string[]>(['financial', 'stock', 'settings']);
     const navigate = useNavigate();
     const location = useLocation();
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
+
+    // Get allowed menus for current user role
+    const userRole = user?.role?.toLowerCase() || 'caixa';
+    const allowedMenus = roleMenuAccess[userRole] || roleMenuAccess.caixa;
+    const hasFullAccess = allowedMenus.includes('*');
 
     const toggleMenu = (menuId: string) => {
         setExpandedMenus(prev =>
             prev.includes(menuId)
+                ? prev.filter(id => id !== menuId)
+                : [...prev, menuId]
+        );
+    };
+
+    const handleNavigation = (path: string) => {
+        if (path === '/pos') {
+            window.location.href = path;
+        } else {
+            navigate(path);
+        }
+        // Note: onNavigate is not called since paths are already absolute
+    };
+
+    const menuItems: MenuItem[] = [
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, enabled: true, path: '/admin/dashboard' },
+        { id: 'pos', label: 'PDV', icon: ShoppingCart, enabled: true, path: '/pos' },
         { id: 'sales', label: 'Vendas', icon: Receipt, enabled: true, path: '/admin/sales' },
-            { id: 'scheduler', label: 'Agendamento', icon: Scissors, enabled: true, path: '/admin/scheduler' },
-            {
-                id: 'stock',
-                label: 'Estoque',
-                icon: Package,
-                enabled: true,
-                subItems: [
-                    { id: 'inventory', label: 'Gestão de Estoque', icon: Boxes, enabled: true, path: '/admin/inventory' },
-                    { id: 'stock-movements', label: 'Movimentações', icon: TrendingUp, enabled: true, path: '/admin/stock-movements' },
-                ]
-            },
-            {
-                id: 'financial',
-                label: 'Financeiro',
-                icon: DollarSign,
-                enabled: true,
-                subItems: [
-                    { id: 'financial-cash-registers', label: 'Caixa', icon: Monitor, enabled: true, path: '/admin/financial/cash-registers' },
-                    { id: 'financial-payable', label: 'Contas a Pagar', icon: TrendingDown, enabled: true, path: '/admin/financial/payable' },
-                    { id: 'financial-receivable', label: 'Contas a Receber', icon: TrendingUp, enabled: true, path: '/admin/financial/receivable' },
-                    { id: 'financial-cashflow', label: 'Fluxo de Caixa', icon: LineChart, enabled: true, path: '/admin/financial/cash-flow' },
-                    { id: 'fiscal-invoices', label: 'Notas Fiscais', icon: FileText, enabled: true, path: '/admin/financial/invoices' },
-                    { id: 'financial-commissions', label: 'Comissões', icon: UserCog, enabled: true, path: '/admin/financial/commissions' },
-                    { id: 'financial-reconciliation', label: 'Conciliação Bancária', icon: LinkIcon, enabled: true, path: '/admin/financial/reconciliation' },
-                    { id: 'financial-import', label: 'Importação NF-e', icon: Upload, enabled: true, path: '/admin/financial/import' },
-                ]
-            },
-            { id: 'reports', label: 'Relatórios', icon: FileText, enabled: true, path: '/admin/reports' },
-            { id: 'customers', label: 'Clientes', icon: Users, enabled: true, path: '/admin/customers' },
-            { id: 'suppliers', label: 'Fornecedores', icon: Truck, enabled: true, path: '/admin/suppliers' },
-            {
-                id: 'settings',
-                label: 'Configurações',
-                icon: Settings,
-                enabled: true,
-                subItems: [
-                    { id: 'business-settings', label: 'Meu Negócio', icon: Building2, enabled: true, path: '/admin/settings/business' },
-                    {
-                        id: 'settings-financial',
-                        label: 'Financeiro',
-                        icon: DollarSign,
-                        enabled: true,
-                        subItems: [
-                            { id: 'expense-categories', label: 'Categorias de Despesas', icon: ChevronRight, enabled: true, path: '/admin/settings/expense-categories' },
-                            { id: 'payment-methods', label: 'Métodos de Pagamento', icon: ChevronRight, enabled: true, path: '/admin/settings/payments' },
-                            { id: 'bank-accounts', label: 'Contas Bancárias', icon: ChevronRight, enabled: true, path: '/admin/settings/bank-accounts' },
-                        ]
-                    },
-                    {
-                        id: 'settings-pets',
-                        label: 'Clientes',
-                        icon: Users,
-                        enabled: true,
-                        subItems: [
-                            { id: 'pet-species', label: 'Cadastro de Espécies', icon: ChevronRight, enabled: true, path: '/admin/settings/pet-species' },
-                            { id: 'loyalty-settings', label: 'Fidelidade e Cashback', icon: ChevronRight, enabled: true, path: '/admin/settings/loyalty' },
-                        ]
-                    },
-                    {
-                        id: 'settings-system',
-                        label: 'Sistema',
-                        icon: Monitor,
-                        enabled: true,
-                        subItems: [
-                            { id: 'users-management', label: 'Usuários', icon: Users, enabled: true, path: '/admin/settings/users' },
-                            { id: 'audit-logs', label: 'Auditoria de Logs', icon: FileSearch, enabled: true, path: '/admin/settings/audit-logs' },
-                        ]
-                    }
-                ]
-            },
+        { id: 'scheduler', label: 'Agendamento', icon: Scissors, enabled: true, path: '/admin/scheduler' },
+        {
+            id: 'stock',
+            label: 'Estoque',
+            icon: Package,
+            enabled: true,
+            subItems: [
+                { id: 'inventory', label: 'Gestão de Estoque', icon: Boxes, enabled: true, path: '/admin/inventory' },
+                { id: 'stock-movements', label: 'Movimentações', icon: TrendingUp, enabled: true, path: '/admin/stock-movements' },
+            ]
+        },
+        {
+            id: 'financial',
+            label: 'Financeiro',
+            icon: DollarSign,
+            enabled: true,
+            subItems: [
+                { id: 'financial-cash-registers', label: 'Caixa', icon: Monitor, enabled: true, path: '/admin/financial/cash-registers' },
+                { id: 'financial-payable', label: 'Contas a Pagar', icon: TrendingDown, enabled: true, path: '/admin/financial/payable' },
+                { id: 'financial-receivable', label: 'Contas a Receber', icon: TrendingUp, enabled: true, path: '/admin/financial/receivable' },
+                { id: 'financial-cashflow', label: 'Fluxo de Caixa', icon: LineChart, enabled: true, path: '/admin/financial/cash-flow' },
+                { id: 'fiscal-invoices', label: 'Notas Fiscais', icon: FileText, enabled: true, path: '/admin/financial/invoices' },
+                { id: 'financial-commissions', label: 'Comissões', icon: UserCog, enabled: true, path: '/admin/financial/commissions' },
+                { id: 'financial-reconciliation', label: 'Conciliação Bancária', icon: LinkIcon, enabled: true, path: '/admin/financial/reconciliation' },
+                { id: 'financial-import', label: 'Importação NF-e', icon: Upload, enabled: true, path: '/admin/financial/import' },
+            ]
+        },
+        { id: 'reports', label: 'Relatórios', icon: FileText, enabled: true, path: '/admin/reports' },
+        { id: 'customers', label: 'Clientes', icon: Users, enabled: true, path: '/admin/customers' },
+        { id: 'suppliers', label: 'Fornecedores', icon: Truck, enabled: true, path: '/admin/suppliers' },
+        {
+            id: 'settings',
+            label: 'Configurações',
+            icon: Settings,
+            enabled: true,
+            subItems: [
+                { id: 'business-settings', label: 'Meu Negócio', icon: Building2, enabled: true, path: '/admin/settings/business' },
+                {
+                    id: 'settings-financial',
+                    label: 'Financeiro',
+                    icon: DollarSign,
+                    enabled: true,
+                    subItems: [
+                        { id: 'expense-categories', label: 'Categorias de Despesas', icon: ChevronRight, enabled: true, path: '/admin/settings/expense-categories' },
+                        { id: 'payment-methods', label: 'Métodos de Pagamento', icon: ChevronRight, enabled: true, path: '/admin/settings/payments' },
+                        { id: 'bank-accounts', label: 'Contas Bancárias', icon: ChevronRight, enabled: true, path: '/admin/settings/bank-accounts' },
+                    ]
+                },
+                {
+                    id: 'settings-pets',
+                    label: 'Clientes',
+                    icon: Users,
+                    enabled: true,
+                    subItems: [
+                        { id: 'pet-species', label: 'Cadastro de Espécies', icon: ChevronRight, enabled: true, path: '/admin/settings/pet-species' },
+                        { id: 'loyalty-settings', label: 'Fidelidade e Cashback', icon: ChevronRight, enabled: true, path: '/admin/settings/loyalty' },
+                    ]
+                },
+                {
+                    id: 'settings-system',
+                    label: 'Sistema',
+                    icon: Monitor,
+                    enabled: true,
+                    subItems: [
+                        { id: 'users-management', label: 'Usuários', icon: Users, enabled: true, path: '/admin/settings/users' },
+                        { id: 'audit-logs', label: 'Auditoria de Logs', icon: FileSearch, enabled: true, path: '/admin/settings/audit-logs' },
+                    ]
+                }
+            ]
+        },
     ];
+
+    // Filter menu items based on user role
+    const getFilteredMenuItems = (): MenuItem[] => {
+        if (hasFullAccess) return menuItems;
+        return menuItems.filter(item => allowedMenus.includes(item.id));
+    };
+
+    const filteredMenuItems = getFilteredMenuItems();
 
     const isActive = (item: MenuItem): boolean => {
         if (item.path === '/pos') return false;
@@ -234,7 +272,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             {/* Menu Items - Scrollable Area */}
             <nav className="flex-1 p-3 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent hover:scrollbar-thumb-gray-300">
                 <div className="space-y-0.5">
-                    {menuItems.map(item => renderMenuItem(item))}
+                    {filteredMenuItems.map(item => renderMenuItem(item))}
                 </div>
             </nav>
 

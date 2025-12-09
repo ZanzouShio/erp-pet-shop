@@ -56,6 +56,29 @@ export default function POS({ onExit }: POSProps) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [closingSummary, setClosingSummary] = useState<any>(null);
 
+  // Cash operation success modal
+  const [cashSuccessModal, setCashSuccessModal] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    details?: { label: string; value: string }[];
+    type: 'success' | 'info';
+    showPrint?: boolean;
+    printData?: {
+      operatorName: string;
+      terminalName: string;
+      openedAt: string;
+      closedAt: string;
+      openingBalance: number;
+      closingBalance: number;
+      expectedBalance: number;
+      difference: number;
+      totalSales: number;
+      totalSangrias: number;
+      totalSuprimentos: number;
+    };
+  }>({ show: false, title: '', message: '', type: 'success' });
+
 
   // Buscar produtos da API
   const fetchProducts = async () => {
@@ -103,7 +126,31 @@ export default function POS({ onExit }: POSProps) {
     setCashLoading(false);
     if (result.success) {
       setShowCashCloseModal(false);
-      alert(`Caixa fechado com sucesso!\nDiferença: R$ ${result.summary?.difference?.toFixed(2) || '0.00'}`);
+      setCashSuccessModal({
+        show: true,
+        title: '✓ Caixa Fechado com Sucesso!',
+        message: 'O fechamento do caixa foi realizado corretamente.',
+        details: [
+          { label: 'Diferença', value: `R$ ${result.summary?.difference?.toFixed(2) || '0.00'}` },
+          { label: 'Saldo Esperado', value: `R$ ${result.summary?.expectedBalance?.toFixed(2) || '0.00'}` },
+          { label: 'Saldo Contado', value: `R$ ${result.summary?.closingBalance?.toFixed(2) || '0.00'}` },
+        ],
+        type: 'success',
+        showPrint: true,
+        printData: {
+          operatorName: closingSummary?.register?.operatorName || cashState.register?.operatorName || 'Operador',
+          terminalName: closingSummary?.register?.terminalName || cashState.register?.terminalName || 'Terminal',
+          openedAt: closingSummary?.register?.openedAt || cashState.register?.openedAt || new Date().toISOString(),
+          closedAt: new Date().toISOString(),
+          openingBalance: closingSummary?.summary?.opening || parseFloat(String(cashState.register?.openingBalance || '0')),
+          closingBalance: result.summary?.closingBalance || closingBalance,
+          expectedBalance: result.summary?.expectedBalance || closingSummary?.summary?.expected || 0,
+          difference: result.summary?.difference || 0,
+          totalSales: closingSummary?.summary?.sales?.cash || 0,
+          totalSangrias: closingSummary?.summary?.sangrias || 0,
+          totalSuprimentos: closingSummary?.summary?.suprimentos || 0,
+        }
+      });
     }
   };
 
@@ -113,7 +160,12 @@ export default function POS({ onExit }: POSProps) {
     setCashLoading(false);
     if (success) {
       setShowSangriaModal(false);
-      alert('Sangria realizada com sucesso!');
+      setCashSuccessModal({
+        show: true,
+        title: '✓ Sangria Realizada',
+        message: `Retirada de R$ ${amount.toFixed(2)} registrada com sucesso.`,
+        type: 'success'
+      });
     }
   };
 
@@ -123,7 +175,12 @@ export default function POS({ onExit }: POSProps) {
     setCashLoading(false);
     if (success) {
       setShowSuprimentoModal(false);
-      alert('Suprimento realizado com sucesso!');
+      setCashSuccessModal({
+        show: true,
+        title: '✓ Suprimento Realizado',
+        message: `Entrada de R$ ${amount.toFixed(2)} registrada com sucesso.`,
+        type: 'success'
+      });
     }
   };
 
@@ -643,6 +700,218 @@ export default function POS({ onExit }: POSProps) {
             >
               Abrir Caixa
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Cash Operation Success Modal */}
+      {cashSuccessModal.show && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 50
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '2rem',
+            borderRadius: '1rem',
+            textAlign: 'center',
+            maxWidth: '420px',
+            width: '90%',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            animation: 'fadeIn 0.2s ease-out'
+          }}>
+            {/* Success Icon */}
+            <div style={{
+              width: '4rem',
+              height: '4rem',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1rem auto'
+            }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+
+            {/* Title */}
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              color: '#1f2937',
+              marginBottom: '0.5rem'
+            }}>
+              {cashSuccessModal.title}
+            </h2>
+
+            {/* Message */}
+            <p style={{
+              color: '#6b7280',
+              marginBottom: '1.5rem',
+              fontSize: '0.95rem'
+            }}>
+              {cashSuccessModal.message}
+            </p>
+
+            {/* Details */}
+            {cashSuccessModal.details && cashSuccessModal.details.length > 0 && (
+              <div style={{
+                backgroundColor: '#f9fafb',
+                borderRadius: '0.75rem',
+                padding: '1rem',
+                marginBottom: '1.5rem'
+              }}>
+                {cashSuccessModal.details.map((detail, idx) => (
+                  <div key={idx} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    padding: '0.5rem 0',
+                    borderBottom: idx < cashSuccessModal.details!.length - 1 ? '1px solid #e5e7eb' : 'none'
+                  }}>
+                    <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>{detail.label}</span>
+                    <span style={{
+                      fontWeight: '600',
+                      color: detail.label === 'Diferença' && detail.value !== 'R$ 0.00' ? '#ef4444' : '#1f2937',
+                      fontSize: '0.875rem'
+                    }}>{detail.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Buttons */}
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+              {/* Print Button - only for cash close */}
+              {cashSuccessModal.showPrint && cashSuccessModal.printData && (
+                <button
+                  onClick={() => {
+                    const data = cashSuccessModal.printData!;
+                    const formatCurrency = (v: number) => `R$ ${v.toFixed(2)}`;
+                    const formatDate = (d: string) => new Date(d).toLocaleString('pt-BR');
+
+                    const receiptHTML = `
+                      <!DOCTYPE html>
+                      <html>
+                      <head>
+                        <meta charset="utf-8">
+                        <title>Fechamento de Caixa</title>
+                        <style>
+                          @page { size: 80mm auto; margin: 0; }
+                          body { 
+                            font-family: 'Courier New', monospace; 
+                            width: 80mm; 
+                            padding: 5mm;
+                            margin: 0 auto;
+                            font-size: 12px;
+                          }
+                          .header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
+                          .title { font-weight: bold; font-size: 14px; }
+                          .row { display: flex; justify-content: space-between; margin: 4px 0; }
+                          .separator { border-top: 1px dashed #000; margin: 8px 0; }
+                          .total { font-weight: bold; font-size: 13px; }
+                          .center { text-align: center; }
+                          .difference { color: ${data.difference !== 0 ? '#c00' : '#000'}; }
+                        </style>
+                      </head>
+                      <body>
+                        <div class="header">
+                          <div class="title">FECHAMENTO DE CAIXA</div>
+                          <div>${data.terminalName}</div>
+                        </div>
+                        <div class="row"><span>Operador:</span><span>${data.operatorName}</span></div>
+                        <div class="row"><span>Abertura:</span><span>${formatDate(data.openedAt)}</span></div>
+                        <div class="row"><span>Fechamento:</span><span>${formatDate(data.closedAt)}</span></div>
+                        <div class="separator"></div>
+                        <div class="row"><span>Saldo Inicial:</span><span>${formatCurrency(data.openingBalance)}</span></div>
+                        <div class="row"><span>Vendas Dinheiro:</span><span>${formatCurrency(data.totalSales)}</span></div>
+                        <div class="row"><span>Suprimentos:</span><span>+ ${formatCurrency(data.totalSuprimentos)}</span></div>
+                        <div class="row"><span>Sangrias:</span><span>- ${formatCurrency(data.totalSangrias)}</span></div>
+                        <div class="separator"></div>
+                        <div class="row total"><span>Saldo Esperado:</span><span>${formatCurrency(data.expectedBalance)}</span></div>
+                        <div class="row total"><span>Saldo Contado:</span><span>${formatCurrency(data.closingBalance)}</span></div>
+                        <div class="row total difference"><span>DIFERENÇA:</span><span>${formatCurrency(data.difference)}</span></div>
+                        <div class="separator"></div>
+                        <div class="center" style="margin-top: 10px; font-size: 10px;">
+                          ${new Date().toLocaleString('pt-BR')}
+                        </div>
+                      </body>
+                      </html>
+                    `;
+
+                    const printWindow = window.open('', '_blank', 'width=350,height=600');
+                    if (printWindow) {
+                      printWindow.document.write(receiptHTML);
+                      printWindow.document.close();
+                      setTimeout(() => {
+                        printWindow.print();
+                      }, 250);
+                    }
+                  }}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'white',
+                    color: '#374151',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '0.5rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.1s'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.borderColor = '#6366f1';
+                    e.currentTarget.style.color = '#6366f1';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.borderColor = '#e5e7eb';
+                    e.currentTarget.style.color = '#374151';
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect x="6" y="14" width="12" height="8"></rect>
+                  </svg>
+                  Imprimir
+                </button>
+              )}
+
+              {/* OK Button */}
+              <button
+                onClick={() => setCashSuccessModal({ ...cashSuccessModal, show: false })}
+                style={{
+                  padding: '0.75rem 2.5rem',
+                  background: 'linear-gradient(to right, #6366f1, #8b5cf6)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  transition: 'transform 0.1s, box-shadow 0.1s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                  e.currentTarget.style.boxShadow = '0 10px 25px rgba(99, 102, 241, 0.3)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                Entendido
+              </button>
+            </div>
           </div>
         </div>
       )}
