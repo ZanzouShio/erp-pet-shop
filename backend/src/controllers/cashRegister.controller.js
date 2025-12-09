@@ -66,7 +66,7 @@ const cashRegisterController = {
 
             movements.forEach(mov => {
                 const amount = parseFloat(mov.amount) || 0;
-                if (['opening', 'suprimento', 'sale_cash'].includes(mov.type)) {
+                if (['suprimento', 'sale_cash'].includes(mov.type)) {
                     currentBalance += amount;
                 } else if (['sangria', 'closing'].includes(mov.type)) {
                     currentBalance -= amount;

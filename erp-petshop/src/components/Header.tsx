@@ -1,4 +1,5 @@
 import { Bell, User } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
     currentPage: string;
@@ -16,6 +17,8 @@ const pageNames: Record<string, string> = {
 };
 
 export default function Header({ currentPage }: HeaderProps) {
+    const { user } = useAuth();
+
     return (
         <header className="bg-white shadow-sm px-8 py-4 border-b border-gray-200">
             <div className="flex justify-between items-center">
@@ -40,8 +43,8 @@ export default function Header({ currentPage }: HeaderProps) {
                     {/* User Avatar */}
                     <div className="flex items-center gap-3">
                         <div className="text-right">
-                            <p className="font-medium text-gray-900">Admin</p>
-                            <p className="text-xs text-gray-500">Operador</p>
+                            <p className="font-medium text-gray-900">{user?.name || 'Usuário'}</p>
+                            <p className="text-xs text-gray-500 capitalize">{user?.role || 'Operador'}</p>
                         </div>
                         <div className="bg-indigo-600 p-2 rounded-full text-white">
                             <User size={20} />

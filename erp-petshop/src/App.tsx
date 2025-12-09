@@ -44,6 +44,10 @@ import NFeTaxes from './pages/Settings/NFeTaxes';
 import AuditLogs from './pages/Settings/AuditLogs';
 import FiscalInvoices from './pages/Financial/FiscalInvoices';
 import Commissions from './pages/Financial/Commissions';
+import CashRegisterList from './pages/Financial/CashRegisterList';
+import UserList from './pages/Settings/UserList';
+import UserForm from './pages/Settings/UserForm';
+import RoleList from './pages/Settings/RoleList';
 import GroomingManagement from './pages/GroomingManagement';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
@@ -106,6 +110,7 @@ function AdminRoutes() {
         <Route path="financial/invoices" element={<FiscalInvoices />} />
         <Route path="financial/reconciliation" element={<BankReconciliation />} />
         <Route path="financial/commissions" element={<Commissions />} />
+        <Route path="financial/cash-registers" element={<CashRegisterList />} />
         <Route path="financial/import" element={<Finance />} />
 
         {/* Relatórios */}
@@ -150,6 +155,10 @@ function AdminRoutes() {
         <Route path="settings/invoices/nfe/data" element={<NFeEmissionData />} />
         <Route path="settings/invoices/nfe/taxes" element={<NFeTaxes />} />
         <Route path="settings/audit-logs" element={<AuditLogs />} />
+        <Route path="settings/users" element={<UserList />} />
+        <Route path="settings/users/new" element={<UserForm />} />
+        <Route path="settings/users/:id" element={<UserForm />} />
+        <Route path="settings/roles" element={<RoleList />} />
 
         {/* Grooming Management */}
         <Route path="grooming-settings" element={<GroomingManagement />} />

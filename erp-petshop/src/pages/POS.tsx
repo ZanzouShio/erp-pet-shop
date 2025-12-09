@@ -239,6 +239,7 @@ export default function POS({ onExit }: POSProps) {
         payment_method: paymentMethod,
         discount_amount: totalDiscount,
         customer_id: selectedCustomer?.id,
+        cash_register_id: cashState.register?.id || null,
         notes: null,
         ...details // Incluir paymentConfigId, installments, feePercent, useWalletBalance
       };
@@ -382,7 +383,7 @@ export default function POS({ onExit }: POSProps) {
               onSuprimento={() => setShowSuprimentoModal(true)}
               onViewReport={handleViewReport}
               isOpen={cashState.isOpen}
-              currentBalance={parseFloat(cashState.register?.currentBalance || '0')}
+              currentBalance={Number(cashState.register?.currentBalance) || 0}
               operatorName={cashState.register?.operatorName}
             />
             {onExit && (
@@ -562,11 +563,17 @@ export default function POS({ onExit }: POSProps) {
         isOpen={showCashCloseModal}
         onClose={() => setShowCashCloseModal(false)}
         onConfirm={handleCloseCash}
-        expectedBalance={parseFloat(cashState.register?.currentBalance || '0')}
-        openingBalance={parseFloat(cashState.register?.openingBalance?.toString() || '0')}
-        totalSales={closingSummary?.salesByMethod?.cash || 0}
-        totalSangrias={closingSummary?.summary?.totalSangrias || 0}
-        totalSuprimentos={closingSummary?.summary?.totalSuprimentos || 0}
+        expectedBalance={closingSummary?.summary?.expected || parseFloat(String(cashState.register?.currentBalance ?? 0))}
+        openingBalance={closingSummary?.summary?.opening || parseFloat(cashState.register?.openingBalance?.toString() || '0')}
+        totalSales={closingSummary?.summary?.sales?.cash || 0}
+        totalDebit={closingSummary?.summary?.sales?.debit_card || 0}
+        totalCredit={closingSummary?.summary?.sales?.credit_card || 0}
+        totalPix={closingSummary?.summary?.sales?.pix || 0}
+        totalSangrias={closingSummary?.summary?.sangrias || 0}
+        totalSuprimentos={closingSummary?.summary?.suprimentos || 0}
+        operatorName={closingSummary?.register?.operatorName || cashState.register?.operatorName || 'Operador'}
+        terminalName={closingSummary?.register?.terminalName || TERMINAL_ID}
+        openedAt={closingSummary?.register?.openedAt || cashState.register?.openedAt}
         isLoading={cashLoading}
       />
 
@@ -575,7 +582,7 @@ export default function POS({ onExit }: POSProps) {
         isOpen={showSangriaModal}
         onClose={() => setShowSangriaModal(false)}
         onConfirm={handleSangria}
-        currentBalance={parseFloat(cashState.register?.currentBalance || '0')}
+        currentBalance={parseFloat(String(cashState.register?.currentBalance ?? 0))}
         isLoading={cashLoading}
       />
 
@@ -584,7 +591,7 @@ export default function POS({ onExit }: POSProps) {
         isOpen={showSuprimentoModal}
         onClose={() => setShowSuprimentoModal(false)}
         onConfirm={handleSuprimento}
-        currentBalance={parseFloat(cashState.register?.currentBalance || '0')}
+        currentBalance={parseFloat(String(cashState.register?.currentBalance ?? 0))}
         isLoading={cashLoading}
       />
 

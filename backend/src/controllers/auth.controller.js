@@ -5,6 +5,20 @@ import { verifyPassword } from '../utils/auth.utils.js';
 
 const SECRET_KEY = process.env.JWT_SECRET || 'erp-pet-shop-secret-key-change-me';
 
+// Helper to log login attempts
+const logLoginAttempt = async (client, userId, req, success, reason = null) => {
+    try {
+        const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null;
+        const userAgent = req.headers['user-agent'] || null;
+        await client.query(
+            `INSERT INTO user_login_history (user_id, ip_address, user_agent, success, reason) VALUES ($1, $2, $3, $4, $5)`,
+            [userId, ip, userAgent, success, reason]
+        );
+    } catch (err) {
+        console.error('Error logging login attempt:', err);
+    }
+};
+
 export const login = async (req, res) => {
     const client = await pool.connect();
     try {
@@ -25,10 +39,12 @@ export const login = async (req, res) => {
 
         // Verificar senha
         if (!user.password_hash || !verifyPassword(password, user.password_hash)) {
+            await logLoginAttempt(client, user.id, req, false, 'Senha incorreta');
             return res.status(401).json({ error: 'Credenciais inválidas' });
         }
 
         if (!user.is_active) {
+            await logLoginAttempt(client, user.id, req, false, 'Usuário inativo');
             return res.status(403).json({ error: 'Usuário inativo' });
         }
 
@@ -42,6 +58,10 @@ export const login = async (req, res) => {
             SECRET_KEY,
             { expiresIn: '8h' }
         );
+
+        // Registrar login bem-sucedido e atualizar last_login_at
+        await logLoginAttempt(client, user.id, req, true);
+        await client.query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
 
         // Remover hash da resposta
         delete user.password_hash;

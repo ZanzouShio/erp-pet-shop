@@ -5,7 +5,7 @@ export const createSale = async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        const { items, payment_method, discount_amount, installments = 1, customer_id, due_date, paymentConfigId, feePercent } = req.body;
+        const { items, payment_method, discount_amount, installments = 1, customer_id, due_date, paymentConfigId, feePercent, cash_register_id } = req.body;
 
         if (!items || items.length === 0) {
             await client.query('ROLLBACK');
@@ -41,10 +41,10 @@ export const createSale = async (req, res) => {
         const saleResult = await client.query(`
             INSERT INTO sales (
                 sale_number, subtotal, discount, total,
-                status, user_id, synced, customer_id
-            ) VALUES ($1, $2, $3, $4, 'completed', $5, false, $6)
+                status, user_id, synced, customer_id, cash_register_id
+            ) VALUES ($1, $2, $3, $4, 'completed', $5, false, $6, $7)
             RETURNING *
-        `, [sale_number, subtotal, total_discount, total_amount, user_id, customer_id || null]);
+        `, [sale_number, subtotal, total_discount, total_amount, user_id, customer_id || null, cash_register_id || null]);
 
         const sale = saleResult.rows[0];
 

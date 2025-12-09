@@ -69,11 +69,15 @@ app.use('/api/service-matrix', serviceMatrixRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/cash-registers', cashRegisterRoutes);
 import authRoutes from './routes/auth.routes.js';
+import usersRoutes from './routes/users.routes.js';
+import rolesRoutes from './routes/roles.routes.js';
 import { optionalAuthMiddleware, authMiddleware } from './middleware/auth.middleware.js';
 
 // ... (existing codes)
 
 app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/roles', rolesRoutes);
 
 // Aplicar middleware opcional nas vendas para maximizar compatibilidade enquanto migramos
 // Ou forçar authMiddleware se quizermos rigidez. O usuário pediu "pegar o ID do usuário logado".
