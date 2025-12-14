@@ -178,10 +178,11 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
         const active = isActive(item);
         const expanded = expandedMenus.includes(item.id);
         const hasSubItems = item.subItems && item.subItems.length > 0;
+        const isSubItem = depth > 0;
         const paddingLeft = depth * 12 + 16; // 16px base + 12px per level
 
         return (
-            <div key={item.id}>
+            <div key={item.id} className="relative group">
                 <button
                     onClick={() => {
                         if (!item.enabled) return;
@@ -199,21 +200,37 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
                     disabled={!item.enabled}
                     style={{ paddingLeft: isCollapsed ? undefined : `${paddingLeft}px` }}
                     className={`
-                        w-full flex items-center gap-3 py-2.5 rounded-lg transition-all mb-0.5
+                        w-full flex items-center gap-3 py-2 rounded-lg transition-all mb-0.5 relative
                         ${active && !hasSubItems
-                            ? 'bg-indigo-50 text-indigo-600 font-medium'
+                            ? 'bg-indigo-50 text-indigo-700 font-medium'
                             : item.enabled
-                                ? 'text-gray-700 hover:bg-gray-100'
+                                ? isSubItem
+                                    ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                    : 'text-gray-700 hover:bg-gray-100' // Top level default
                                 : 'text-gray-400 cursor-not-allowed opacity-60'
                         }
                         ${isCollapsed ? 'justify-center px-2' : 'pr-4'}
                     `}
                     title={isCollapsed ? item.label : ''}
                 >
-                    {Icon && <Icon size={20} className={active && !hasSubItems ? 'text-indigo-600' : 'text-gray-500'} />}
+                    {active && !hasSubItems && !isCollapsed && (
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-600 rounded-l-full" />
+                    )}
+
+                    {Icon && (
+                        <div className={`flex items-center justify-center transition-colors ${isSubItem ? 'scale-90 opacity-75' : ''}`}>
+                            <Icon
+                                size={isSubItem ? 18 : 20}
+                                className={active && !hasSubItems ? 'text-indigo-600' : isSubItem ? 'text-gray-400 group-hover:text-gray-600' : 'text-gray-500 group-hover:text-gray-700'}
+                            />
+                        </div>
+                    )}
+
                     {!isCollapsed && (
                         <>
-                            <span className="flex-1 text-left text-sm">{item.label}</span>
+                            <span className={`flex-1 text-left ${isSubItem ? 'text-[13px] font-normal' : 'text-sm font-medium'}`}>
+                                {item.label}
+                            </span>
                             {hasSubItems && (
                                 expanded ? <ChevronDown size={14} className="text-gray-400" /> : <ChevronRight size={14} className="text-gray-400" />
                             )}
@@ -229,7 +246,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
                     <div className="relative">
                         {/* Linha guia visual para submenus */}
                         <div
-                            className="absolute left-0 top-0 bottom-0 border-l border-gray-100"
+                            className="absolute left-0 top-0 bottom-0 border-l border-gray-200"
                             style={{ left: `${paddingLeft + 9}px` }}
                         />
                         {item.subItems!.map(subItem => renderMenuItem(subItem, depth + 1))}
