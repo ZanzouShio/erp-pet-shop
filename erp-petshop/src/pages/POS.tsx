@@ -37,6 +37,8 @@ export default function POS({ onExit }: POSProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showPayment, setShowPayment] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [cartDiscount, setCartDiscount] = useState(0); // Desconto geral do carrinho
+  const [discountReason, setDiscountReason] = useState(''); // Motivo do desconto
 
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [showQuickCustomerModal, setShowQuickCustomerModal] = useState(false);
@@ -255,7 +257,8 @@ export default function POS({ onExit }: POSProps) {
 
   // Calcular totais do carrinho
   const subtotal = cart.reduce((sum, item) => sum + item.subtotal, 0);
-  const totalDiscount = cart.reduce((sum, item) => sum + item.discount, 0);
+  const itemDiscount = cart.reduce((sum, item) => sum + item.discount, 0);
+  const totalDiscount = itemDiscount + cartDiscount; // Soma desconto por item + desconto geral
   const total = subtotal - totalDiscount;
 
   // Adicionar produto ao carrinho
@@ -337,6 +340,7 @@ export default function POS({ onExit }: POSProps) {
         })),
         payment_method: paymentMethod,
         discount_amount: totalDiscount,
+        discount_reason: discountReason || null,
         customer_id: selectedCustomer?.id,
         cash_register_id: cashState.register?.id || null,
         notes: null,
@@ -371,6 +375,8 @@ export default function POS({ onExit }: POSProps) {
 
       // Limpar carrinho e fechar modal
       setCart([]);
+      setCartDiscount(0); // Resetar desconto
+      setDiscountReason(''); // Resetar motivo
       setShowPayment(false);
       setSelectedCustomer(null); // Resetar cliente após venda
 
@@ -609,6 +615,11 @@ export default function POS({ onExit }: POSProps) {
               onUpdateQuantity={updateQuantity}
               onApplyDiscount={applyDiscount}
               onCheckout={() => setShowPayment(true)}
+              cartDiscount={cartDiscount}
+              onCartDiscountChange={(value, reason) => {
+                setCartDiscount(value);
+                setDiscountReason(reason);
+              }}
             />
             {selectedCustomer && (
               <div className="mt-4">

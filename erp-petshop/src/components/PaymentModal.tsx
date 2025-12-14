@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { PaymentMethod } from '../types/index';
 import { API_URL } from '../services/api';
 
@@ -157,6 +157,22 @@ export default function PaymentModal({
         const amount = parseInt(rawValue, 10) / 100;
         setCashReceived(amount.toFixed(2));
     };
+
+    // Handle Enter key to confirm payment
+    const handleKeyDown = useCallback((e: KeyboardEvent) => {
+        if (e.key === 'Enter' && step === 'confirm') {
+            // For cash, check if change is valid
+            if (selectedMethod === 'cash' && change < 0) {
+                return; // Don't confirm if insufficient
+            }
+            handleComplete();
+        }
+    }, [step, selectedMethod, change]);
+
+    useEffect(() => {
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleKeyDown]);
 
     return (
         <div style={{

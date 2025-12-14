@@ -5,7 +5,7 @@ export const createSale = async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        const { items, payment_method, discount_amount, installments = 1, customer_id, due_date, paymentConfigId, feePercent, cash_register_id } = req.body;
+        const { items, payment_method, discount_amount, discount_reason, installments = 1, customer_id, due_date, paymentConfigId, feePercent, cash_register_id } = req.body;
 
         if (!items || items.length === 0) {
             await client.query('ROLLBACK');
@@ -40,11 +40,11 @@ export const createSale = async (req, res) => {
         // 1. Criar Venda
         const saleResult = await client.query(`
             INSERT INTO sales (
-                sale_number, subtotal, discount, total,
+                sale_number, subtotal, discount, discount_reason, total,
                 status, user_id, synced, customer_id, cash_register_id
-            ) VALUES ($1, $2, $3, $4, 'completed', $5, false, $6, $7)
+            ) VALUES ($1, $2, $3, $4, $5, 'completed', $6, false, $7, $8)
             RETURNING *
-        `, [sale_number, subtotal, total_discount, total_amount, user_id, customer_id || null, cash_register_id || null]);
+        `, [sale_number, subtotal, total_discount, discount_reason || null, total_amount, user_id, customer_id || null, cash_register_id || null]);
 
         const sale = saleResult.rows[0];
 
@@ -187,14 +187,19 @@ export const createSale = async (req, res) => {
                 const netAmount = amountToPay - totalFee;
 
                 const dueDate = new Date();
-                dueDate.setDate(dueDate.getDate() + daysToLiquidate);
+
+                // Dinheiro/Cash é imediato (D+0), não adiciona dias
+                const isCash = payment_method === 'money' || payment_method === 'cash';
+                if (!isCash && daysToLiquidate > 0) {
+                    dueDate.setDate(dueDate.getDate() + daysToLiquidate);
+                }
 
                 let status = 'pending';
                 let paidDate = null;
 
                 // Se dias para liquidar for 0, ou se for dinheiro/cash, já nasce pago
                 // Pix e Débito seguem a configuração (se for 1 dia, nasce pendente)
-                if (daysToLiquidate === 0 || payment_method === 'money' || payment_method === 'cash') {
+                if (daysToLiquidate === 0 || isCash) {
                     status = 'paid';
                     paidDate = new Date();
                 }

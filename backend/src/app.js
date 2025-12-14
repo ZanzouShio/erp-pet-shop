@@ -28,6 +28,7 @@ import serviceMatrixRoutes from './routes/serviceMatrix.routes.js';
 import commissionsRoutes from './routes/commissions.routes.js';
 import auditLogRoutes from './routes/auditLog.routes.js';
 import cashRegisterRoutes from './routes/cashRegister.routes.js';
+import discountReportRoutes from './routes/discountReport.routes.js';
 
 const app = express();
 
@@ -68,6 +69,7 @@ app.use('/api/grooming-resources', groomingResourcesRoutes);
 app.use('/api/service-matrix', serviceMatrixRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/cash-registers', cashRegisterRoutes);
+app.use('/api/reports', discountReportRoutes);
 import authRoutes from './routes/auth.routes.js';
 import usersRoutes from './routes/users.routes.js';
 import rolesRoutes from './routes/roles.routes.js';

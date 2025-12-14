@@ -44,18 +44,22 @@ class AccountsReceivableController {
                         });
 
                         // Criar transação financeira
-                        const config = await tx.payment_methods_config.findUnique({
-                            where: { id: title.payment_config_id }
-                        });
-
                         let bankAccountId = null;
-                        if (config && config.bank_account_id) {
-                            bankAccountId = config.bank_account_id;
-                            // Atualizar saldo bancário
-                            await tx.bank_accounts.update({
-                                where: { id: bankAccountId },
-                                data: { current_balance: { increment: title.net_amount } }
+
+                        // Só buscar config se payment_config_id existir
+                        if (title.payment_config_id) {
+                            const config = await tx.payment_methods_config.findUnique({
+                                where: { id: title.payment_config_id }
                             });
+
+                            if (config && config.bank_account_id) {
+                                bankAccountId = config.bank_account_id;
+                                // Atualizar saldo bancário
+                                await tx.bank_accounts.update({
+                                    where: { id: bankAccountId },
+                                    data: { current_balance: { increment: title.net_amount } }
+                                });
+                            }
                         }
 
                         await tx.financial_transactions.create({

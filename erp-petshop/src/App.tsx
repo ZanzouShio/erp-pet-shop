@@ -22,6 +22,7 @@ import PaymentFeesReport from './pages/Reports/PaymentFeesReport';
 import BreakevenReport from './pages/Reports/BreakevenReport';
 import AverageTicketReport from './pages/Reports/AverageTicketReport';
 import RevenueAnalysisReport from './pages/Reports/RevenueAnalysisReport';
+import DiscountAnalyticsReport from './pages/Reports/DiscountAnalyticsReport';
 import CustomerList from './pages/Customers/CustomerList';
 import CustomerForm from './pages/Customers/CustomerForm';
 import SuppliersList from './pages/Suppliers/SuppliersList';
@@ -124,6 +125,7 @@ function AdminRoutes() {
         <Route path="reports/breakeven" element={<BreakevenReport />} />
         <Route path="reports/average-ticket" element={<AverageTicketReport />} />
         <Route path="reports/revenue-analysis" element={<RevenueAnalysisReport />} />
+        <Route path="reports/discounts" element={<DiscountAnalyticsReport />} />
 
         {/* Clientes */}
         <Route path="customers" element={<CustomerList />} />

@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import type { CartItem } from '../types/index';
+import DiscountModal from './DiscountModal';
 
 interface CartProps {
     items: CartItem[];
@@ -9,6 +11,8 @@ interface CartProps {
     onUpdateQuantity: (productId: string, quantity: number) => void;
     onApplyDiscount: (productId: string, discount: number) => void;
     onCheckout: () => void;
+    cartDiscount?: number;
+    onCartDiscountChange?: (discount: number, reason: string) => void;
 }
 
 export default function Cart({
@@ -19,7 +23,10 @@ export default function Cart({
     onRemoveItem,
     onUpdateQuantity,
     onCheckout,
+    cartDiscount = 0,
+    onCartDiscountChange,
 }: CartProps) {
+    const [showDiscountModal, setShowDiscountModal] = useState(false);
     return (
         <div style={{
             backgroundColor: 'white',
@@ -202,13 +209,42 @@ export default function Cart({
                             <span style={{ color: '#6b7280' }}>Subtotal:</span>
                             <span style={{ fontWeight: '600' }}>R$ {subtotal.toFixed(2)}</span>
                         </div>
+
+                        {/* Discount Button */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '0.875rem'
+                        }}>
+                            <span style={{ color: '#6b7280' }}>Desconto:</span>
+                            <button
+                                onClick={() => setShowDiscountModal(true)}
+                                style={{
+                                    padding: '0.375rem 0.75rem',
+                                    border: cartDiscount > 0 ? '1px solid #16a34a' : '1px solid #d1d5db',
+                                    borderRadius: '0.375rem',
+                                    backgroundColor: cartDiscount > 0 ? '#f0fdf4' : 'white',
+                                    color: cartDiscount > 0 ? '#16a34a' : '#6b7280',
+                                    cursor: 'pointer',
+                                    fontSize: '0.875rem',
+                                    fontWeight: cartDiscount > 0 ? '600' : '400'
+                                }}
+                            >
+                                {cartDiscount > 0 ? `R$ ${cartDiscount.toFixed(2)}` : '+ Adicionar'}
+                            </button>
+                        </div>
+
                         {discount > 0 && (
                             <div style={{
                                 display: 'flex',
                                 justifyContent: 'space-between',
-                                fontSize: '0.875rem'
+                                fontSize: '0.875rem',
+                                backgroundColor: '#f0fdf4',
+                                padding: '0.25rem 0.5rem',
+                                borderRadius: '0.25rem'
                             }}>
-                                <span style={{ color: '#6b7280' }}>Desconto:</span>
+                                <span style={{ color: '#16a34a' }}>Total desconto:</span>
                                 <span style={{ fontWeight: '600', color: '#16a34a' }}>
                                     - R$ {discount.toFixed(2)}
                                 </span>
@@ -243,6 +279,18 @@ export default function Cart({
                     </button>
                 </>
             )}
+
+            {/* Discount Modal */}
+            <DiscountModal
+                isOpen={showDiscountModal}
+                onClose={() => setShowDiscountModal(false)}
+                subtotal={subtotal}
+                currentDiscount={cartDiscount}
+                onApplyDiscount={(value, reason) => {
+                    onCartDiscountChange?.(value, reason);
+                    setShowDiscountModal(false);
+                }}
+            />
         </div>
     );
 }

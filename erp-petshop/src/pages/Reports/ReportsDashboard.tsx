@@ -67,6 +67,13 @@ export default function ReportsDashboard() {
             description: 'Receita total, crescimento e margem de lucro.',
             icon: <BarChart3 size={32} className="text-emerald-600" />,
             color: 'bg-emerald-50 border-emerald-200 hover:border-emerald-400'
+        },
+        {
+            id: 'discounts',
+            title: 'Análise de Descontos',
+            description: 'Descontos concedidos, motivos, operadores e auditoria.',
+            icon: <TrendingUp size={32} className="text-rose-600" />,
+            color: 'bg-rose-50 border-rose-200 hover:border-rose-400'
         }
     ];
 
@@ -77,7 +84,7 @@ export default function ReportsDashboard() {
                 <p className="text-gray-500">Selecione um relatório para visualizar e imprimir.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {reports.map(report => (
                     <div
                         key={report.id}

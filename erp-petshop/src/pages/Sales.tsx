@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Filter, Eye, Calendar, DollarSign, FileText, Smartphone } from 'lucide-react';
+import { Search, Filter, Eye, Calendar, DollarSign, FileText, Smartphone, Printer } from 'lucide-react';
 import NFCeEmissionModal from '../components/NFCeEmissionModal';
 import NFeEmissionModal from '../components/NFeEmissionModal';
 
@@ -87,6 +87,15 @@ export default function Sales() {
     const [selectedSale, setSelectedSale] = useState<SaleDetails | null>(null);
     const [showNFCeModal, setShowNFCeModal] = useState(false);
     const [showNFeModal, setShowNFeModal] = useState(false);
+    const [company, setCompany] = useState<any>(null);
+
+    // Carregar dados da empresa para impressão
+    useEffect(() => {
+        fetch(`${API_URL}/settings`)
+            .then(res => res.json())
+            .then(data => setCompany(data))
+            .catch(err => console.error('Erro ao carregar empresa:', err));
+    }, []);
 
     useEffect(() => {
         loadSales();
@@ -274,6 +283,154 @@ export default function Sales() {
         }
     };
 
+    const handlePrintReceipt = () => {
+        if (!selectedSale) return;
+
+        const printWindow = window.open('', '', 'width=300,height=600');
+        if (!printWindow) return;
+
+        const date = new Date(selectedSale.created_at).toLocaleString('pt-BR');
+        const companyName = company?.trade_name || company?.company_name || 'ERP Pet Shop';
+        const address = company?.address ? `${company.address}, ${company.number}` : '';
+        const city = company?.city && company?.state ? `${company.city} - ${company.state}` : '';
+        const fullAddress = [address, company?.neighborhood, city, company?.zip_code].filter(Boolean).join(', ');
+        const logo = company?.logo_url ? `<img src="${company.logo_url}" style="max-height: 50px; max-width: 150px;" />` : '';
+
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Cupom #${selectedSale.sale_number}</title>
+                <style>
+                    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+                    body {
+                        font-family: 'Roboto', sans-serif;
+                        font-size: 12px;
+                        margin: 0;
+                        padding: 10px;
+                        color: #000;
+                    }
+                    .header {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        margin-bottom: 20px;
+                    }
+                    .logo { max-width: 100px; }
+                    .company-name { font-weight: bold; font-size: 16px; }
+
+                    .section-title {
+                        font-weight: bold;
+                        font-size: 14px;
+                        text-transform: uppercase;
+                        margin-bottom: 2px;
+                    }
+                    .date { margin-bottom: 15px; color: #333; }
+
+                    .table-header {
+                        display: flex;
+                        justify-content: space-between;
+                        font-weight: bold;
+                        border-bottom: 2px solid #000;
+                        padding-bottom: 5px;
+                        margin-bottom: 10px;
+                    }
+
+                    .item-row { margin-bottom: 8px; }
+                    .item-name { font-weight: bold; font-size: 13px; }
+                    .item-details {
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 12px;
+                    }
+
+                    .totals-section {
+                        margin-top: 20px;
+                        border-top: 2px solid #000;
+                        padding-top: 10px;
+                    }
+
+                    .total-row {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-top: 10px;
+                    }
+                    .total-label { font-size: 20px; font-weight: bold; }
+                    .total-value { font-size: 24px; font-weight: bold; }
+
+                    .footer {
+                        margin-top: 30px;
+                        border-top: 1px solid #000;
+                        padding-top: 10px;
+                        font-size: 11px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    ${logo}
+                    <div class="company-name">${companyName}</div>
+                </div>
+
+                <div class="section-title">DETALHE DE PRODUTOS</div>
+                <div class="date">${date}</div>
+
+                <div class="table-header">
+                    <span>Prod. e Quant.</span>
+                    <span>Valor Subtotal</span>
+                </div>
+
+                <div class="items-list">
+                    ${selectedSale.items.map(item => `
+                        <div class="item-row">
+                            <div class="item-name">${item.product_name}</div>
+                            <div class="item-details">
+                                <span>x${item.quantity} un.</span>
+                                <span>${formatCurrency(item.unit_price)}/un.</span>
+                                <span>${formatCurrency(item.total)}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="totals-section">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Quant. total de itens</span>
+                        <span>${selectedSale.items.length}</span>
+                    </div>
+
+                    ${selectedSale.discount_amount > 0 ? `
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Desconto</span>
+                            <span>-${formatCurrency(selectedSale.discount_amount)}</span>
+                        </div>
+                    ` : ''}
+
+                    <div class="total-row">
+                        <span class="total-label">Total R$</span>
+                        <span class="total-value">${formatCurrency(selectedSale.total_amount)}</span>
+                    </div>
+
+                    <div style="margin-top: 10px; font-size: 13px;">
+                        <strong>Forma de Pagamento:</strong> ${selectedSale.payments.map(p => paymentMethodLabels[p.payment_method] || p.payment_method).join(', ')}
+                    </div>
+                </div>
+
+                <div class="footer">
+                    <div>${companyName}</div>
+                    <div>${fullAddress}</div>
+                    <div style="margin-top: 10px; font-weight: bold; text-align: center;">SEM VALOR FISCAL</div>
+                </div>
+
+                <script>
+                    window.print();
+                </script>
+            </body>
+        </html>
+        `);
+        printWindow.document.close();
+    };
+
     // Calcular total do dia
     const totalToday = sales.reduce((sum, sale) => {
         if (sale.status === 'completed') {
@@ -414,6 +571,9 @@ export default function Sales() {
                                             Pagamento
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Desconto
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Total
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -438,6 +598,15 @@ export default function Sales() {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                                 {paymentMethodLabels[sale.payment_method] || sale.payment_method}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                {parseFloat(String(sale.discount_amount)) > 0 ? (
+                                                    <span className="text-red-600 font-medium">
+                                                        -{formatCurrency(parseFloat(String(sale.discount_amount)))}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-400">-</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className="font-medium text-gray-900">
@@ -581,6 +750,13 @@ export default function Sales() {
                         </div>
                         <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-8 py-4 flex justify-between items-center gap-3">
                             <div className="flex gap-3">
+                                <button
+                                    onClick={handlePrintReceipt}
+                                    className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+                                >
+                                    <Printer size={18} />
+                                    Imprimir Cupom
+                                </button>
                                 <button
                                     onClick={() => setShowNFeModal(true)}
                                     className="px-4 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition flex items-center gap-2"
