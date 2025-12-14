@@ -1,0 +1,24 @@
+{
+    "name": "hardware-service",
+    "version": "1.0.0",
+    "description": "Local hardware service for POS integration (barcode scanner, scale, cash drawer)",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "node src/index.js",
+        "dev": "node --watch src/index.js"
+    },
+    "keywords": [
+        "pos",
+        "hardware",
+        "barcode",
+        "scale",
+        "cash-drawer"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "ws": "^8.14.2",
+        "dotenv": "^16.3.1",
+        "serialport": "^12.0.0"
+    }
+}

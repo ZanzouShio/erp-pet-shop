@@ -5,6 +5,7 @@ interface ProductSearchProps {
     searchTerm: string;
     onSearchChange: (term: string) => void;
     onAddToCart: (product: Product) => void;
+    onBarcodeSubmit?: (barcode: string) => void;
     showOnlyProducts?: boolean;
 }
 
@@ -13,8 +14,36 @@ export default function ProductSearch({
     searchTerm,
     onSearchChange,
     onAddToCart,
+    onBarcodeSubmit,
     showOnlyProducts = false,
 }: ProductSearchProps) {
+
+    // Handle Enter key - if it looks like a barcode, try to add to cart
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && searchTerm.trim()) {
+            e.preventDefault();
+
+            // Check if input looks like a barcode (only numbers, 8-14 digits)
+            const isBarcode = /^\d{8,14}$/.test(searchTerm.trim());
+
+            if (isBarcode && onBarcodeSubmit) {
+                onBarcodeSubmit(searchTerm.trim());
+            } else {
+                // If there's exactly one product in filtered results, add it
+                const filtered = products.filter(
+                    (product) =>
+                        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        product.barcode?.includes(searchTerm) ||
+                        product.category.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+                if (filtered.length === 1) {
+                    onAddToCart(filtered[0]);
+                    onSearchChange('');
+                }
+            }
+        }
+    };
+
     // Filtrar produtos
     const filteredProducts = products.filter(
         (product) =>
@@ -178,6 +207,7 @@ export default function ProductSearch({
                         placeholder="Buscar produto (nome, código de barras, categoria)..."
                         value={searchTerm}
                         onChange={(e) => onSearchChange(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         autoFocus
                     />
                     <div style={{

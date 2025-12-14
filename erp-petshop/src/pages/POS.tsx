@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { User, AlertTriangle } from 'lucide-react';
 import type { Product, CartItem, PaymentMethod } from '../types/index';
 // import { mockProducts } from '../data/mockProducts'; // Não usar mais mock
@@ -20,12 +20,18 @@ import SuprimentoModal from '../components/SuprimentoModal';
 import CashReportModal from '../components/CashReportModal';
 
 import { API_URL } from '../services/api';
+import { useHardware } from '../hooks/useHardware';
+import HardwareStatusIndicator from '../components/HardwareStatusIndicator';
+import { useAuth } from '../contexts/AuthContext';
 
 interface POSProps {
   onExit?: () => void;
 }
 
 export default function POS({ onExit }: POSProps) {
+  // Auth
+  const { user } = useAuth();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -79,6 +85,42 @@ export default function POS({ onExit }: POSProps) {
     };
   }>({ show: false, title: '', message: '', type: 'success' });
 
+  // Hardware Service Integration
+  const { status: hardwareStatus, lastBarcode, lastWeight, openDrawer } = useHardware();
+
+  // Handle barcode from hardware scanner
+  const handleBarcodeScanned = useCallback(async (barcode: string) => {
+    console.log('📦 Barcode scanned:', barcode);
+
+    // Search for product by barcode/EAN
+    try {
+      const response = await fetch(`${API_URL}/products?search=${encodeURIComponent(barcode)}`);
+      if (response.ok) {
+        const data = await response.json();
+        const productsFound = data.data || data;
+
+        // Find exact match by barcode or ean
+        const product = productsFound.find((p: Product) =>
+          p.barcode === barcode || p.ean === barcode
+        );
+
+        if (product) {
+          addToCart(product, 1);
+        } else {
+          console.log('Product not found for barcode:', barcode);
+        }
+      }
+    } catch (error) {
+      console.error('Error searching product by barcode:', error);
+    }
+  }, []);
+
+  // React to barcode scans
+  useEffect(() => {
+    if (lastBarcode) {
+      handleBarcodeScanned(lastBarcode);
+    }
+  }, [lastBarcode, handleBarcodeScanned]);
 
   // Buscar produtos da API
   const fetchProducts = async () => {
@@ -443,6 +485,12 @@ export default function POS({ onExit }: POSProps) {
               currentBalance={Number(cashState.register?.currentBalance) || 0}
               operatorName={cashState.register?.operatorName}
             />
+
+            {/* Hardware Status Indicator */}
+            <HardwareStatusIndicator
+              connected={hardwareStatus.connected}
+              devices={hardwareStatus.devices}
+            />
             {onExit && (
               <button
                 onClick={onExit}
@@ -465,7 +513,7 @@ export default function POS({ onExit }: POSProps) {
             )}
             <div style={{ textAlign: 'right' }}>
               <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>Operador</p>
-              <p style={{ fontWeight: '600' }}>Admin</p>
+              <p style={{ fontWeight: '600' }}>{user?.name || 'Não identificado'}</p>
             </div>
             <div style={{
               width: '2.5rem',
@@ -478,7 +526,7 @@ export default function POS({ onExit }: POSProps) {
               color: 'white',
               fontWeight: 'bold'
             }}>
-              A
+              {user?.name?.charAt(0)?.toUpperCase() || '?'}
             </div>
           </div>
         </div>
@@ -497,6 +545,19 @@ export default function POS({ onExit }: POSProps) {
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             onAddToCart={addToCart}
+            onBarcodeSubmit={async (barcode) => {
+              // Find product by exact barcode or EAN
+              const product = products.find(p =>
+                p.barcode === barcode || p.ean === barcode
+              );
+
+              if (product) {
+                addToCart(product);
+                setSearchTerm('');
+              } else {
+                alert(`Produto não encontrado para código: ${barcode}`);
+              }
+            }}
           />
         </div>
 
