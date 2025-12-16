@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, Package, Tag, DollarSign, Layers, Scale, PackageOpen } from 'lucide-react';
+import { X, Package, Tag, DollarSign, Layers, Scale, PackageOpen, Plus } from 'lucide-react';
 
 import { API_URL } from '../services/api';
 import OpenPackageModal from './OpenPackageModal';
+import CategoryFormModal from './CategoryFormModal';
 
 interface Category {
     id: string;
@@ -46,6 +47,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(false);
     const [showOpenPackageModal, setShowOpenPackageModal] = useState(false);
+    const [showCategoryModal, setShowCategoryModal] = useState(false);
 
     const [formData, setFormData] = useState<ProductFormData>({
         name: '',
@@ -285,16 +287,17 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
                 image_url: formData.image_url.trim() || null,
             };
 
-            // Apenas no cadastro enviar stock_quantity e dados de granel
+            // Apenas no cadastro enviar stock_quantity
             if (!product) {
                 payload.stock_quantity = parseFloat(formData.stock_quantity);
+            }
 
-                if (formData.create_bulk) {
-                    payload.create_bulk = true;
-                    payload.bulk_conversion_factor = parseFloat(formData.bulk_conversion_factor);
-                    payload.bulk_unit = formData.bulk_unit;
-                    payload.bulk_price = formData.bulk_price ? parseFloat(formData.bulk_price) : null;
-                }
+            // Enviar dados de granel se marcado (tanto criação quanto edição)
+            if (formData.create_bulk) {
+                payload.create_bulk = true;
+                payload.bulk_conversion_factor = parseFloat(formData.bulk_conversion_factor);
+                payload.bulk_unit = formData.bulk_unit;
+                payload.bulk_price = formData.bulk_price ? parseFloat(formData.bulk_price) : null;
             }
 
             const url = product
@@ -334,8 +337,10 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
         { id: 'stock', label: 'Estoque', icon: Layers },
     ] as const;
 
-    // Adicionar aba de granel apenas no cadastro
-    const allTabs = !product
+    // Adicionar aba de granel se não tiver filhos e não for filho
+    const canCreateBulk = !product || (product && (!product.children || product.children.length === 0) && !product.parent_id);
+
+    const allTabs = canCreateBulk
         ? [...tabs, { id: 'bulk', label: 'Venda a Granel', icon: Scale }]
         : tabs;
 
@@ -453,19 +458,30 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Categoria <span className="text-red-500">*</span>
                                         </label>
-                                        <select
-                                            value={formData.category_id}
-                                            onChange={(e) => handleChange('category_id', e.target.value)}
-                                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.category_id ? 'border-red-500' : 'border-gray-300'
-                                                }`}
-                                        >
-                                            <option value="">Selecione...</option>
-                                            {categories.map((cat) => (
-                                                <option key={cat.id} value={cat.id}>
-                                                    {cat.name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        <div className="flex gap-2">
+                                            <select
+                                                value={formData.category_id}
+                                                onChange={(e) => handleChange('category_id', e.target.value)}
+                                                className={`flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.category_id ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
+                                            >
+                                                <option value="">Selecione...</option>
+                                                {categories.map((cat) => (
+                                                    <option key={cat.id} value={cat.id}>
+                                                        {cat.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCategoryModal(true)}
+                                                className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1 whitespace-nowrap"
+                                                title="Nova categoria"
+                                            >
+                                                <Plus size={18} />
+                                                <span className="hidden sm:inline">Nova</span>
+                                            </button>
+                                        </div>
                                         {errors.category_id && <p className="text-red-500 text-sm mt-1">{errors.category_id}</p>}
                                     </div>
                                 </div>
@@ -703,7 +719,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
 
                     {/* Aba: Venda a Granel */}
                     {
-                        activeTab === 'bulk' && !product && (
+                        activeTab === 'bulk' && canCreateBulk && (
                             <div className="space-y-6">
                                 <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
                                     <div className="flex items-start gap-3">
@@ -832,6 +848,17 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
                     // Opcional: Fechar o modal de edição também, ou manter aberto
                 }}
                 initialParentId={product?.parent_product_id}
+            />
+
+            {/* Modal de Nova Categoria (Aninhado) */}
+            <CategoryFormModal
+                isOpen={showCategoryModal}
+                onClose={() => setShowCategoryModal(false)}
+                onSuccess={async () => {
+                    // Recarregar categorias
+                    await loadCategories();
+                    setShowCategoryModal(false);
+                }}
             />
         </div>
     );

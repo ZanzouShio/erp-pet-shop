@@ -122,6 +122,15 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
             subItems: [
                 { id: 'business-settings', label: 'Meu Negócio', icon: Building2, enabled: true, path: '/admin/settings/business' },
                 {
+                    id: 'settings-products',
+                    label: 'Produtos',
+                    icon: Package,
+                    enabled: true,
+                    subItems: [
+                        { id: 'product-categories', label: 'Categorias', icon: ChevronRight, enabled: true, path: '/admin/settings/product-categories' },
+                    ]
+                },
+                {
                     id: 'settings-financial',
                     label: 'Financeiro',
                     icon: DollarSign,

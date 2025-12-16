@@ -179,16 +179,21 @@ export const createProduct = async (req, res) => {
 };
 
 export const updateProduct = async (req, res) => {
+    const client = await pool.connect();
     try {
+        await client.query('BEGIN');
+
         const { id } = req.params;
         const {
             name, description, ean, sale_price, cost_price,
             stock_quantity, min_stock, max_stock, unit,
             category_id, supplier_id, is_active,
-            internal_code, sku
+            internal_code, sku,
+            // Bulk fields
+            create_bulk, bulk_conversion_factor, bulk_unit, bulk_price
         } = req.body;
 
-        const result = await pool.query(`
+        const result = await client.query(`
             UPDATE products SET
                 name = COALESCE($1, name),
                 description = COALESCE($2, description),
@@ -216,16 +221,68 @@ export const updateProduct = async (req, res) => {
         ]);
 
         if (result.rowCount === 0) {
+            await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Produto não encontrado' });
         }
 
+        const parentProduct = result.rows[0];
+        let childProduct = null;
+
+        // Se solicitado, criar produto a granel (filho) se ainda não existir
+        if (create_bulk && bulk_conversion_factor) {
+            // Verificar se já existe filho a granel
+            const existingChild = await client.query(
+                'SELECT id FROM products WHERE parent_product_id = $1 AND is_bulk = true AND is_active = true',
+                [id]
+            );
+
+            if (existingChild.rows.length === 0) {
+                const bulkName = `${parentProduct.name} (Granel)`;
+                const internalCodeBulk = parentProduct.ean ? `G${parentProduct.ean}` : `G${parentProduct.id.substring(0, 8)}`;
+
+                const childResult = await client.query(`
+                    INSERT INTO products (
+                        name, description, internal_code, sale_price, cost_price,
+                        stock_quantity, min_stock, unit,
+                        category_id, supplier_id, is_active,
+                        is_bulk, parent_product_id, conversion_factor,
+                        created_at, updated_at
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    RETURNING *
+                `, [
+                    bulkName,
+                    `Produto a granel derivado de: ${parentProduct.name}`,
+                    internalCodeBulk,
+                    bulk_price || 0,
+                    (parseFloat(parentProduct.cost_price) || 0) / bulk_conversion_factor,
+                    0, // Estoque inicial zero
+                    0,
+                    bulk_unit || 'KG',
+                    parentProduct.category_id,
+                    parentProduct.supplier_id,
+                    true,
+                    true, // is_bulk
+                    parentProduct.id,
+                    bulk_conversion_factor
+                ]);
+
+                childProduct = childResult.rows[0];
+            }
+        }
+
+        await client.query('COMMIT');
+
         res.json({
             message: 'Produto atualizado com sucesso',
-            product: result.rows[0]
+            product: parentProduct,
+            bulk_product: childProduct
         });
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('❌ Erro ao atualizar produto:', error);
         res.status(500).json({ error: 'Erro ao atualizar produto: ' + error.message });
+    } finally {
+        client.release();
     }
 };
 

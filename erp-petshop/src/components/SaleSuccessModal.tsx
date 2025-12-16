@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle, Printer, ArrowRight } from 'lucide-react';
 import { API_URL } from '../services/api';
+import type { ReceiptData } from '../hooks/useHardware';
 
 interface SaleSuccessModalProps {
     saleNumber: string;
@@ -10,6 +11,10 @@ interface SaleSuccessModalProps {
     items?: any[];
     installments?: number;
     onClose: () => void;
+    // Thermal printing support
+    printerConnected?: boolean;
+    printReceipt?: (data: ReceiptData) => Promise<boolean>;
+    operator?: string;
 }
 
 export default function SaleSuccessModal({
@@ -19,9 +24,13 @@ export default function SaleSuccessModal({
     change = 0,
     items = [],
     installments,
-    onClose
+    onClose,
+    printerConnected = false,
+    printReceipt,
+    operator
 }: SaleSuccessModalProps) {
     const [company, setCompany] = useState<any>(null);
+    const [printing, setPrinting] = useState(false);
 
     useEffect(() => {
         fetch(`${API_URL}/settings`)
@@ -61,7 +70,56 @@ export default function SaleSuccessModal({
         return map[method.toLowerCase()] || method;
     };
 
-    const handlePrint = () => {
+    const handlePrint = async () => {
+        // Try thermal printing first if available
+        if (printerConnected && printReceipt) {
+            try {
+                setPrinting(true);
+                const companyName = company?.trade_name || company?.company_name || 'ERP Pet Shop';
+
+                // Linha 1: Rua + Número
+                const addressLine1 = company?.address ? `${company.address}, ${company.number || ''}`.trim() : '';
+
+                // Linha 2: Bairro, Cidade - UF
+                const neighborhood = company?.neighborhood || '';
+                const cityState = company?.city && company?.state ? `${company.city} - ${company.state}` : '';
+                const addressLine2 = [neighborhood, cityState].filter(Boolean).join(', ');
+
+                // Linha 3: Email / Telefone
+                const contactInfo = [company?.email, company?.phone].filter(Boolean).join(' | ');
+
+                const receiptData: ReceiptData = {
+                    companyName,
+                    address: addressLine1,
+                    address2: addressLine2,
+                    contact: contactInfo,
+                    saleNumber,
+                    date: new Date().toLocaleString('pt-BR'),
+                    items: items.map(item => ({
+                        name: item.name,
+                        quantity: item.quantity,
+                        price: item.price || item.sale_price,
+                        total: item.subtotal || item.total || (item.quantity * (item.price || item.sale_price))
+                    })),
+                    subtotal: items.reduce((sum, item) => sum + (item.subtotal || item.total || 0), 0),
+                    discount: items.reduce((sum, item) => sum + (item.discount || 0), 0),
+                    total,
+                    paymentMethod: translatePaymentMethod(paymentMethod),
+                    change,
+                    installments,
+                    operator
+                };
+
+                await printReceipt(receiptData);
+                setPrinting(false);
+                return; // Success, no need for fallback
+            } catch (e) {
+                console.error('Thermal print failed, falling back to browser:', e);
+                setPrinting(false);
+            }
+        }
+
+        // Fallback: browser print dialog
         const printWindow = window.open('', '', 'width=300,height=600');
         if (!printWindow) return;
 
@@ -265,10 +323,26 @@ export default function SaleSuccessModal({
                     <div className="flex gap-3">
                         <button
                             onClick={handlePrint}
-                            className="flex-1 py-3 px-4 border border-gray-300 rounded-xl font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                            disabled={printing}
+                            className={`flex-1 py-3 px-4 border border-gray-300 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 ${printing
+                                ? 'bg-gray-100 text-gray-400 cursor-wait'
+                                : 'text-gray-700 hover:bg-gray-50'
+                                }`}
                         >
-                            <Printer size={20} />
-                            Imprimir Cupom
+                            {printing ? (
+                                <>
+                                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    </svg>
+                                    Imprimindo...
+                                </>
+                            ) : (
+                                <>
+                                    <Printer size={20} />
+                                    {printerConnected ? 'Imprimir Cupom' : 'Imprimir (Navegador)'}
+                                </>
+                            )}
                         </button>
                         <button
                             onClick={onClose}

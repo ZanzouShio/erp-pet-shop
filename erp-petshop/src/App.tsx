@@ -49,6 +49,7 @@ import CashRegisterList from './pages/Financial/CashRegisterList';
 import UserList from './pages/Settings/UserList';
 import UserForm from './pages/Settings/UserForm';
 import RoleList from './pages/Settings/RoleList';
+import ProductCategories from './pages/Settings/ProductCategories';
 import GroomingManagement from './pages/GroomingManagement';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
@@ -139,6 +140,7 @@ function AdminRoutes() {
 
         {/* Configurações */}
         <Route path="settings/pet-species" element={<PetSpeciesSettings />} />
+        <Route path="settings/product-categories" element={<ProductCategories />} />
         <Route path="settings/expense-categories" element={<ExpenseCategories />} />
         <Route path="settings/payments" element={<PaymentSettings />} />
         <Route path="settings/payments" element={<PaymentSettings />} />

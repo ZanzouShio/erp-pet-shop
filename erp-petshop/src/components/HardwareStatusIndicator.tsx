@@ -4,7 +4,7 @@
  * Shows connection status to the local hardware service.
  */
 
-import { Wifi, WifiOff, Scan, Scale, DollarSign } from 'lucide-react';
+import { Wifi, WifiOff, Scan, Scale, DollarSign, Printer } from 'lucide-react';
 
 interface HardwareStatusProps {
     connected: boolean;
@@ -16,8 +16,8 @@ export default function HardwareStatusIndicator({ connected, devices }: Hardware
         <div className="relative">
             <div
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${connected
-                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
-                        : 'bg-gradient-to-r from-slate-600 to-slate-700 text-slate-300'
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white'
+                    : 'bg-gradient-to-r from-slate-600 to-slate-700 text-slate-300'
                     }`}
             >
                 {connected ? (
@@ -43,6 +43,11 @@ export default function HardwareStatusIndicator({ connected, devices }: Hardware
                         {devices.includes('drawer') && (
                             <div title="Gaveta" className="p-0.5">
                                 <DollarSign className="w-4 h-4" />
+                            </div>
+                        )}
+                        {devices.includes('printer') && (
+                            <div title="Impressora Térmica" className="p-0.5">
+                                <Printer className="w-4 h-4" />
                             </div>
                         )}
                     </div>

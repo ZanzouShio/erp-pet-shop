@@ -12,6 +12,7 @@ const url = require('url');
 const { ScaleDevice } = require('./devices/scale');
 const { DrawerDevice } = require('./devices/drawer');
 const { ScannerDevice } = require('./devices/scanner');
+const { PrinterDevice } = require('./devices/printer');
 
 const PORT = process.env.PORT || 3002;
 const DEBUG = process.env.DEBUG === 'true';
@@ -22,7 +23,8 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,h
 const devices = {
     scale: null,
     drawer: null,
-    scanner: null
+    scanner: null,
+    printer: null
 };
 
 function log(...args) {
@@ -96,6 +98,20 @@ function initDevices() {
     if (process.env.SCANNER_ENABLED !== 'false') {
         devices.scanner = new ScannerDevice();
         log('✅ Scanner initialized (keyboard mode)');
+    }
+
+    // Initialize printer if enabled
+    if (process.env.PRINTER_ENABLED === 'true') {
+        try {
+            devices.printer = new PrinterDevice({
+                type: process.env.PRINTER_TYPE || 'epson',
+                interface: process.env.PRINTER_INTERFACE || null,
+                width: parseInt(process.env.PRINTER_WIDTH) || 32 // 58mm = 32 chars
+            });
+            log('✅ Printer initialized:', process.env.PRINTER_INTERFACE || 'USB');
+        } catch (e) {
+            console.error('❌ Failed to initialize printer:', e.message);
+        }
     }
 }
 
@@ -215,9 +231,45 @@ wss.on('connection', (ws) => {
                     const status = {
                         scale: devices.scale ? 'connected' : 'disabled',
                         drawer: devices.drawer ? 'connected' : 'disabled',
-                        scanner: devices.scanner ? 'connected' : 'disabled'
+                        scanner: devices.scanner ? 'connected' : 'disabled',
+                        printer: devices.printer ? 'connected' : 'disabled'
                     };
                     ws.send(JSON.stringify({ type: 'status', data: status }));
+                    break;
+
+                case 'printReceipt':
+                    if (devices.printer) {
+                        try {
+                            await devices.printer.printReceipt(cmd.data);
+                            ws.send(JSON.stringify({ type: 'receiptPrinted', success: true }));
+                        } catch (e) {
+                            ws.send(JSON.stringify({ type: 'error', message: 'Print failed: ' + e.message }));
+                        }
+                    } else {
+                        ws.send(JSON.stringify({ type: 'error', message: 'Printer not available' }));
+                    }
+                    break;
+
+                case 'printCashClose':
+                    if (devices.printer) {
+                        try {
+                            await devices.printer.printCashClose(cmd.data);
+                            ws.send(JSON.stringify({ type: 'cashClosePrinted', success: true }));
+                        } catch (e) {
+                            ws.send(JSON.stringify({ type: 'error', message: 'Print failed: ' + e.message }));
+                        }
+                    } else {
+                        ws.send(JSON.stringify({ type: 'error', message: 'Printer not available' }));
+                    }
+                    break;
+
+                case 'listPrinters':
+                    try {
+                        const printers = await PrinterDevice.listPrinters();
+                        ws.send(JSON.stringify({ type: 'printerList', data: printers }));
+                    } catch (e) {
+                        ws.send(JSON.stringify({ type: 'error', message: 'Failed to list printers: ' + e.message }));
+                    }
                     break;
 
                 // Simulated events for testing
