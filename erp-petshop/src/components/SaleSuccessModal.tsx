@@ -10,6 +10,11 @@ interface SaleSuccessModalProps {
     change?: number;
     items?: any[];
     installments?: number;
+    customer?: {
+        name: string;
+        cpf?: string;
+        cashback_balance?: number;
+    } | null;
     onClose: () => void;
     // Thermal printing support
     printerConnected?: boolean;
@@ -24,6 +29,7 @@ export default function SaleSuccessModal({
     change = 0,
     items = [],
     installments,
+    customer,
     onClose,
     printerConnected = false,
     printReceipt,
@@ -107,7 +113,12 @@ export default function SaleSuccessModal({
                     paymentMethod: translatePaymentMethod(paymentMethod),
                     change,
                     installments,
-                    operator
+                    operator,
+                    customer: customer ? {
+                        name: customer.name,
+                        cpf: customer.cpf,
+                        cashback_balance: customer.cashback_balance
+                    } : undefined
                 };
 
                 await printReceipt(receiptData);

@@ -50,6 +50,11 @@ export default function POS({ onExit }: POSProps) {
     change: number;
     items: any[];
     installments?: number;
+    customer?: {
+      name: string;
+      cpf?: string;
+      cashback_balance?: number;
+    } | null;
   } | null>(null);
 
   // Cash Register State
@@ -88,7 +93,7 @@ export default function POS({ onExit }: POSProps) {
   }>({ show: false, title: '', message: '', type: 'success' });
 
   // Hardware Service Integration
-  const { status: hardwareStatus, lastBarcode, lastWeight, openDrawer, printReceipt, printerConnected } = useHardware();
+  const { status: hardwareStatus, lastBarcode, lastWeight, openDrawer, printReceipt, printCashClose, printerConnected } = useHardware();
 
   // Handle barcode from hardware scanner
   const handleBarcodeScanned = useCallback(async (barcode: string) => {
@@ -368,7 +373,12 @@ export default function POS({ onExit }: POSProps) {
         paymentMethod: paymentMethod,
         change: details?.change || 0,
         items: [...cart],
-        installments: details?.installments
+        installments: details?.installments,
+        customer: selectedCustomer ? {
+          name: selectedCustomer.name,
+          cpf: selectedCustomer.cpf_cnpj,
+          cashback_balance: result.customer?.wallet_balance || selectedCustomer.wallet_balance || 0
+        } : null
       });
       setShowSuccessModal(true);
       // alert(`✅ Venda #${result.sale.sale_number} concluída!\n\nTotal: R$ ${total.toFixed(2)}\nPagamento: ${paymentMethod.toUpperCase()}\n\nObrigado pela preferência!`);
@@ -659,6 +669,7 @@ export default function POS({ onExit }: POSProps) {
           change={lastSale.change}
           items={lastSale.items}
           installments={lastSale.installments}
+          customer={lastSale.customer}
           onClose={() => setShowSuccessModal(false)}
           printerConnected={printerConnected}
           printReceipt={printReceipt}
@@ -866,8 +877,31 @@ export default function POS({ onExit }: POSProps) {
               {/* Print Button - only for cash close */}
               {cashSuccessModal.showPrint && cashSuccessModal.printData && (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const data = cashSuccessModal.printData!;
+
+                    // Try thermal printing first if available
+                    if (printerConnected) {
+                      try {
+                        await printCashClose({
+                          terminalName: data.terminalName,
+                          operatorName: data.operatorName,
+                          openedAt: new Date(data.openedAt).toLocaleString('pt-BR'),
+                          closedAt: new Date(data.closedAt).toLocaleString('pt-BR'),
+                          openingBalance: data.openingBalance,
+                          totalSales: data.totalSales,
+                          totalSuprimentos: data.totalSuprimentos,
+                          totalSangrias: data.totalSangrias,
+                          expectedBalance: data.expectedBalance,
+                          closingBalance: data.closingBalance
+                        });
+                        return; // Success, no need for fallback
+                      } catch (e) {
+                        console.error('Thermal print failed, falling back to browser:', e);
+                      }
+                    }
+
+                    // Fallback: browser print dialog
                     const formatCurrency = (v: number) => `R$ ${v.toFixed(2)}`;
                     const formatDate = (d: string) => new Date(d).toLocaleString('pt-BR');
 

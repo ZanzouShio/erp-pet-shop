@@ -168,6 +168,23 @@ class PrinterDevice extends EventEmitter {
                 p.println(`Parcelado: ${receiptData.installments}x de ${this.formatCurrency(installmentValue)}`);
             }
 
+            // Customer info (if identified)
+            if (receiptData.customer) {
+                p.drawLine();
+                p.alignLeft();
+                if (receiptData.customer.cpf) {
+                    // Format CPF: 000.000.000-00
+                    const cpf = receiptData.customer.cpf.replace(/[^\d]/g, '');
+                    const formattedCpf = cpf.length === 11
+                        ? `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9, 11)}`
+                        : receiptData.customer.cpf;
+                    p.println(`CPF: ${formattedCpf}`);
+                }
+                // Always show cashback balance
+                const cashback = receiptData.customer.cashback_balance || 0;
+                p.println(`Saldo Cashback: ${this.formatCurrency(cashback)}`);
+            }
+
             p.drawLine();
 
             // Footer
@@ -212,34 +229,66 @@ class PrinterDevice extends EventEmitter {
             p.bold(true);
             p.println('FECHAMENTO DE CAIXA');
             p.bold(false);
-            p.println(reportData.terminalName || 'Terminal');
+            p.println(this.normalizeText(reportData.terminalName || 'Terminal'));
             p.drawLine();
 
             p.alignLeft();
-            p.println(`Operador: ${reportData.operatorName}`);
-            p.println(`Abertura: ${reportData.openedAt}`);
-            p.println(`Fechamento: ${reportData.closedAt}`);
+            p.println(`Operador: ${this.normalizeText(reportData.operatorName || 'N/A')}`);
+            p.println(`Abertura: ${reportData.openedAt || 'N/A'}`);
+            p.println(`Fechamento: ${reportData.closedAt || new Date().toLocaleString('pt-BR')}`);
             p.drawLine();
 
+            // Entradas
+            p.bold(true);
+            p.println('ENTRADAS');
+            p.bold(false);
             p.println(`Saldo Inicial: ${this.formatCurrency(reportData.openingBalance)}`);
-            p.println(`Vendas Dinheiro: ${this.formatCurrency(reportData.totalSales)}`);
             p.println(`Suprimentos: +${this.formatCurrency(reportData.totalSuprimentos)}`);
+            p.println(`Vendas Dinheiro: +${this.formatCurrency(reportData.totalSales)}`);
+
+            // Vendas Cartão/PIX (se houver)
+            if (reportData.totalDebit) {
+                p.println(`Debito: ${this.formatCurrency(reportData.totalDebit)}`);
+            }
+            if (reportData.totalCredit) {
+                p.println(`Credito: ${this.formatCurrency(reportData.totalCredit)}`);
+            }
+            if (reportData.totalPix) {
+                p.println(`PIX: ${this.formatCurrency(reportData.totalPix)}`);
+            }
+            p.drawLine();
+
+            // Saídas
+            p.bold(true);
+            p.println('SAIDAS');
+            p.bold(false);
             p.println(`Sangrias: -${this.formatCurrency(reportData.totalSangrias)}`);
             p.drawLine();
 
+            // Totais
             p.bold(true);
             p.println(`Saldo Esperado: ${this.formatCurrency(reportData.expectedBalance)}`);
             p.println(`Saldo Contado: ${this.formatCurrency(reportData.closingBalance)}`);
 
-            const diff = reportData.closingBalance - reportData.expectedBalance;
-            p.println(`DIFERENCA: ${this.formatCurrency(diff)}`);
+            const diff = parseFloat(reportData.closingBalance) - parseFloat(reportData.expectedBalance);
+            const diffLabel = Math.abs(diff) < 0.01 ? 'CAIXA OK' : (diff > 0 ? 'SOBRA' : 'FALTA');
+            p.println(`${diffLabel}: ${this.formatCurrency(Math.abs(diff))}`);
             p.bold(false);
+
+            // Observações
+            if (reportData.notes) {
+                p.drawLine();
+                p.println(`Obs: ${this.normalizeText(reportData.notes)}`);
+            }
 
             p.drawLine();
             p.alignCenter();
             p.println(new Date().toLocaleString('pt-BR'));
 
-            p.cut();
+            // Feed lines for manual tear (no cut)
+            p.newLine();
+            p.newLine();
+
             await p.execute();
 
             console.log('🖨️ Cash close report printed');
@@ -291,7 +340,8 @@ class PrinterDevice extends EventEmitter {
 
     // Helper functions
     formatCurrency(value) {
-        return `R$ ${(value || 0).toFixed(2).replace('.', ',')}`;
+        const num = parseFloat(value) || 0;
+        return `R$ ${num.toFixed(2).replace('.', ',')}`;
     }
 
     truncate(str, maxLen) {

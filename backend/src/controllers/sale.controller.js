@@ -364,6 +364,20 @@ export const createSale = async (req, res) => {
 
         await client.query('COMMIT');
 
+        // Buscar saldo atualizado do cliente (após todas as operações de carteira)
+        let customerData = null;
+        if (customer_id) {
+            const updatedCustomer = await pool.query(
+                'SELECT wallet_balance FROM customers WHERE id = $1',
+                [customer_id]
+            );
+            if (updatedCustomer.rows[0]) {
+                customerData = {
+                    wallet_balance: parseFloat(updatedCustomer.rows[0].wallet_balance) || 0
+                };
+            }
+        }
+
         res.status(201).json({
             message: 'Venda criada com sucesso',
             sale: {
@@ -371,7 +385,8 @@ export const createSale = async (req, res) => {
                 sale_number: sale.sale_number,
                 total: parseFloat(sale.total),
                 payment_method: sale.payment_method
-            }
+            },
+            customer: customerData
         });
     } catch (error) {
         await client.query('ROLLBACK');

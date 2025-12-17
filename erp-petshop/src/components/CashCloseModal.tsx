@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, LogOut, AlertTriangle, TrendingUp, TrendingDown, Printer, CheckCircle } from 'lucide-react';
+import type { CashCloseData } from '../hooks/useHardware';
 
 interface CashCloseModalProps {
     isOpen: boolean;
@@ -17,6 +18,9 @@ interface CashCloseModalProps {
     terminalName?: string;
     openedAt?: string;
     isLoading?: boolean;
+    // Thermal printing support
+    printerConnected?: boolean;
+    printCashClose?: (data: CashCloseData) => Promise<boolean>;
 }
 
 const CashCloseModal: React.FC<CashCloseModalProps> = ({
@@ -34,7 +38,9 @@ const CashCloseModal: React.FC<CashCloseModalProps> = ({
     operatorName = 'Operador',
     terminalName = 'Terminal 01',
     openedAt,
-    isLoading = false
+    isLoading = false,
+    printerConnected = false,
+    printCashClose
 }) => {
     const [closingBalance, setClosingBalance] = useState('');
     const [notes, setNotes] = useState('');
@@ -58,7 +64,33 @@ const CashCloseModal: React.FC<CashCloseModalProps> = ({
         setShowConfirmation(false);
     };
 
-    const handlePrint = () => {
+    const handlePrint = async () => {
+        // Try thermal printing first if available
+        if (printerConnected && printCashClose) {
+            try {
+                await printCashClose({
+                    terminalName,
+                    operatorName,
+                    openedAt: openedAt ? new Date(openedAt).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR'),
+                    closedAt: new Date().toLocaleString('pt-BR'),
+                    openingBalance,
+                    totalSales,
+                    totalDebit,
+                    totalCredit,
+                    totalPix,
+                    totalSuprimentos,
+                    totalSangrias,
+                    expectedBalance,
+                    closingBalance: parsedClosingBalance,
+                    notes: notes.trim() || undefined
+                });
+                return; // Success, no need for fallback
+            } catch (e) {
+                console.error('Thermal print failed, falling back to browser:', e);
+            }
+        }
+
+        // Fallback: browser print dialog
         const printContent = printRef.current;
         if (!printContent) return;
 

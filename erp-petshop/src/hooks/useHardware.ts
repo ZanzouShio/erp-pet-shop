@@ -32,11 +32,33 @@ export interface ReceiptData {
     change?: number;
     installments?: number;
     operator?: string;
+    customer?: {
+        name?: string;
+        cpf?: string;
+        cashback_balance?: number;
+    };
 }
 
 export interface PrinterInfo {
     name: string;
     port: string;
+}
+
+export interface CashCloseData {
+    terminalName?: string;
+    operatorName?: string;
+    openedAt?: string;
+    closedAt?: string;
+    openingBalance: number;
+    totalSales: number;
+    totalDebit?: number;
+    totalCredit?: number;
+    totalPix?: number;
+    totalSuprimentos: number;
+    totalSangrias: number;
+    expectedBalance: number;
+    closingBalance: number;
+    notes?: string;
 }
 
 interface HardwareHook {
@@ -48,6 +70,7 @@ interface HardwareHook {
     readWeight: () => void;
     simulateBarcode: (barcode: string) => void;
     printReceipt: (data: ReceiptData) => Promise<boolean>;
+    printCashClose: (data: CashCloseData) => Promise<boolean>;
     listPrinters: () => Promise<PrinterInfo[]>;
 }
 
@@ -225,6 +248,38 @@ export function useHardware(): HardwareHook {
         });
     }, [sendCommand]);
 
+    const printCashClose = useCallback((data: CashCloseData): Promise<boolean> => {
+        return new Promise((resolve, reject) => {
+            if (wsRef.current?.readyState !== WebSocket.OPEN) {
+                reject(new Error('Hardware service not connected'));
+                return;
+            }
+
+            const handleMessage = (event: MessageEvent) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    if (msg.type === 'cashClosePrinted') {
+                        wsRef.current?.removeEventListener('message', handleMessage);
+                        resolve(true);
+                    } else if (msg.type === 'error') {
+                        wsRef.current?.removeEventListener('message', handleMessage);
+                        reject(new Error(msg.message));
+                    }
+                } catch (e) {
+                    // Ignore parse errors
+                }
+            };
+
+            wsRef.current?.addEventListener('message', handleMessage);
+            sendCommand('printCashClose', { data });
+
+            setTimeout(() => {
+                wsRef.current?.removeEventListener('message', handleMessage);
+                reject(new Error('Print timeout'));
+            }, 10000);
+        });
+    }, [sendCommand]);
+
     const printerConnected = status.devices.includes('printer');
 
     return {
@@ -236,6 +291,7 @@ export function useHardware(): HardwareHook {
         readWeight,
         simulateBarcode,
         printReceipt,
+        printCashClose,
         listPrinters
     };
 }
