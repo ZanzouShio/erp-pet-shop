@@ -5,7 +5,7 @@ export const createSale = async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        const { items, payment_method, discount_amount, discount_reason, installments = 1, customer_id, due_date, paymentConfigId, feePercent, cash_register_id } = req.body;
+        const { items, payment_method, discount_amount, discount_reason, installments = 1, customer_id, due_date, paymentConfigId, feePercent, cash_register_id, user_id: body_user_id } = req.body;
 
         if (!items || items.length === 0) {
             await client.query('ROLLBACK');
@@ -25,8 +25,8 @@ export const createSale = async (req, res) => {
         const saleNumberResult = await client.query('SELECT COALESCE(MAX(CAST(sale_number AS INTEGER)), 0) + 1 as next_number FROM sales WHERE sale_number ~ \'^[0-9]+$\'');
         const sale_number = saleNumberResult.rows[0].next_number.toString();
 
-        // User ID - Admin PDV (Dynamic fetch)
-        let user_id = req.user_id; // Try to get from request (middleware)
+        // User ID - Prioriza: 1) body.user_id (frontend), 2) req.user_id (middleware), 3) primeiro usuário do banco
+        let user_id = body_user_id || req.user_id;
         if (!user_id) {
             const userResult = await client.query('SELECT id FROM users LIMIT 1');
             user_id = userResult.rows[0]?.id;

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Filter, Eye, Calendar, DollarSign, FileText, Smartphone, Printer } from 'lucide-react';
 import NFCeEmissionModal from '../components/NFCeEmissionModal';
 import NFeEmissionModal from '../components/NFeEmissionModal';
+import { useHardware } from '../hooks/useHardware';
 
 import { API_URL } from '../services/api';
 
@@ -88,6 +89,9 @@ export default function Sales() {
     const [showNFCeModal, setShowNFCeModal] = useState(false);
     const [showNFeModal, setShowNFeModal] = useState(false);
     const [company, setCompany] = useState<any>(null);
+
+    // Hardware Service Integration
+    const { printReceipt, printerConnected } = useHardware();
 
     // Carregar dados da empresa para impressão
     useEffect(() => {
@@ -283,9 +287,45 @@ export default function Sales() {
         }
     };
 
-    const handlePrintReceipt = () => {
+    const handlePrintReceipt = async () => {
         if (!selectedSale) return;
 
+        // Try thermal printing first if available
+        if (printerConnected) {
+            try {
+                const companyName = company?.trade_name || company?.company_name || 'ERP Pet Shop';
+                const address = company?.address ? `${company.address}, ${company.number || ''}`.trim() : '';
+                const address2 = [company?.neighborhood, company?.city, company?.state].filter(Boolean).join(', ');
+                const contact = [company?.email, company?.phone].filter(Boolean).join(' | ');
+
+                await printReceipt({
+                    companyName,
+                    address: address || undefined,
+                    address2: address2 || undefined,
+                    contact: contact || undefined,
+                    saleNumber: String(selectedSale.sale_number),
+                    date: new Date(selectedSale.created_at).toLocaleString('pt-BR'),
+                    items: selectedSale.items.map(item => ({
+                        name: item.product_name,
+                        quantity: item.quantity,
+                        price: item.unit_price,
+                        total: item.total
+                    })),
+                    subtotal: selectedSale.subtotal,
+                    discount: selectedSale.discount_amount,
+                    total: selectedSale.total_amount,
+                    paymentMethod: selectedSale.payments.map(p => paymentMethodLabels[p.payment_method] || p.payment_method).join(', '),
+                    change: 0,
+                    installments: selectedSale.installments?.length || 1,
+                    operator: selectedSale.user_name || 'Operador'
+                });
+                return; // Success, no need for fallback
+            } catch (e) {
+                console.error('Thermal print failed, falling back to browser:', e);
+            }
+        }
+
+        // Fallback: browser print dialog
         const printWindow = window.open('', '', 'width=300,height=600');
         if (!printWindow) return;
 

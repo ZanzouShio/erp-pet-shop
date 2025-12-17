@@ -348,6 +348,7 @@ export default function POS({ onExit }: POSProps) {
         discount_reason: discountReason || null,
         customer_id: selectedCustomer?.id,
         cash_register_id: cashState.register?.id || null,
+        user_id: user?.id, // Vincular venda ao operador logado
         notes: null,
         ...details // Incluir paymentConfigId, installments, feePercent, useWalletBalance
       };
