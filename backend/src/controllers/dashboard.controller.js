@@ -12,6 +12,16 @@ export const getSummary = async (req, res) => {
               AND status = 'completed'
         `);
 
+        // 1b. Vendas de ontem (para comparação)
+        const salesYesterday = await pool.query(`
+            SELECT 
+                COUNT(*) as count,
+                COALESCE(SUM(total), 0) as total
+            FROM sales
+            WHERE DATE(created_at AT TIME ZONE 'America/Sao_Paulo') = DATE(NOW() AT TIME ZONE 'America/Sao_Paulo') - INTERVAL '1 day'
+              AND status = 'completed'
+        `);
+
         // 2. Produtos com baixo estoque
         const lowStock = await pool.query(`
             SELECT COUNT(*) as count
@@ -61,6 +71,10 @@ export const getSummary = async (req, res) => {
             sales_today: {
                 total: parseFloat(salesToday.rows[0].total) || 0,
                 count: parseInt(salesToday.rows[0].count) || 0
+            },
+            sales_yesterday: {
+                total: parseFloat(salesYesterday.rows[0].total) || 0,
+                count: parseInt(salesYesterday.rows[0].count) || 0
             },
             new_customers_count: parseInt(newCustomers.rows[0].count) || 0,
             low_stock_count: parseInt(lowStock.rows[0].count) || 0,

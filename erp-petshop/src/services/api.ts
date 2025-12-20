@@ -40,3 +40,36 @@ api.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+
+/**
+ * Authenticated fetch wrapper - use this instead of native fetch for API calls
+ * Automatically adds auth header and redirects to login on token expiration
+ */
+export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+    const token = localStorage.getItem('token');
+
+    const headers = new Headers(options.headers || {});
+    if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+    }
+    if (!headers.has('Content-Type') && options.body) {
+        headers.set('Content-Type', 'application/json');
+    }
+
+    const response = await fetch(url, {
+        ...options,
+        headers
+    });
+
+    // Handle auth errors
+    if (response.status === 401 || response.status === 403) {
+        if (!window.location.pathname.includes('/login')) {
+            console.warn('Token inválido ou expirado. Redirecionando para login...');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+    }
+
+    return response;
+}

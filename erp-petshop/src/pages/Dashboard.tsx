@@ -1,4 +1,4 @@
-import { TrendingUp, Users, Package, Calendar, ArrowUpRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, Package, Calendar, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { API_URL } from '../services/api';
@@ -57,11 +57,21 @@ export default function Dashboard() {
             const topProductsResponse = await fetch(`${API_URL}/statistics/top-products?period=7`);
             const topProductsData = await topProductsResponse.json();
 
+            // Calcular variação percentual
+            const todayTotal = stats.sales_today.total;
+            const yesterdayTotal = stats.sales_yesterday?.total || 0;
+            let changePercent = 0;
+            if (yesterdayTotal > 0) {
+                changePercent = Math.round(((todayTotal - yesterdayTotal) / yesterdayTotal) * 100);
+            } else if (todayTotal > 0) {
+                changePercent = 100; // Se ontem foi 0 e hoje tem vendas, é 100% de crescimento
+            }
+
             // Atualizar métricas
             setMetrics({
                 salesToday: {
-                    value: stats.sales_today.total,
-                    change: 5 // TODO: calcular vs ontem
+                    value: todayTotal,
+                    change: changePercent
                 },
                 newCustomers: {
                     value: stats.new_customers_count,
@@ -116,14 +126,25 @@ export default function Dashboard() {
                                 {formatCurrency(metrics.salesToday.value)}
                             </h3>
                         </div>
-                        <div className="bg-green-100 p-3 rounded-lg">
-                            <TrendingUp className="text-green-600" size={24} />
+                        <div className={`p-3 rounded-lg ${metrics.salesToday.change >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+                            {metrics.salesToday.change >= 0 ? (
+                                <TrendingUp className="text-green-600" size={24} />
+                            ) : (
+                                <TrendingDown className="text-red-600" size={24} />
+                            )}
                         </div>
                     </div>
-                    <div className="flex items-center gap-1 text-green-600 text-sm">
-                        <ArrowUpRight size={16} />
-                        <span>+{metrics.salesToday.change}% vs ontem</span>
-                    </div>
+                    {metrics.salesToday.change !== 0 ? (
+                        <div className={`flex items-center gap-1 text-sm ${metrics.salesToday.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {metrics.salesToday.change >= 0 ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+                            <span>{metrics.salesToday.change >= 0 ? '+' : ''}{metrics.salesToday.change}% vs ontem</span>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1 text-gray-500 text-sm">
+                            <Minus size={16} />
+                            <span>Igual a ontem</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* New Customers */}

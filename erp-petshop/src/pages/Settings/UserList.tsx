@@ -17,7 +17,7 @@ import {
     RefreshCw,
     X
 } from 'lucide-react';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 
 interface User {
     id: string;
@@ -87,9 +87,7 @@ export default function UserList() {
 
     const loadRoles = async () => {
         try {
-            const response = await fetch(`${API_URL}/roles`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
+            const response = await authFetch(`${API_URL}/roles`);
             if (!response.ok) {
                 console.error('Error loading roles:', response.status);
                 setRoles([]);
@@ -113,9 +111,7 @@ export default function UserList() {
             if (roleFilter) params.append('role', roleFilter);
             if (statusFilter) params.append('isActive', statusFilter);
 
-            const response = await fetch(`${API_URL}/users?${params}`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
+            const response = await authFetch(`${API_URL}/users?${params}`);
 
             if (!response.ok) {
                 console.error('Error loading users:', response.status);
@@ -145,9 +141,8 @@ export default function UserList() {
         if (!confirm(`Deseja ${user.is_active ? 'desativar' : 'ativar'} o usuário ${user.name}?`)) return;
 
         try {
-            await fetch(`${API_URL}/users/${user.id}/toggle-status`, {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            await authFetch(`${API_URL}/users/${user.id}/toggle-status`, {
+                method: 'POST'
             });
             loadUsers();
         } catch (error) {
@@ -160,12 +155,9 @@ export default function UserList() {
 
         try {
             setActionLoading(true);
-            const response = await fetch(`${API_URL}/users/${showResetPassword.id}/reset-password`, {
+            const response = await authFetch(`${API_URL}/users/${showResetPassword.id}/reset-password`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ newPassword })
             });
 
@@ -189,10 +181,7 @@ export default function UserList() {
         if (!confirm(`Deseja excluir o usuário ${user.name}? Esta ação não pode ser desfeita.`)) return;
 
         try {
-            await fetch(`${API_URL}/users/${user.id}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
+            await authFetch(`${API_URL}/users/${user.id}`, { method: 'DELETE' });
             loadUsers();
         } catch (error) {
             console.error('Error deleting user:', error);
@@ -202,9 +191,7 @@ export default function UserList() {
     const loadLoginHistory = async (user: User) => {
         setShowLoginHistory(user);
         try {
-            const response = await fetch(`${API_URL}/users/${user.id}/login-history`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-            });
+            const response = await authFetch(`${API_URL}/users/${user.id}/login-history`);
             const data = await response.json();
             setLoginHistory(data || []);
         } catch (error) {

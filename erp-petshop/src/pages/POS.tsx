@@ -33,14 +33,39 @@ export default function POS({ onExit }: POSProps) {
   const { user } = useAuth();
 
   const [products, setProducts] = useState<Product[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
+
+  // Initialize cart from localStorage
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('pos_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+
   const [searchTerm, setSearchTerm] = useState('');
   const [showPayment, setShowPayment] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [cartDiscount, setCartDiscount] = useState(0); // Desconto geral do carrinho
-  const [discountReason, setDiscountReason] = useState(''); // Motivo do desconto
 
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  // Initialize discount from localStorage
+  const [cartDiscount, setCartDiscount] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pos_discount');
+      return saved ? parseFloat(saved) : 0;
+    } catch { return 0; }
+  });
+  const [discountReason, setDiscountReason] = useState(() => {
+    try {
+      return localStorage.getItem('pos_discount_reason') || '';
+    } catch { return ''; }
+  });
+
+  // Initialize customer from localStorage
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(() => {
+    try {
+      const saved = localStorage.getItem('pos_customer');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
   const [showQuickCustomerModal, setShowQuickCustomerModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastSale, setLastSale] = useState<{
@@ -158,6 +183,26 @@ export default function POS({ onExit }: POSProps) {
   useEffect(() => {
     checkStatus(TERMINAL_ID);
   }, [checkStatus]);
+
+  // Persist cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('pos_cart', JSON.stringify(cart));
+  }, [cart]);
+
+  // Persist discount to localStorage
+  useEffect(() => {
+    localStorage.setItem('pos_discount', cartDiscount.toString());
+    localStorage.setItem('pos_discount_reason', discountReason);
+  }, [cartDiscount, discountReason]);
+
+  // Persist customer to localStorage
+  useEffect(() => {
+    if (selectedCustomer) {
+      localStorage.setItem('pos_customer', JSON.stringify(selectedCustomer));
+    } else {
+      localStorage.removeItem('pos_customer');
+    }
+  }, [selectedCustomer]);
 
   // Handlers para operações de caixa
   const handleOpenCash = async (openingBalance: number, notes?: string) => {
