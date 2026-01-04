@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Check, Upload, Link as LinkIcon, Plus, RefreshCw } from 'lucide-react';
 
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 
 interface BankTransaction {
     id: string;
@@ -51,7 +51,7 @@ export default function BankReconciliation() {
 
     const loadBankAccounts = async () => {
         try {
-            const res = await fetch(`${API_URL}/financial/bank-accounts`);
+            const res = await authFetch(`${API_URL}/financial/bank-accounts`);
             const data = await res.json();
             setBankAccounts(data);
             if (data.length > 0) setSelectedAccount(data[0].id);
@@ -64,7 +64,7 @@ export default function BankReconciliation() {
         if (!selectedAccount) return;
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/bank-reconciliation?bank_account_id=${selectedAccount}`);
+            const res = await authFetch(`${API_URL}/bank-reconciliation?bank_account_id=${selectedAccount}`);
             const data = await res.json();
             setBankTransactions(data.bankTransactions || []);
             setSystemTransactions(data.systemTransactions || []);
@@ -173,7 +173,7 @@ export default function BankReconciliation() {
                     return;
                 }
 
-                const res = await fetch(`${API_URL}/bank-reconciliation/import`, {
+                const res = await authFetch(`${API_URL}/bank-reconciliation/import`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -222,7 +222,7 @@ export default function BankReconciliation() {
         if (!selectedBankItem || !selectedSystemItem) return;
 
         try {
-            const res = await fetch(`${API_URL}/bank-reconciliation/match`, {
+            const res = await authFetch(`${API_URL}/bank-reconciliation/match`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -256,7 +256,7 @@ export default function BankReconciliation() {
         if (!confirm(`Deseja criar uma transação financeira para "${bankItem.bank_description}" no valor de R$ ${bankItem.bank_amount}?`)) return;
 
         try {
-            const res = await fetch(`${API_URL}/bank-reconciliation/create-and-match`, {
+            const res = await authFetch(`${API_URL}/bank-reconciliation/create-and-match`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

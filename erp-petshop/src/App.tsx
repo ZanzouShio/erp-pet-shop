@@ -52,6 +52,7 @@ import UserList from './pages/Settings/UserList';
 import UserForm from './pages/Settings/UserForm';
 import RoleList from './pages/Settings/RoleList';
 import ProductCategories from './pages/Settings/ProductCategories';
+import ImageGallery from './pages/Settings/ImageGallery';
 import GroomingManagement from './pages/GroomingManagement';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
@@ -167,6 +168,7 @@ function AdminRoutes() {
         <Route path="settings/users/new" element={<UserForm />} />
         <Route path="settings/users/:id" element={<UserForm />} />
         <Route path="settings/roles" element={<RoleList />} />
+        <Route path="settings/images" element={<ImageGallery />} />
 
         {/* Grooming Management */}
         <Route path="grooming-settings" element={<GroomingManagement />} />

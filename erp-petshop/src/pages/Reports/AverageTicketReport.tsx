@@ -6,7 +6,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 import { formatCurrency } from '../../utils/format';
 
 interface GeneralMetrics {
@@ -90,7 +90,7 @@ export default function AverageTicketReport() {
                 startDate,
                 endDate
             });
-            const response = await fetch(`${API_URL}/reports/average-ticket?${params}`);
+            const response = await authFetch(`${API_URL}/reports/average-ticket?${params}`);
             if (response.ok) {
                 const result = await response.json();
                 setData(result);

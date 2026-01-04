@@ -22,7 +22,8 @@ import {
     Building2,
     Scissors,
     FileSearch,
-    Monitor
+    Monitor,
+    Image as ImageIcon
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -51,7 +52,7 @@ const roleMenuAccess: Record<string, string[]> = {
     estoque: ['dashboard', 'stock', 'reports', 'suppliers'],
 };
 
-export default function Sidebar({ onNavigate }: SidebarProps) {
+export default function Sidebar({ }: SidebarProps) {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [expandedMenus, setExpandedMenus] = useState<string[]>(['financial', 'stock', 'settings']);
     const navigate = useNavigate();
@@ -159,6 +160,7 @@ export default function Sidebar({ onNavigate }: SidebarProps) {
                     subItems: [
                         { id: 'users-management', label: 'Usuários', icon: Users, enabled: true, path: '/admin/settings/users' },
                         { id: 'audit-logs', label: 'Auditoria de Logs', icon: FileSearch, enabled: true, path: '/admin/settings/audit-logs' },
+                        { id: 'image-gallery', label: 'Galeria de Imagens', icon: ImageIcon, enabled: true, path: '/admin/settings/images' },
                     ]
                 }
             ]

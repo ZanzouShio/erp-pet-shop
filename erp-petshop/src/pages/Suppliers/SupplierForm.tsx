@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Truck } from 'lucide-react';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 import { maskCNPJ, maskPhone, maskMobile, maskCEP, unmask } from '../../utils/masks';
 import { validateCNPJ } from '../../utils/validators';
+import { useToast } from '../../components/Toast';
 
 interface SupplierFormData {
     company_name: string;
@@ -56,6 +57,7 @@ const initialData: SupplierFormData = {
 export default function SupplierForm() {
     const navigate = useNavigate();
     const { id } = useParams();
+    const toast = useToast();
     const [formData, setFormData] = useState<SupplierFormData>(initialData);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -69,11 +71,12 @@ export default function SupplierForm() {
     const loadSupplier = async (supplierId: string) => {
         setLoading(true);
         try {
-            const response = await fetch(`${API_URL}/suppliers/${supplierId}`);
+            const response = await authFetch(`${API_URL}/suppliers/${supplierId}`);
             if (!response.ok) throw new Error('Falha ao carregar fornecedor');
             const data = await response.json();
             setFormData({
                 ...data,
+                cnpj: maskCNPJ(data.cnpj || ''),
                 trade_name: data.trade_name || '',
                 email: data.email || '',
                 phone: maskPhone(data.phone || ''),
@@ -93,7 +96,7 @@ export default function SupplierForm() {
             });
         } catch (error) {
             console.error('Erro ao carregar fornecedor:', error);
-            alert('Erro ao carregar dados do fornecedor');
+            toast.error('Erro ao carregar dados do fornecedor');
             navigate('/admin/suppliers');
         } finally {
             setLoading(false);
@@ -104,7 +107,7 @@ export default function SupplierForm() {
         e.preventDefault();
 
         if (!validateCNPJ(formData.cnpj)) {
-            alert('CNPJ inválido! Verifique o número digitado.');
+            toast.error('CNPJ inválido! Verifique o número digitado.');
             return;
         }
 
@@ -128,7 +131,7 @@ export default function SupplierForm() {
                 updated_at: undefined
             };
 
-            const response = await fetch(url, {
+            const response = await authFetch(url, {
                 method,
                 headers: {
                     'Content-Type': 'application/json'
@@ -141,11 +144,11 @@ export default function SupplierForm() {
                 throw new Error(errorData.error || 'Erro ao salvar fornecedor');
             }
 
-            alert(id ? 'Fornecedor atualizado com sucesso!' : 'Fornecedor cadastrado com sucesso!');
+            toast.success(id ? 'Fornecedor atualizado com sucesso!' : 'Fornecedor cadastrado com sucesso!');
             navigate('/admin/suppliers');
         } catch (error: any) {
             console.error('Erro ao salvar:', error);
-            alert(error.message || 'Erro ao salvar fornecedor');
+            toast.error(error.message || 'Erro ao salvar fornecedor');
         } finally {
             setSaving(false);
         }
@@ -165,7 +168,7 @@ export default function SupplierForm() {
 
     const handleCnpjBlur = () => {
         if (formData.cnpj && !validateCNPJ(formData.cnpj)) {
-            alert('CNPJ inválido!');
+            toast.error('CNPJ inválido!');
         }
     };
 

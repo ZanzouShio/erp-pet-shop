@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Printer, ArrowLeft, AlertTriangle, PackageX, CalendarX, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 
 export default function StockAlertsReport() {
     const navigate = useNavigate();
@@ -16,7 +16,7 @@ export default function StockAlertsReport() {
     const fetchReport = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/reports/stock-alerts`);
+            const res = await authFetch(`${API_URL}/reports/stock-alerts`);
             if (!res.ok) throw new Error('Falha ao carregar relatório');
             const json = await res.json();
             setData(json);

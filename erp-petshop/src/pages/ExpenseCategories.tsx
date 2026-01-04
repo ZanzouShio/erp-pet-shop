@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Save, X } from 'lucide-react';
 
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 
 interface ExpenseCategory {
     id: string;
@@ -24,7 +24,7 @@ export default function ExpenseCategories() {
 
     const loadCategories = async () => {
         try {
-            const response = await fetch(`${API_URL}/accounts-payable/categories`);
+            const response = await authFetch(`${API_URL}/accounts-payable/categories`);
             const data = await response.json();
             setCategories(data);
         } catch (error) {
@@ -38,13 +38,13 @@ export default function ExpenseCategories() {
         e.preventDefault();
         try {
             if (editingId) {
-                await fetch(`${API_URL}/accounts-payable/categories/${editingId}`, {
+                await authFetch(`${API_URL}/accounts-payable/categories/${editingId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
                 });
             } else {
-                await fetch(`${API_URL}/accounts-payable/categories`, {
+                await authFetch(`${API_URL}/accounts-payable/categories`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
@@ -62,7 +62,7 @@ export default function ExpenseCategories() {
     const handleDelete = async (id: string) => {
         if (!confirm('Tem certeza que deseja excluir esta categoria?')) return;
         try {
-            const response = await fetch(`${API_URL}/accounts-payable/categories/${id}`, {
+            const response = await authFetch(`${API_URL}/accounts-payable/categories/${id}`, {
                 method: 'DELETE'
             });
             if (!response.ok) {

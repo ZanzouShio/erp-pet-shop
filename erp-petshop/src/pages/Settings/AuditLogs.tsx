@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, FileText, Clock } from 'lucide-react';
 import { format } from 'date-fns';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 
 interface AuditLog {
     id: string;
@@ -71,8 +71,8 @@ export default function AuditLogs() {
     const loadFilters = async () => {
         try {
             const [typesRes, actionsRes] = await Promise.all([
-                fetch(`${API_URL}/audit-logs/entity-types`),
-                fetch(`${API_URL}/audit-logs/actions`)
+                authFetch(`${API_URL}/audit-logs/entity-types`),
+                authFetch(`${API_URL}/audit-logs/actions`)
             ]);
             if (typesRes.ok) {
                 setEntityTypes(await typesRes.json());
@@ -96,7 +96,7 @@ export default function AuditLogs() {
             if (selectedEntityType) params.append('entity_type', selectedEntityType);
             if (selectedAction) params.append('action', selectedAction);
 
-            const response = await fetch(`${API_URL}/audit-logs?${params}`);
+            const response = await authFetch(`${API_URL}/audit-logs?${params}`);
             if (response.ok) {
                 setLogs(await response.json());
             }

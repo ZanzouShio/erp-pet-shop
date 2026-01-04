@@ -4,7 +4,7 @@ import NFCeEmissionModal from '../components/NFCeEmissionModal';
 import NFeEmissionModal from '../components/NFeEmissionModal';
 import { useHardware } from '../hooks/useHardware';
 
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 
 interface Sale {
     id: string;
@@ -100,7 +100,7 @@ export default function Sales() {
 
     // Carregar dados da empresa para impressão
     useEffect(() => {
-        fetch(`${API_URL}/settings`)
+        authFetch(`${API_URL}/settings`)
             .then(res => res.json())
             .then(data => setCompany(data))
             .catch(err => console.error('Erro ao carregar empresa:', err));
@@ -170,7 +170,7 @@ export default function Sales() {
             params.append('limit', String(ITEMS_PER_PAGE));
             params.append('offset', String((currentPage - 1) * ITEMS_PER_PAGE));
 
-            const response = await fetch(`${API_URL}/sales?${params}`);
+            const response = await authFetch(`${API_URL}/sales?${params}`);
             const data = await response.json();
 
             // Backend agora retorna { data: [...], pagination: {...} }
@@ -213,7 +213,7 @@ export default function Sales() {
 
     const loadSaleDetails = async (saleId: string) => {
         try {
-            const response = await fetch(`${API_URL}/sales/${saleId}`);
+            const response = await authFetch(`${API_URL}/sales/${saleId}`);
             if (!response.ok) throw new Error('Erro ao carregar detalhes');
             const data = await response.json();
             setSelectedSale(data);
@@ -231,7 +231,7 @@ export default function Sales() {
         }
 
         try {
-            const response = await fetch(`${API_URL}/sales/${selectedSale.id}/cancel`, {
+            const response = await authFetch(`${API_URL}/sales/${selectedSale.id}/cancel`, {
                 method: 'POST'
             });
 
@@ -258,7 +258,7 @@ export default function Sales() {
 
         try {
             console.log('📡 Sending request to', `${API_URL}/invoices`);
-            const response = await fetch(`${API_URL}/invoices`, {
+            const response = await authFetch(`${API_URL}/invoices`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

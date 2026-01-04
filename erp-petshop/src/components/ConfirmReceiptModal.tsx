@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, CheckCircle, AlertCircle, DollarSign, CreditCard, Banknote } from 'lucide-react';
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 
 interface ConfirmReceiptModalProps {
     title: {
@@ -26,7 +26,7 @@ export default function ConfirmReceiptModal({ title, onClose, onConfirm }: Confi
 
     const fetchBankAccounts = async () => {
         try {
-            const res = await fetch(`${API_URL}/financial/bank-accounts`);
+            const res = await authFetch(`${API_URL}/financial/bank-accounts`);
             const data = await res.json();
             setBankAccounts(data.filter((acc: any) => acc.is_active));
         } catch (error) {

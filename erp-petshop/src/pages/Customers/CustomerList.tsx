@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, User, Phone, MapPin, ArrowUp, ArrowDown, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 import { maskMobile } from '../../utils/masks';
 
 export default function CustomerList() {
@@ -27,7 +27,7 @@ export default function CustomerList() {
 
     const fetchSpecies = async () => {
         try {
-            const res = await fetch(`${API_URL}/pet-species`);
+            const res = await authFetch(`${API_URL}/pet-species`);
             if (res.ok) {
                 const data = await res.json();
                 setSpeciesOptions(data);
@@ -48,7 +48,7 @@ export default function CustomerList() {
                 sortOrder,
                 species
             });
-            const res = await fetch(`${API_URL}/customers?${params}`);
+            const res = await authFetch(`${API_URL}/customers?${params}`);
             const data = await res.json();
             setCustomers(data.data);
             setTotalPages(data.meta.pages);
@@ -62,7 +62,7 @@ export default function CustomerList() {
     const handleDelete = async (id: string) => {
         if (!confirm('Tem certeza que deseja excluir este cliente?')) return;
         try {
-            const res = await fetch(`${API_URL}/customers/${id}`, { method: 'DELETE' });
+            const res = await authFetch(`${API_URL}/customers/${id}`, { method: 'DELETE' });
             if (res.ok) {
                 fetchCustomers();
             } else {

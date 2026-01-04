@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Filter, CheckCircle, AlertCircle, Clock, Search, X, CreditCard, Wallet, Banknote, XCircle, Info } from 'lucide-react';
 
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 import { useToast } from '../components/Toast';
 
 interface AccountPayable {
@@ -123,7 +123,7 @@ export default function AccountsPayable() {
             if (startDate) params.append('startDate', startDate);
             if (endDate) params.append('endDate', endDate);
 
-            const response = await fetch(`${API_URL}/accounts-payable?${params}`);
+            const response = await authFetch(`${API_URL}/accounts-payable?${params}`);
             if (!response.ok) {
                 throw new Error('Erro ao carregar contas');
             }
@@ -140,9 +140,9 @@ export default function AccountsPayable() {
     const loadDependencies = async () => {
         try {
             const [catRes, supRes, bankRes] = await Promise.all([
-                fetch(`${API_URL}/accounts-payable/categories`),
-                fetch(`${API_URL}/financial/suppliers`),
-                fetch(`${API_URL}/financial/bank-accounts`)
+                authFetch(`${API_URL}/accounts-payable/categories`),
+                authFetch(`${API_URL}/financial/suppliers`),
+                authFetch(`${API_URL}/financial/bank-accounts`)
             ]);
             if (catRes.ok) setCategories(await catRes.json());
             if (supRes.ok) setSuppliers(await supRes.json());
@@ -158,7 +158,7 @@ export default function AccountsPayable() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await fetch(`${API_URL}/accounts-payable`, {
+            const response = await authFetch(`${API_URL}/accounts-payable`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -193,7 +193,7 @@ export default function AccountsPayable() {
 
         try {
             setProcessingPayment(true);
-            const response = await fetch(`${API_URL}/accounts-payable/${selectedAccount.id}/pay`, {
+            const response = await authFetch(`${API_URL}/accounts-payable/${selectedAccount.id}/pay`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -228,7 +228,7 @@ export default function AccountsPayable() {
         if (!selectedAccount) return;
         setProcessingCancel(true);
         try {
-            const response = await fetch(`${API_URL}/accounts-payable/${selectedAccount.id}/cancel`, {
+            const response = await authFetch(`${API_URL}/accounts-payable/${selectedAccount.id}/cancel`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ reason: cancelReason })

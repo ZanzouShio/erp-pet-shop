@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, PackageOpen, ArrowRight } from 'lucide-react';
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 
 interface Product {
     id: string;
@@ -34,7 +34,7 @@ export default function OpenPackageModal({ isOpen, onClose, onSuccess, initialPa
 
     const loadProducts = async () => {
         try {
-            const response = await fetch(`${API_URL}/products`);
+            const response = await authFetch(`${API_URL}/products`);
             const data = await response.json();
             // Filtrar apenas produtos que TÊM filhos a granel
             setProducts(data.filter((p: any) => p.children && p.children.length > 0));
@@ -49,7 +49,7 @@ export default function OpenPackageModal({ isOpen, onClose, onSuccess, initialPa
 
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/stock-movements/open-package`, {
+            const response = await authFetch(`${API_URL}/stock-movements/open-package`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

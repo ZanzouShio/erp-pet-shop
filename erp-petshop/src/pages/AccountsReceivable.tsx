@@ -19,7 +19,7 @@ interface ReceivableTitle {
     payment_method: string;
 }
 
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 
 export default function AccountsReceivable() {
     const [titles, setTitles] = useState<ReceivableTitle[]>([]);
@@ -86,7 +86,7 @@ export default function AccountsReceivable() {
             if (startDate) params.append('start_date', startDate);
             if (endDate) params.append('end_date', endDate);
 
-            const response = await fetch(`${API_URL}/accounts-receivable?${params}`);
+            const response = await authFetch(`${API_URL}/accounts-receivable?${params}`);
             const data = await response.json();
             setTitles(data);
         } catch (error) {
@@ -110,7 +110,7 @@ export default function AccountsReceivable() {
         if (!selectedTitle) return;
 
         try {
-            const response = await fetch(`${API_URL}/accounts-receivable/${selectedTitle.id}/receive`, {
+            const response = await authFetch(`${API_URL}/accounts-receivable/${selectedTitle.id}/receive`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, Building2, MapPin, Phone, Upload, ArrowLeft } from 'lucide-react';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 import { maskCNPJ, maskPhone, maskCEP } from '../../utils/masks';
 
 export default function CompanySettings() {
@@ -32,7 +32,7 @@ export default function CompanySettings() {
 
     const fetchSettings = async () => {
         try {
-            const response = await fetch(`${API_URL}/settings`);
+            const response = await authFetch(`${API_URL}/settings`);
             const data = await response.json();
 
             // Convert nulls to empty strings
@@ -85,7 +85,7 @@ export default function CompanySettings() {
         e.preventDefault();
         setSaving(true);
         try {
-            const response = await fetch(`${API_URL}/settings`, {
+            const response = await authFetch(`${API_URL}/settings`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)

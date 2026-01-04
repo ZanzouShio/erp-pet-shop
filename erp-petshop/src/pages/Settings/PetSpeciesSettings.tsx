@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Save, X, AlertCircle } from 'lucide-react';
 
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 
 interface PetSpecies {
     id: string;
@@ -24,7 +24,7 @@ export default function PetSpeciesSettings() {
     const fetchSpecies = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/pet-species`);
+            const res = await authFetch(`${API_URL}/pet-species`);
             const data = await res.json();
             setSpecies(data);
         } catch (error) {
@@ -40,7 +40,7 @@ export default function PetSpeciesSettings() {
         if (!newName.trim()) return;
 
         try {
-            const res = await fetch(`${API_URL}/pet-species`, {
+            const res = await authFetch(`${API_URL}/pet-species`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: newName })
@@ -63,7 +63,7 @@ export default function PetSpeciesSettings() {
         if (!editName.trim()) return;
 
         try {
-            const res = await fetch(`${API_URL}/pet-species/${id}`, {
+            const res = await authFetch(`${API_URL}/pet-species/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: editName })
@@ -87,7 +87,7 @@ export default function PetSpeciesSettings() {
         if (!confirm('Tem certeza que deseja excluir esta espécie?')) return;
 
         try {
-            const res = await fetch(`${API_URL}/pet-species/${id}`, {
+            const res = await authFetch(`${API_URL}/pet-species/${id}`, {
                 method: 'DELETE'
             });
 

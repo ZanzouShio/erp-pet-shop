@@ -19,7 +19,7 @@ import SangriaModal from '../components/SangriaModal';
 import SuprimentoModal from '../components/SuprimentoModal';
 import CashReportModal from '../components/CashReportModal';
 
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 import { useHardware } from '../hooks/useHardware';
 import HardwareStatusIndicator from '../components/HardwareStatusIndicator';
 import { useAuth } from '../contexts/AuthContext';
@@ -93,6 +93,7 @@ export default function POS({ onExit }: POSProps) {
   const [cashReport, setCashReport] = useState<any>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [closingSummary, setClosingSummary] = useState<any>(null);
+  const [isForcedClose, setIsForcedClose] = useState(false);
 
   // Cash operation success modal
   const [cashSuccessModal, setCashSuccessModal] = useState<{
@@ -126,7 +127,7 @@ export default function POS({ onExit }: POSProps) {
 
     // Search for product by barcode/EAN
     try {
-      const response = await fetch(`${API_URL}/products?search=${encodeURIComponent(barcode)}`);
+      const response = await authFetch(`${API_URL}/products?search=${encodeURIComponent(barcode)}`);
       if (response.ok) {
         const data = await response.json();
         const productsFound = data.data || data;
@@ -137,7 +138,13 @@ export default function POS({ onExit }: POSProps) {
         );
 
         if (product) {
-          addToCart(product, 1);
+          // Add to cart directly
+          const existingItem = cart.find(item => item.id === product.id);
+          if (existingItem) {
+            setCart(cart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.price } : item));
+          } else {
+            setCart([...cart, { ...product, quantity: 1, discount: 0, subtotal: product.price }]);
+          }
         } else {
           console.log('Product not found for barcode:', barcode);
         }
@@ -158,7 +165,7 @@ export default function POS({ onExit }: POSProps) {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/products`);
+      const response = await authFetch(`${API_URL}/products`);
 
       if (!response.ok) {
         throw new Error('Erro ao buscar produtos');
@@ -183,6 +190,31 @@ export default function POS({ onExit }: POSProps) {
   useEffect(() => {
     checkStatus(TERMINAL_ID);
   }, [checkStatus]);
+
+  // Check for stale cash register (opened on previous day)
+  useEffect(() => {
+    if (cashState.isOpen && cashState.register && !cashState.loading) {
+      const openedAt = new Date(cashState.register.openedAt);
+      const today = new Date();
+
+      // Reset time components for date comparison
+      const openDate = new Date(openedAt.getFullYear(), openedAt.getMonth(), openedAt.getDate());
+      const currentDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+      // If opened before today, force close
+      if (openDate < currentDate) {
+        // Prevent infinite loop if modal is already open
+        if (!showCashCloseModal && !isForcedClose) {
+          console.log('Force closing register from previous day:', cashState.register.openedAt);
+          setIsForcedClose(true);
+          handleBeforeCloseCash(); // Prepare summary data
+          // We set showCashCloseModal(true) inside handleBeforeCloseCash usually, 
+          // but we need to ensure the user knows WHY.
+          alert('O caixa foi aberto em uma data anterior. É necessário realizar o fechamento para iniciar as operações de hoje.');
+        }
+      }
+    }
+  }, [cashState.isOpen, cashState.loading, cashState.register]);
 
   // Persist cart to localStorage whenever it changes
   useEffect(() => {
@@ -210,7 +242,23 @@ export default function POS({ onExit }: POSProps) {
     }
   }, [selectedCustomer]);
 
+
+
   // Handlers para operações de caixa
+  const handleBeforeCloseCash = async () => {
+    try {
+      setCashLoading(true);
+      const data = await getReport();
+      setClosingSummary(data);
+      setShowCashCloseModal(true);
+    } catch (error) {
+      console.error('Erro ao preparar fechamento:', error);
+      alert('Erro ao carregar dados para fechamento.');
+    } finally {
+      setCashLoading(false);
+    }
+  };
+
   const handleOpenCash = async (openingBalance: number, notes?: string) => {
     setCashLoading(true);
     const success = await openCash(TERMINAL_ID, openingBalance, notes);
@@ -225,6 +273,7 @@ export default function POS({ onExit }: POSProps) {
     const result = await closeCash(closingBalance, notes);
     setCashLoading(false);
     if (result.success) {
+      setIsForcedClose(false);
       setShowCashCloseModal(false);
       setCashSuccessModal({
         show: true,
@@ -405,7 +454,7 @@ export default function POS({ onExit }: POSProps) {
       };
 
       // Enviar venda ao backend
-      const response = await fetch(`${API_URL}/sales`, {
+      const response = await authFetch(`${API_URL}/sales`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(saleData)

@@ -5,7 +5,7 @@ import type { Appointment } from '../services/appointmentService';
 import { format, parseISO } from 'date-fns';
 import CustomerSearch from './CustomerSearch';
 import { ConfirmationModal } from './ConfirmationModal';
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 import { useToast } from './Toast';
 
 interface NewAppointmentModalProps {
@@ -100,7 +100,7 @@ export function NewAppointmentModal(props: NewAppointmentModalProps) {
 
                 // [NEW] Load Customer and Pets for Edit
                 if (initialData.customer_id) {
-                    fetch(`${API_URL}/customers/${initialData.customer_id}`)
+                    authFetch(`${API_URL}/customers/${initialData.customer_id}`)
                         .then(res => res.json())
                         .then(data => {
                             setSelectedCustomer(data);
@@ -313,7 +313,7 @@ export function NewAppointmentModal(props: NewAppointmentModalProps) {
                                         setSelectedCustomer(customer);
                                         if (customer) {
                                             // Fetch full details including pets if not present
-                                            fetch(`${API_URL}/customers/${customer.id}`)
+                                            authFetch(`${API_URL}/customers/${customer.id}`)
                                                 .then(res => res.json())
                                                 .then(data => {
                                                     setCustomerPets(data.pets || []);

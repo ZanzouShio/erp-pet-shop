@@ -53,6 +53,7 @@ O erro se mostra presente me todas as formas de pagamentos, e caso eu utilize a 
 
 -Em fornecedores acho pertinente que na ação de editar seja possível colocar o principal ou principais produtos que o fornecedor vende para nós.
 * Ajustado: Adicionado campo 'Fornecedor Principal' no formulário de produtos e botão 'Ver Produtos' na lista de fornecedores, exibindo produtos ordenados por estoque.
+
 -Na aba "Configurações" em "Financeiro" e logo em seguida em "Métodos de pagamento" na aba PIX, aparece novamente infinitepay, talvez fosse melhor colocar apenas a chave pix completa ou com alguma censura.
 * Não irei ajustar, pois está correto, o código de pix será gerado pela maquininha, então tem que saber qual maquininha foi pago o pix, PJ não recebe o pix diretamente na conta.
 
@@ -60,6 +61,7 @@ O erro se mostra presente me todas as formas de pagamentos, e caso eu utilize a 
 * O desconto já é registrado no sistema e qual foi o PDV que registrou o desconto e o motivo do desconto.
 
 -Em relatórios- "resumo de vendas do dia" o valor de total de vendas do turno (que aparece na opção fechar caixa) e o total de vendas não batem.
+* Ajustado
 
 -Em relatórios - posição de caixa diária, o valor de saldo atual em contas não está sendo atualizado, juntamente com as movimentações e entradas por forma de pagamento.
 * Ajustado: Corrigido o registro da data de pagamento (`paid_date`) nos controladores de Vendas, Contas a Receber e Contas a Pagar. Agora as transações aparecem corretamente no relatório.

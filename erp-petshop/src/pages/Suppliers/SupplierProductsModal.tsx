@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Package, AlertTriangle } from 'lucide-react';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 
 interface Product {
     id: string;
@@ -33,7 +33,7 @@ export default function SupplierProductsModal({ isOpen, onClose, supplierId, sup
     const loadProducts = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/suppliers/${supplierId}`);
+            const response = await authFetch(`${API_URL}/suppliers/${supplierId}`);
             if (!response.ok) throw new Error('Erro ao buscar produtos');
 
             const data = await response.json();

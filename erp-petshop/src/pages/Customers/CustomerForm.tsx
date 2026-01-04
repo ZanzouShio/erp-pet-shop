@@ -4,7 +4,7 @@ import { ArrowLeft, Save, Plus, Trash2, ShoppingBag, Calendar, DollarSign } from
 import { isValidCPF, formatCPF } from '../../utils/validators';
 import { maskMobile, maskPhone, maskCEP, unmask } from '../../utils/masks';
 
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 
 export default function CustomerForm() {
     const navigate = useNavigate();
@@ -47,7 +47,7 @@ export default function CustomerForm() {
 
     const fetchSpecies = async () => {
         try {
-            const res = await fetch(`${API_URL}/pet-species`);
+            const res = await authFetch(`${API_URL}/pet-species`);
             if (res.ok) {
                 const data = await res.json();
                 setSpeciesOptions(data);
@@ -72,7 +72,7 @@ export default function CustomerForm() {
 
     const fetchCustomer = async () => {
         try {
-            const res = await fetch(`${API_URL}/customers/${id}`);
+            const res = await authFetch(`${API_URL}/customers/${id}`);
             if (res.ok) {
                 const data = await res.json();
                 setFormData({
@@ -91,7 +91,7 @@ export default function CustomerForm() {
     const fetchSales = async () => {
         setLoadingSales(true);
         try {
-            const res = await fetch(`${API_URL}/sales?customerId=${id}&limit=20`);
+            const res = await authFetch(`${API_URL}/sales?customerId=${id}&limit=20`);
             if (res.ok) {
                 const data = await res.json();
                 setSales(data);
@@ -110,7 +110,7 @@ export default function CustomerForm() {
             // Por enquanto, vamos assumir que existe ou criar em breve.
             // Vou usar uma rota genérica de transações ou adicionar ao customer details
             // Melhor: adicionar endpoint /customers/:id/wallet-transactions
-            const res = await fetch(`${API_URL}/customers/${id}/wallet-transactions`);
+            const res = await authFetch(`${API_URL}/customers/${id}/wallet-transactions`);
             if (res.ok) {
                 const data = await res.json();
                 setWalletTransactions(data);
@@ -197,7 +197,7 @@ export default function CustomerForm() {
         if (petId && isEditing) {
             if (!confirm('Deseja remover este pet do banco de dados?')) return;
             try {
-                await fetch(`${API_URL}/customers/pets/${petId}`, { method: 'DELETE' });
+                await authFetch(`${API_URL}/customers/pets/${petId}`, { method: 'DELETE' });
             } catch (e) {
                 console.error(e);
                 return;

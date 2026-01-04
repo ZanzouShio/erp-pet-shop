@@ -20,6 +20,7 @@ export const getAllProducts = async (req, res) => {
         p.is_bulk,
         p.internal_code,
         p.sku,
+        p.image_url,
         p.parent_product_id,
         p.conversion_factor,
         pc.name as category,
@@ -53,6 +54,7 @@ export const getAllProducts = async (req, res) => {
             is_active: row.is_active,
             internal_code: row.internal_code,
             sku: row.sku,
+            image_url: row.image_url,
             // Bulk fields
             is_bulk: row.is_bulk,
             parent_product_id: row.parent_product_id,
@@ -97,7 +99,7 @@ export const createProduct = async (req, res) => {
             name, description, ean, sale_price, cost_price,
             stock_quantity, min_stock, max_stock, unit,
             category_id, supplier_id, is_active = true,
-            internal_code, sku, // Added fields
+            internal_code, sku, image_url, // Added fields
             // Bulk specific fields
             create_bulk, bulk_conversion_factor, bulk_unit, bulk_price
         } = req.body;
@@ -113,15 +115,15 @@ export const createProduct = async (req, res) => {
                 name, description, ean, sale_price, cost_price,
                 stock_quantity, min_stock, max_stock, unit,
                 category_id, supplier_id, is_active,
-                internal_code, sku,
+                internal_code, sku, image_url,
                 created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             RETURNING *
         `, [
             name, description, ean || null, sale_price, cost_price || 0,
             stock_quantity || 0, min_stock || 0, max_stock || null, unit || 'UN',
             category_id || null, supplier_id || null, is_active,
-            internal_code || null, sku || null
+            internal_code || null, sku || null, image_url || null
         ]);
 
         const parentProduct = parentResult.rows[0];
@@ -188,7 +190,7 @@ export const updateProduct = async (req, res) => {
             name, description, ean, sale_price, cost_price,
             stock_quantity, min_stock, max_stock, unit,
             category_id, supplier_id, is_active,
-            internal_code, sku,
+            internal_code, sku, image_url,
             // Bulk fields
             create_bulk, bulk_conversion_factor, bulk_unit, bulk_price
         } = req.body;
@@ -209,14 +211,15 @@ export const updateProduct = async (req, res) => {
                 is_active = COALESCE($12, is_active),
                 internal_code = COALESCE($13, internal_code),
                 sku = COALESCE($14, sku),
+                image_url = COALESCE($15, image_url),
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = $15
+            WHERE id = $16
             RETURNING *
         `, [
             name, description, ean, sale_price, cost_price,
             stock_quantity, min_stock, max_stock, unit,
             category_id, supplier_id, is_active,
-            internal_code, sku,
+            internal_code, sku, image_url,
             id
         ]);
 

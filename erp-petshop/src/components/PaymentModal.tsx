@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { PaymentMethod } from '../types/index';
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 
 interface PaymentModalProps {
     total: number;
@@ -50,7 +50,7 @@ export default function PaymentModal({
     const fetchConfigs = async (type: string) => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/payment-config/active/${type}`);
+            const res = await authFetch(`${API_URL}/payment-config/active/${type}`);
             const data = await res.json();
             setConfigs(data);
         } catch (error) {

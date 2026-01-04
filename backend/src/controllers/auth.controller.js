@@ -2,8 +2,7 @@
 import pool from '../db.js';
 import jwt from 'jsonwebtoken';
 import { verifyPassword } from '../utils/auth.utils.js';
-
-const SECRET_KEY = process.env.JWT_SECRET || 'erp-pet-shop-secret-key-change-me';
+import { SECRET_KEY } from '../middleware/auth.middleware.js';
 
 // Helper to log login attempts
 const logLoginAttempt = async (client, userId, req, success, reason = null) => {
@@ -48,7 +47,8 @@ export const login = async (req, res) => {
             return res.status(403).json({ error: 'Usuário inativo' });
         }
 
-        // Gerar Token
+        // Gerar Token com expiração configurável
+        const expiresIn = process.env.JWT_EXPIRES_IN || '8h';
         const token = jwt.sign(
             {
                 id: user.id,
@@ -56,7 +56,7 @@ export const login = async (req, res) => {
                 role: user.role
             },
             SECRET_KEY,
-            { expiresIn: '8h' }
+            { expiresIn }
         );
 
         // Registrar login bem-sucedido e atualizar last_login_at

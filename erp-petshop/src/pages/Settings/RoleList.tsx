@@ -8,7 +8,7 @@ import {
     Trash2,
     Lock
 } from 'lucide-react';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 
 interface Role {
     id: string;
@@ -58,7 +58,7 @@ export default function RoleList() {
     const loadRoles = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/roles?includeInactive=true`, {
+            const response = await authFetch(`${API_URL}/roles?includeInactive=true`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             const data = await response.json();
@@ -72,7 +72,7 @@ export default function RoleList() {
 
     const seedDefaults = async () => {
         try {
-            await fetch(`${API_URL}/roles/seed`, {
+            await authFetch(`${API_URL}/roles/seed`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
@@ -147,7 +147,7 @@ export default function RoleList() {
         if (!confirm(`Deseja excluir o cargo "${role.name}"?`)) return;
 
         try {
-            await fetch(`${API_URL}/roles/${role.id}`, {
+            await authFetch(`${API_URL}/roles/${role.id}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });

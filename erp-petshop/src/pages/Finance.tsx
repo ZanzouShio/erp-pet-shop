@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 
 interface NfeItem {
     code: string;
@@ -74,7 +74,7 @@ export default function Finance() {
 
         try {
             setUploading(true);
-            const response = await fetch(`${API_URL}/financial/nfe/upload`, {
+            const response = await authFetch(`${API_URL}/financial/nfe/upload`, {
                 method: 'POST',
                 body: formData
             });
@@ -242,7 +242,7 @@ export default function Finance() {
                                 onClick={async () => {
                                     try {
                                         setUploading(true);
-                                        const response = await fetch(`${API_URL}/financial/nfe/confirm`, {
+                                        const response = await authFetch(`${API_URL}/financial/nfe/confirm`, {
                                             method: 'POST',
                                             headers: {
                                                 'Content-Type': 'application/json'

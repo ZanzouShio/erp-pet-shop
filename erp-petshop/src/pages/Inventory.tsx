@@ -3,7 +3,7 @@ import { Plus, Search, Package, Edit, Trash2, AlertTriangle, PackageOpen } from 
 import ProductFormModal from '../components/ProductFormModal';
 import OpenPackageModal from '../components/OpenPackageModal';
 
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 
 interface Product {
     id: string;
@@ -50,7 +50,7 @@ export default function Inventory() {
     const loadProducts = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/products`);
+            const response = await authFetch(`${API_URL}/products`);
             const data = await response.json();
             setProducts(data);
         } catch (error) {
@@ -62,7 +62,7 @@ export default function Inventory() {
 
     const loadCategories = async () => {
         try {
-            const response = await fetch(`${API_URL}/categories`);
+            const response = await authFetch(`${API_URL}/categories`);
             const data = await response.json();
             setCategories(data);
         } catch (error) {
@@ -74,7 +74,7 @@ export default function Inventory() {
         if (!confirm(`Deseja realmente desativar o produto "${name}"?`)) return;
 
         try {
-            const response = await fetch(`${API_URL}/products/${id}`, {
+            const response = await authFetch(`${API_URL}/products/${id}`, {
                 method: 'DELETE',
             });
 

@@ -1,7 +1,8 @@
 import { Package, Plus, TrendingDown, TrendingUp, AlertTriangle, Search, X, ChevronDown } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
+import { useToast } from '../components/Toast';
 
 interface Product {
     id: string;
@@ -79,7 +80,7 @@ export default function StockMovements() {
     const loadMovements = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/stock-movements?limit=50`);
+            const response = await authFetch(`${API_URL}/stock-movements?limit=50`);
             const data = await response.json();
             setMovements(data);
         } catch (error) {
@@ -91,7 +92,7 @@ export default function StockMovements() {
 
     const loadProducts = async () => {
         try {
-            const response = await fetch(`${API_URL}/products`);
+            const response = await authFetch(`${API_URL}/products`);
             const data = await response.json();
             setProducts(data);
         } catch (error) {
@@ -103,12 +104,12 @@ export default function StockMovements() {
         e.preventDefault();
 
         if (!selectedProduct || !quantity || !costPrice) {
-            alert('Preencha todos os campos obrigatórios');
+            toast.error('Preencha todos os campos obrigatórios');
             return;
         }
 
         try {
-            const response = await fetch(`${API_URL}/stock-movements`, {
+            const response = await authFetch(`${API_URL}/stock-movements`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -134,7 +135,7 @@ export default function StockMovements() {
                 setMarginAlert(result);
                 setProductName(result.product_name);
             } else {
-                alert(`Entrada processada com sucesso!\nEstoque: ${result.old_stock} → ${result.new_stock}\nCusto médio: R$ ${result.old_average_cost.toFixed(2)} → R$ ${result.new_average_cost.toFixed(2)}`);
+                toast.success(`Entrada processada! Estoque: ${result.old_stock} → ${result.new_stock}`);
             }
 
             // Limpar form
@@ -149,7 +150,7 @@ export default function StockMovements() {
             loadProducts();
 
         } catch (error: any) {
-            alert('Erro: ' + error.message);
+            toast.error('Erro: ' + error.message);
         }
     };
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 
 interface CashRegister {
     id: string;
@@ -43,7 +43,7 @@ const useCashRegister = (): UseCashRegisterReturn => {
         try {
             setState(prev => ({ ...prev, loading: true, error: null }));
 
-            const response = await fetch(`${API_URL}/cash-registers/status/${terminalId}`);
+            const response = await authFetch(`${API_URL}/cash-registers/status/${terminalId}`);
             const data = await response.json();
 
             if (data.isOpen) {
@@ -83,7 +83,7 @@ const useCashRegister = (): UseCashRegisterReturn => {
             const storedUser = localStorage.getItem('user');
             const currentUserId = userId || (storedUser ? JSON.parse(storedUser).id : undefined);
 
-            const response = await fetch(`${API_URL}/cash-registers/open`, {
+            const response = await authFetch(`${API_URL}/cash-registers/open`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -129,7 +129,7 @@ const useCashRegister = (): UseCashRegisterReturn => {
             const storedUser = localStorage.getItem('user');
             const currentUserId = userId || (storedUser ? JSON.parse(storedUser).id : undefined);
 
-            const response = await fetch(`${API_URL}/cash-registers/${state.register.id}/close`, {
+            const response = await authFetch(`${API_URL}/cash-registers/${state.register.id}/close`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -179,7 +179,7 @@ const useCashRegister = (): UseCashRegisterReturn => {
             const storedUser = localStorage.getItem('user');
             const currentUserId = userId || (storedUser ? JSON.parse(storedUser).id : undefined);
 
-            const response = await fetch(`${API_URL}/cash-registers/${state.register.id}/sangria`, {
+            const response = await authFetch(`${API_URL}/cash-registers/${state.register.id}/sangria`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -224,7 +224,7 @@ const useCashRegister = (): UseCashRegisterReturn => {
             const storedUser = localStorage.getItem('user');
             const currentUserId = userId || (storedUser ? JSON.parse(storedUser).id : undefined);
 
-            const response = await fetch(`${API_URL}/cash-registers/${state.register.id}/suprimento`, {
+            const response = await authFetch(`${API_URL}/cash-registers/${state.register.id}/suprimento`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -260,7 +260,7 @@ const useCashRegister = (): UseCashRegisterReturn => {
                 throw new Error('Nenhum caixa aberto');
             }
 
-            const response = await fetch(`${API_URL}/cash-registers/${state.register.id}/report`);
+            const response = await authFetch(`${API_URL}/cash-registers/${state.register.id}/report`);
             const data = await response.json();
 
             if (!response.ok) {

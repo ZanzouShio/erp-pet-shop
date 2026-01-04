@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Package } from 'lucide-react';
 import CategoryFormModal from '../../components/CategoryFormModal';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 
 interface Category {
     id: string;
@@ -35,7 +35,7 @@ export default function ProductCategories() {
     const loadCategories = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/categories`);
+            const response = await authFetch(`${API_URL}/categories`);
             const data = await response.json();
             // Parse products_count as integer (PostgreSQL COUNT returns string)
             const parsedData = data.map((cat: any) => ({
@@ -65,7 +65,7 @@ export default function ProductCategories() {
         if (!confirm(`Deseja realmente excluir a categoria "${name}"?`)) return;
 
         try {
-            const response = await fetch(`${API_URL}/categories/${id}`, {
+            const response = await authFetch(`${API_URL}/categories/${id}`, {
                 method: 'DELETE',
             });
 

@@ -87,7 +87,7 @@ export default function UserList() {
 
     const loadRoles = async () => {
         try {
-            const response = await authFetch(`${API_URL}/roles`);
+            const response = await authauthFetch(`${API_URL}/roles`);
             if (!response.ok) {
                 console.error('Error loading roles:', response.status);
                 setRoles([]);
@@ -111,7 +111,7 @@ export default function UserList() {
             if (roleFilter) params.append('role', roleFilter);
             if (statusFilter) params.append('isActive', statusFilter);
 
-            const response = await authFetch(`${API_URL}/users?${params}`);
+            const response = await authauthFetch(`${API_URL}/users?${params}`);
 
             if (!response.ok) {
                 console.error('Error loading users:', response.status);
@@ -141,7 +141,7 @@ export default function UserList() {
         if (!confirm(`Deseja ${user.is_active ? 'desativar' : 'ativar'} o usuário ${user.name}?`)) return;
 
         try {
-            await authFetch(`${API_URL}/users/${user.id}/toggle-status`, {
+            await authauthFetch(`${API_URL}/users/${user.id}/toggle-status`, {
                 method: 'POST'
             });
             loadUsers();
@@ -155,7 +155,7 @@ export default function UserList() {
 
         try {
             setActionLoading(true);
-            const response = await authFetch(`${API_URL}/users/${showResetPassword.id}/reset-password`, {
+            const response = await authauthFetch(`${API_URL}/users/${showResetPassword.id}/reset-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ newPassword })
@@ -181,7 +181,7 @@ export default function UserList() {
         if (!confirm(`Deseja excluir o usuário ${user.name}? Esta ação não pode ser desfeita.`)) return;
 
         try {
-            await authFetch(`${API_URL}/users/${user.id}`, { method: 'DELETE' });
+            await authauthFetch(`${API_URL}/users/${user.id}`, { method: 'DELETE' });
             loadUsers();
         } catch (error) {
             console.error('Error deleting user:', error);
@@ -191,7 +191,7 @@ export default function UserList() {
     const loadLoginHistory = async (user: User) => {
         setShowLoginHistory(user);
         try {
-            const response = await authFetch(`${API_URL}/users/${user.id}/login-history`);
+            const response = await authauthFetch(`${API_URL}/users/${user.id}/login-history`);
             const data = await response.json();
             setLoginHistory(data || []);
         } catch (error) {

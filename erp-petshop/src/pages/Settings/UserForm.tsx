@@ -10,7 +10,7 @@ import {
     Shield,
     Scissors
 } from 'lucide-react';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 
 interface Role {
     id: string;
@@ -60,7 +60,7 @@ export default function UserForm() {
 
     const loadRoles = async () => {
         try {
-            const response = await fetch(`${API_URL}/roles`, {
+            const response = await authFetch(`${API_URL}/roles`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             const data = await response.json();
@@ -73,7 +73,7 @@ export default function UserForm() {
     const loadUser = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}/users/${id}`, {
+            const response = await authFetch(`${API_URL}/users/${id}`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             const user = await response.json();

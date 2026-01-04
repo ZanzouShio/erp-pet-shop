@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp, TrendingDown, DollarSign, Activity, Calendar, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 import { formatCurrency } from '../../utils/format';
 
 interface BreakevenData {
@@ -67,7 +67,7 @@ export default function BreakevenReport() {
                 startDate,
                 endDate
             });
-            const response = await fetch(`${API_URL}/reports/breakeven?${params}`);
+            const response = await authFetch(`${API_URL}/reports/breakeven?${params}`);
             if (response.ok) {
                 const result = await response.json();
                 setData(result);

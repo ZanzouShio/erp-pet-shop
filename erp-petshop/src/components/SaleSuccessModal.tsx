@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle, Printer, ArrowRight } from 'lucide-react';
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 import type { ReceiptData } from '../hooks/useHardware';
 
 interface SaleSuccessModalProps {
@@ -39,7 +39,7 @@ export default function SaleSuccessModal({
     const [printing, setPrinting] = useState(false);
 
     useEffect(() => {
-        fetch(`${API_URL}/settings`)
+        authFetch(`${API_URL}/settings`)
             .then(res => res.json())
             .then(data => setCompany(data))
             .catch(err => console.error('Erro ao carregar empresa:', err));

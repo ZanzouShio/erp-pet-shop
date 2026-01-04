@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit, Save, X, Building2 } from 'lucide-react';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 
 interface BankAccount {
     id: string;
@@ -41,7 +41,7 @@ const BankAccountSettings: React.FC = () => {
 
     const fetchAccounts = async () => {
         try {
-            const response = await fetch(`${API_URL}/bank-accounts`);
+            const response = await authFetch(`${API_URL}/bank-accounts`);
             const data = await response.json();
             setAccounts(Array.isArray(data) ? data : []);
         } catch (error) {
@@ -98,7 +98,7 @@ const BankAccountSettings: React.FC = () => {
         if (!window.confirm('Tem certeza que deseja excluir esta conta?')) return;
 
         try {
-            const response = await fetch(`${API_URL}/bank-accounts/${id}`, {
+            const response = await authFetch(`${API_URL}/bank-accounts/${id}`, {
                 method: 'DELETE'
             });
 

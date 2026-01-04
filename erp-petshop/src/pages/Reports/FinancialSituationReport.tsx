@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Printer, ArrowLeft, TrendingUp, TrendingDown, AlertCircle, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 
 export default function FinancialSituationReport() {
     const navigate = useNavigate();
@@ -16,7 +16,7 @@ export default function FinancialSituationReport() {
     const fetchReport = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/reports/financial-situation`);
+            const res = await authFetch(`${API_URL}/reports/financial-situation`);
             if (!res.ok) throw new Error('Falha ao carregar relatório');
             const json = await res.json();
             setData(json);

@@ -4,7 +4,7 @@ import {
 } from 'recharts';
 import { Calendar, TrendingUp, TrendingDown, DollarSign, Filter } from 'lucide-react';
 
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 
 interface Projection {
     date: string;
@@ -78,14 +78,14 @@ export default function CashFlow() {
             const queryParams = `startDate=${start.toISOString()}&endDate=${end.toISOString()}`;
 
             // 1. Carregar Projeções (Gráfico)
-            const projRes = await fetch(`${API_URL}/cash-flow/projections?${queryParams}`);
+            const projRes = await authFetch(`${API_URL}/cash-flow/projections?${queryParams}`);
             const projData = await projRes.json();
 
             setProjections(projData.projections || []);
             setCurrentBalance(Number(projData.current_balance || 0));
 
             // 2. Carregar Visão Detalhada (Tabela)
-            const viewRes = await fetch(`${API_URL}/cash-flow/daily-view?${queryParams}`);
+            const viewRes = await authFetch(`${API_URL}/cash-flow/daily-view?${queryParams}`);
             const viewData = await viewRes.json();
             setDailyView(Array.isArray(viewData) ? viewData : []);
 

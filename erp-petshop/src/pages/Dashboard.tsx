@@ -1,7 +1,7 @@
 import { TrendingUp, TrendingDown, Users, Package, Calendar, ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { API_URL } from '../services/api';
+import { api } from '../services/api';
 
 interface DashboardMetrics {
     salesToday: { value: number; change: number };
@@ -27,9 +27,9 @@ interface TopProduct {
 export default function Dashboard() {
     const [metrics, setMetrics] = useState<DashboardMetrics>({
         salesToday: { value: 0, change: 0 },
-        newCustomers: { value: 32, trend: 'Neste mês' },
+        newCustomers: { value: 0, trend: 'Neste mês' },
         lowStock: { value: 0 },
-        appointments: { value: 12 },
+        appointments: { value: 0 },
     });
     const [recentSales, setRecentSales] = useState<Sale[]>([]);
     const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
@@ -43,22 +43,21 @@ export default function Dashboard() {
         try {
             setLoading(true);
 
-            // 1. Buscar estatísticas do dia
-            const statsResponse = await fetch(`${API_URL}/statistics/summary`);
-            const stats = await statsResponse.json();
+            // 1. Buscar estatísticas do dia (usando api com autenticação)
+            const statsResponse = await api.get('/statistics/summary');
+            const stats = statsResponse.data;
 
             // 2. Buscar vendas recentes
-            // Usar data local para evitar problemas de fuso horário (UTC vs Local)
             const today = new Date().toLocaleDateString('en-CA'); // Formato YYYY-MM-DD
-            const salesResponse = await fetch(`${API_URL}/sales?startDate=${today}&endDate=${today}&limit=5`);
-            const salesData = await salesResponse.json();
+            const salesResponse = await api.get(`/sales?startDate=${today}&endDate=${today}&limit=5`);
+            const salesData = salesResponse.data;
 
             // 3. Buscar top produtos
-            const topProductsResponse = await fetch(`${API_URL}/statistics/top-products?period=7`);
-            const topProductsData = await topProductsResponse.json();
+            const topProductsResponse = await api.get('/statistics/top-products?period=7');
+            const topProductsData = topProductsResponse.data;
 
             // Calcular variação percentual
-            const todayTotal = stats.sales_today.total;
+            const todayTotal = stats.sales_today?.total || 0;
             const yesterdayTotal = stats.sales_yesterday?.total || 0;
             let changePercent = 0;
             if (yesterdayTotal > 0) {
@@ -74,19 +73,20 @@ export default function Dashboard() {
                     change: changePercent
                 },
                 newCustomers: {
-                    value: stats.new_customers_count,
+                    value: stats.new_customers_count || 0,
                     trend: 'Neste mês'
                 },
                 lowStock: {
-                    value: stats.low_stock_count + stats.out_of_stock_count
+                    value: (stats.low_stock_count || 0) + (stats.out_of_stock_count || 0)
                 },
                 appointments: {
                     value: stats.appointments_today_count || 0
                 }
             });
 
-            // Backend retorna array direto
-            setRecentSales(Array.isArray(salesData) ? salesData : []);
+            // Backend retorna objeto com { data: [], pagination: {} } ou array direto
+            const salesArray = salesData.data || (Array.isArray(salesData) ? salesData : []);
+            setRecentSales(salesArray);
             setTopProducts(topProductsData || []);
 
         } catch (error) {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Printer, ArrowLeft, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 
 export default function CashPositionReport() {
     const navigate = useNavigate();
@@ -17,7 +17,7 @@ export default function CashPositionReport() {
     const fetchReport = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/reports/cash-position?date=${date}`);
+            const res = await authFetch(`${API_URL}/reports/cash-position?date=${date}`);
             if (!res.ok) throw new Error('Falha ao carregar relatório');
             const json = await res.json();
             setData(json);

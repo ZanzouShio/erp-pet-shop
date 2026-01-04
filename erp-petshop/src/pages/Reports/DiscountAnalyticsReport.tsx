@@ -112,7 +112,7 @@ export default function DiscountAnalyticsReport() {
         setLoading(true);
         try {
             const params = new URLSearchParams({ startDate, endDate });
-            const response = await fetch(`${API_URL}/reports/discounts?${params}`);
+            const response = await authFetch(`${API_URL}/reports/discounts?${params}`);
             if (response.ok) {
                 const result = await response.json();
                 setData(result);

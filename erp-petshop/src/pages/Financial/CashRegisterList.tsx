@@ -18,7 +18,7 @@ import {
     ChevronLeft,
     ChevronRight
 } from 'lucide-react';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 
 interface CashRegister {
     id: string;
@@ -78,7 +78,7 @@ export default function CashRegisterList() {
             if (startDate) params.append('startDate', startDate);
             if (endDate) params.append('endDate', endDate);
 
-            const response = await fetch(`${API_URL}/cash-registers?${params}`);
+            const response = await authFetch(`${API_URL}/cash-registers?${params}`);
             const data = await response.json();
 
             setRegisters(data.registers || []);
@@ -96,7 +96,7 @@ export default function CashRegisterList() {
             setSelectedRegister(register);
             setShowReport(true);
 
-            const response = await fetch(`${API_URL}/cash-registers/${register.id}/report`);
+            const response = await authFetch(`${API_URL}/cash-registers/${register.id}/report`);
             const data = await response.json();
             setReportData(data);
         } catch (error) {

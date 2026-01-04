@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { X, Package, Tag, DollarSign, Layers, Scale, PackageOpen, Plus } from 'lucide-react';
 
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 import OpenPackageModal from './OpenPackageModal';
 import CategoryFormModal from './CategoryFormModal';
 import { useToast } from './Toast';
+import ImagePicker from './ImagePicker';
 
 interface Category {
     id: string;
@@ -50,7 +51,7 @@ interface ProductFormModalProps {
     initialParentId?: string;
 }
 
-export default function ProductFormModal({ isOpen, onClose, onSuccess, product, initialParentId }: ProductFormModalProps) {
+export default function ProductFormModal({ isOpen, onClose, onSuccess, product }: ProductFormModalProps) {
     const [activeTab, setActiveTab] = useState<'basic' | 'codes' | 'prices' | 'stock' | 'bulk'>('basic');
     const [categories, setCategories] = useState<Category[]>([]);
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -154,7 +155,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
 
     const loadCategories = async () => {
         try {
-            const response = await fetch(`${API_URL}/categories`);
+            const response = await authFetch(`${API_URL}/categories`);
             const data = await response.json();
             setCategories(data);
         } catch (error) {
@@ -164,7 +165,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
 
     const loadSuppliers = async () => {
         try {
-            const response = await fetch(`${API_URL}/suppliers`);
+            const response = await authFetch(`${API_URL}/suppliers`);
             const data = await response.json();
             setSuppliers(data);
         } catch (error) {
@@ -436,36 +437,53 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
                     {/* Aba: Informações Básicas */}
                     {
                         activeTab === 'basic' && (
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Nome do Produto <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.name}
-                                        onChange={(e) => handleChange('name', e.target.value)}
-                                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.name ? 'border-red-500' : 'border-gray-300'
-                                            }`}
-                                        placeholder="Ex: Ração Premium para Cães"
-                                    />
-                                    {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    {/* Coluna Esquerda: Informações Principais */}
+                                    <div className="lg:col-span-2 space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Nome do Produto <span className="text-red-500">*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.name}
+                                                onChange={(e) => handleChange('name', e.target.value)}
+                                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${errors.name ? 'border-red-500' : 'border-gray-300'
+                                                    }`}
+                                                placeholder="Ex: Ração Premium para Cães"
+                                            />
+                                            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Descrição
+                                            </label>
+                                            <textarea
+                                                value={formData.description}
+                                                onChange={(e) => handleChange('description', e.target.value)}
+                                                rows={5}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                                placeholder="Descrição detalhada do produto"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Coluna Direita: Imagem */}
+                                    <div className="lg:col-span-1">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Imagem do Produto
+                                        </label>
+                                        <ImagePicker
+                                            value={formData.image_url}
+                                            onChange={(url) => handleChange('image_url', url)}
+                                        />
+                                    </div>
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Descrição
-                                    </label>
-                                    <textarea
-                                        value={formData.description}
-                                        onChange={(e) => handleChange('description', e.target.value)}
-                                        rows={3}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                        placeholder="Descrição detalhada do produto"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* Linha Inferior: Metadados */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-100">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Marca
@@ -526,19 +544,6 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
                                             ))}
                                         </select>
                                     </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        URL da Imagem
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.image_url}
-                                        onChange={(e) => handleChange('image_url', e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                        placeholder="https://exemplo.com/imagem.jpg"
-                                    />
                                 </div>
                             </div>
                         )

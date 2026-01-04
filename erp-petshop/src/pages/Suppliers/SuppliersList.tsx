@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Truck, Phone, Mail, MapPin, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 import { maskPhone, maskMobile } from '../../utils/masks';
 import SupplierProductsModal from './SupplierProductsModal';
+import { useToast } from '../../components/Toast';
 
 interface Supplier {
     id: string;
@@ -20,6 +21,7 @@ interface Supplier {
 
 export default function SuppliersList() {
     const navigate = useNavigate();
+    const toast = useToast();
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -32,13 +34,13 @@ export default function SuppliersList() {
 
     const loadSuppliers = async () => {
         try {
-            const response = await fetch(`${API_URL}/suppliers`);
+            const response = await authFetch(`${API_URL}/suppliers`);
             if (!response.ok) throw new Error('Falha ao carregar fornecedores');
             const data = await response.json();
             setSuppliers(data);
         } catch (error) {
             console.error('Erro ao carregar fornecedores:', error);
-            alert('Erro ao carregar fornecedores');
+            toast.error('Erro ao carregar fornecedores');
         } finally {
             setLoading(false);
         }
@@ -48,7 +50,7 @@ export default function SuppliersList() {
         if (!confirm('Tem certeza que deseja excluir este fornecedor?')) return;
 
         try {
-            const response = await fetch(`${API_URL}/suppliers/${id}`, {
+            const response = await authFetch(`${API_URL}/suppliers/${id}`, {
                 method: 'DELETE'
             });
 
@@ -60,7 +62,7 @@ export default function SuppliersList() {
             loadSuppliers();
         } catch (error: any) {
             console.error('Erro ao excluir:', error);
-            alert(error.message || 'Erro ao excluir fornecedor');
+            toast.error(error.message || 'Erro ao excluir fornecedor');
         }
     };
 

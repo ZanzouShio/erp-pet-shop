@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ShoppingBag, ChevronRight, Package } from 'lucide-react';
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 
 interface CustomerLastSalesProps {
     customerId: string | null;
@@ -36,7 +36,7 @@ export default function CustomerLastSales({ customerId }: CustomerLastSalesProps
     const fetchLastSales = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`${API_URL}/sales?customerId=${customerId}&limit=3&includeItems=true`);
+            const response = await authFetch(`${API_URL}/sales?customerId=${customerId}&limit=3&includeItems=true`);
             if (response.ok) {
                 const data = await response.json();
                 setSales(data);

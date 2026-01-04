@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X, Save, User as UserIcon } from 'lucide-react';
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 import { maskCPF, maskMobile } from '../utils/masks';
 
 interface QuickCustomerModalProps {
@@ -24,7 +24,7 @@ export default function QuickCustomerModal({ onClose, onSuccess, initialSearchTe
         setLoading(true);
 
         try {
-            const response = await fetch(`${API_URL}/customers`, {
+            const response = await authFetch(`${API_URL}/customers`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)

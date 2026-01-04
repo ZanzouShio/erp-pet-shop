@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, User, X } from 'lucide-react';
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 
 interface Customer {
     id: string;
@@ -48,7 +48,7 @@ export default function CustomerSearch({ onSelectCustomer, selectedCustomer }: C
     const searchCustomers = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`${API_URL}/customers?search=${searchTerm}&limit=5`);
+            const response = await authFetch(`${API_URL}/customers?search=${searchTerm}&limit=5`);
             if (response.ok) {
                 const data = await response.json();
                 setCustomers(data.data || []);

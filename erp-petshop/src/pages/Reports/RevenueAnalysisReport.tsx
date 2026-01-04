@@ -6,7 +6,7 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer
 } from 'recharts';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 import { formatCurrency } from '../../utils/format';
 
 interface RevenueMetrics {
@@ -81,7 +81,7 @@ export default function RevenueAnalysisReport() {
         setLoading(true);
         try {
             const params = new URLSearchParams({ startDate, endDate });
-            const response = await fetch(`${API_URL}/reports/revenue-analysis?${params}`);
+            const response = await authFetch(`${API_URL}/reports/revenue-analysis?${params}`);
             if (response.ok) {
                 const result = await response.json();
                 setData(result);

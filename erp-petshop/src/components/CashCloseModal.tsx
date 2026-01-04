@@ -49,7 +49,7 @@ const CashCloseModal: React.FC<CashCloseModalProps> = ({
 
     if (!isOpen) return null;
 
-    const parsedClosingBalance = parseFloat(closingBalance.replace(',', '.')) || 0;
+    const parsedClosingBalance = parseFloat(closingBalance.replace(/\./g, '').replace(',', '.')) || 0;
     const difference = parsedClosingBalance - expectedBalance;
     const totalCardSales = totalDebit + totalCredit + totalPix;
     const totalAllSales = totalSales + totalCardSales;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Save, X, AlertCircle, CreditCard, Smartphone } from 'lucide-react';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 
 interface PaymentConfig {
     id: string;
@@ -40,7 +40,7 @@ export default function PaymentSettings() {
 
     const fetchConfigs = async () => {
         try {
-            const res = await fetch(`${API_URL}/payment-config`);
+            const res = await authFetch(`${API_URL}/payment-config`);
             const data = await res.json();
             if (Array.isArray(data)) {
                 setConfigs(data);
@@ -58,7 +58,7 @@ export default function PaymentSettings() {
 
     const fetchBankAccounts = async () => {
         try {
-            const res = await fetch(`${API_URL}/financial/bank-accounts`);
+            const res = await authFetch(`${API_URL}/financial/bank-accounts`);
             const data = await res.json();
             setBankAccounts(data);
         } catch (error) {
@@ -107,7 +107,7 @@ export default function PaymentSettings() {
         if (!confirm('Tem certeza que deseja excluir esta configuração?')) return;
 
         try {
-            const res = await fetch(`${API_URL}/payment-config/${id}`, {
+            const res = await authFetch(`${API_URL}/payment-config/${id}`, {
                 method: 'DELETE'
             });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Gift, Wallet } from 'lucide-react';
-import { API_URL } from '../../services/api';
+import { API_URL, authFetch } from '../../services/api';
 
 interface Settings {
     loyalty_enabled: boolean;
@@ -27,7 +27,7 @@ export default function LoyaltySettings() {
 
     const loadSettings = async () => {
         try {
-            const response = await fetch(`${API_URL}/settings`);
+            const response = await authFetch(`${API_URL}/settings`);
             if (response.ok) {
                 const data = await response.json();
                 setSettings({
@@ -48,7 +48,7 @@ export default function LoyaltySettings() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            const response = await fetch(`${API_URL}/settings`, {
+            const response = await authFetch(`${API_URL}/settings`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings)
