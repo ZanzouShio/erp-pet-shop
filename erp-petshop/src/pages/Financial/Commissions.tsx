@@ -13,8 +13,10 @@ import {
     CheckCircle,
     AlertCircle
 } from 'lucide-react';
+import { useToast } from '../../components/Toast';
 
 export default function Commissions() {
+    const toast = useToast();
     const [commissions, setCommissions] = useState<Commission[]>([]);
     const [professionals, setProfessionals] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -84,12 +86,12 @@ export default function Commissions() {
 
         try {
             await commissionService.pay(selectedIds, paymentMethod, paymentNotes);
-            alert('Pagamento registrado com sucesso!');
+            toast.success('Pagamento registrado com sucesso!');
             setPaymentModalOpen(false);
             loadCommissions(); // Refresh
             setSelectedIds([]);
         } catch (error) {
-            alert('Erro ao registrar pagamento.');
+            toast.error('Erro ao registrar pagamento.');
             console.error(error);
         }
     };

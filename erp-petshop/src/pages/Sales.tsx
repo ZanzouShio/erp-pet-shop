@@ -5,6 +5,7 @@ import NFeEmissionModal from '../components/NFeEmissionModal';
 import { useHardware } from '../hooks/useHardware';
 
 import { API_URL, authFetch } from '../services/api';
+import { useToast } from '../components/Toast';
 
 interface Sale {
     id: string;
@@ -73,6 +74,7 @@ const paymentMethodLabels: Record<string, string> = {
 };
 
 export default function Sales() {
+    const toast = useToast();
     const [sales, setSales] = useState<Sale[]>([]);
     const [loading, setLoading] = useState(true);
     const [total, setTotal] = useState(0);
@@ -219,7 +221,7 @@ export default function Sales() {
             setSelectedSale(data);
         } catch (error) {
             console.error('Erro ao carregar detalhes:', error);
-            alert('Erro ao carregar detalhes da venda');
+            toast.error('Erro ao carregar detalhes da venda');
         }
     };
 
@@ -240,12 +242,12 @@ export default function Sales() {
                 throw new Error(error.error || 'Erro ao cancelar venda');
             }
 
-            alert('Venda cancelada com sucesso!');
+            toast.success('Venda cancelada com sucesso!');
             setSelectedSale(null);
             loadSales(); // Recarregar lista
         } catch (error) {
             console.error('Erro ao cancelar venda:', error);
-            alert('Erro ao cancelar venda: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+            toast.error('Erro ao cancelar venda: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
         }
     };
 
@@ -280,7 +282,7 @@ export default function Sales() {
 
             const data = await response.json();
             console.log('✅ Success data:', data);
-            alert(data.message);
+            toast.success(data.message);
 
             if (type === 'NFC-e') setShowNFCeModal(false);
             else setShowNFeModal(false);
@@ -290,7 +292,7 @@ export default function Sales() {
             loadSales();
         } catch (error) {
             console.error('Erro ao emitir nota:', error);
-            alert('Erro ao emitir nota: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
+            toast.error('Erro ao emitir nota: ' + (error instanceof Error ? error.message : 'Erro desconhecido'));
         }
     };
 

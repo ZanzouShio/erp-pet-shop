@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Check, Upload, Link as LinkIcon, Plus, RefreshCw } from 'lucide-react';
 
 import { API_URL, authFetch } from '../services/api';
+import { useToast } from '../components/Toast';
 
 interface BankTransaction {
     id: string;
@@ -27,6 +28,7 @@ interface BankAccount {
 }
 
 export default function BankReconciliation() {
+    const toast = useToast();
     const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
     const [selectedAccount, setSelectedAccount] = useState('');
 
@@ -162,13 +164,13 @@ export default function BankReconciliation() {
                 } else if (file.name.toLowerCase().endsWith('.csv')) {
                     transactions = parseCSV(content);
                 } else {
-                    alert('Formato não suportado. Use .ofx ou .csv');
+                    toast.error('Formato não suportado. Use .ofx ou .csv');
                     setImporting(false);
                     return;
                 }
 
                 if (transactions.length === 0) {
-                    alert('Nenhuma transação encontrada no arquivo.');
+                    toast.warning('Nenhuma transação encontrada no arquivo.');
                     setImporting(false);
                     return;
                 }
@@ -184,14 +186,14 @@ export default function BankReconciliation() {
 
                 if (res.ok) {
                     const data = await res.json();
-                    alert(data.message || 'Importação realizada com sucesso!');
+                    toast.success(data.message || 'Importação realizada com sucesso!');
                     loadReconciliationData();
                 } else {
-                    alert('Erro ao importar transações.');
+                    toast.error('Erro ao importar transações.');
                 }
             } catch (error) {
                 console.error(error);
-                alert('Erro ao processar arquivo.');
+                toast.error('Erro ao processar arquivo.');
             } finally {
                 setImporting(false);
                 if (event.target) event.target.value = ''; // Reset input
@@ -202,7 +204,7 @@ export default function BankReconciliation() {
     };
 
     const handleImportClick = () => {
-        if (!selectedAccount) return alert('Selecione uma conta bancária');
+        if (!selectedAccount) { toast.error('Selecione uma conta bancária'); return; }
         document.getElementById('import-file-input')?.click();
     };
 
@@ -237,13 +239,13 @@ export default function BankReconciliation() {
                 setSystemTransactions(prev => prev.filter(i => i.id !== selectedSystemItem));
                 setSelectedBankItem(null);
                 setSelectedSystemItem(null);
-                alert('Conciliado com sucesso!');
+                toast.success('Conciliado com sucesso!');
             } else {
-                alert('Erro ao conciliar');
+                toast.error('Erro ao conciliar');
             }
         } catch (error) {
             console.error(error);
-            alert('Erro ao conciliar');
+            toast.error('Erro ao conciliar');
         }
     };
 
@@ -271,13 +273,13 @@ export default function BankReconciliation() {
             if (res.ok) {
                 setBankTransactions(prev => prev.filter(i => i.id !== selectedBankItem));
                 setSelectedBankItem(null);
-                alert('Transação criada e conciliada!');
+                toast.success('Transação criada e conciliada!');
             } else {
-                alert('Erro ao criar e conciliar');
+                toast.error('Erro ao criar e conciliar');
             }
         } catch (error) {
             console.error(error);
-            alert('Erro ao criar e conciliar');
+            toast.error('Erro ao criar e conciliar');
         }
     };
 

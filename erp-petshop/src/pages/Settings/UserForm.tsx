@@ -11,6 +11,7 @@ import {
     Scissors
 } from 'lucide-react';
 import { API_URL, authFetch } from '../../services/api';
+import { useToast } from '../../components/Toast';
 
 interface Role {
     id: string;
@@ -34,6 +35,7 @@ interface UserFormData {
 export default function UserForm() {
     const navigate = useNavigate();
     const { id } = useParams();
+    const toast = useToast();
     const isEditing = !!id;
 
     const [loading, setLoading] = useState(false);
@@ -100,12 +102,12 @@ export default function UserForm() {
         e.preventDefault();
 
         if (!formData.name || !formData.email) {
-            alert('Nome e email são obrigatórios');
+            toast.error('Nome e email são obrigatórios');
             return;
         }
 
         if (!isEditing && !formData.password) {
-            alert('Senha é obrigatória para novos usuários');
+            toast.error('Senha é obrigatória para novos usuários');
             return;
         }
 
@@ -141,14 +143,14 @@ export default function UserForm() {
 
             if (!response.ok) {
                 const data = await response.json();
-                alert(data.error || 'Erro ao salvar usuário');
+                toast.error(data.error || 'Erro ao salvar usuário');
                 return;
             }
 
             navigate('/admin/settings/users');
         } catch (error) {
             console.error('Error saving user:', error);
-            alert('Erro ao salvar usuário');
+            toast.error('Erro ao salvar usuário');
         } finally {
             setSaving(false);
         }

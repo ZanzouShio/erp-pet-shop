@@ -4,6 +4,7 @@ import ProductFormModal from '../components/ProductFormModal';
 import OpenPackageModal from '../components/OpenPackageModal';
 
 import { API_URL, authFetch } from '../services/api';
+import { useToast } from '../components/Toast';
 
 interface Product {
     id: string;
@@ -30,6 +31,7 @@ interface Category {
 }
 
 export default function Inventory() {
+    const toast = useToast();
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
@@ -79,15 +81,15 @@ export default function Inventory() {
             });
 
             if (response.ok) {
-                alert('Produto desativado com sucesso!');
+                toast.success('Produto desativado com sucesso!');
                 loadProducts();
             } else {
                 const data = await response.json();
-                alert(data.error || 'Erro ao desativar produto');
+                toast.error(data.error || 'Erro ao desativar produto');
             }
         } catch (error) {
             console.error('Erro ao desativar produto:', error);
-            alert('Erro ao desativar produto');
+            toast.error('Erro ao desativar produto');
         }
     };
 

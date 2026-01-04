@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Save, X } from 'lucide-react';
 
 import { API_URL, authFetch } from '../services/api';
+import { useToast } from '../components/Toast';
 
 interface ExpenseCategory {
     id: string;
@@ -12,6 +13,7 @@ interface ExpenseCategory {
 }
 
 export default function ExpenseCategories() {
+    const toast = useToast();
     const [categories, setCategories] = useState<ExpenseCategory[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export default function ExpenseCategories() {
             setFormData({ name: '', description: '', color: '#6B7280', is_fixed: false });
             loadCategories();
         } catch (error) {
-            alert('Erro ao salvar categoria');
+            toast.error('Erro ao salvar categoria');
         }
     };
 
@@ -71,7 +73,7 @@ export default function ExpenseCategories() {
             }
             loadCategories();
         } catch (error: any) {
-            alert(error.message || 'Erro ao excluir categoria');
+            toast.error(error.message || 'Erro ao excluir categoria');
         }
     };
 

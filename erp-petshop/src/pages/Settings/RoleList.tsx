@@ -9,6 +9,7 @@ import {
     Lock
 } from 'lucide-react';
 import { API_URL, authFetch } from '../../services/api';
+import { useToast } from '../../components/Toast';
 
 interface Role {
     id: string;
@@ -37,6 +38,7 @@ const PERMISSION_GROUPS: Record<string, { label: string; permissions: string[] }
 
 export default function RoleList() {
     const navigate = useNavigate();
+    const toast = useToast();
     const [roles, setRoles] = useState<Role[]>([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -77,7 +79,7 @@ export default function RoleList() {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             loadRoles();
-            alert('Cargos padrão criados com sucesso!');
+            toast.success('Cargos padrão criados com sucesso!');
         } catch (error) {
             console.error('Error seeding roles:', error);
         }
@@ -109,7 +111,7 @@ export default function RoleList() {
         e.preventDefault();
 
         if (!formData.name) {
-            alert('Nome é obrigatório');
+            toast.error('Nome é obrigatório');
             return;
         }
 
@@ -129,7 +131,7 @@ export default function RoleList() {
 
             if (!response.ok) {
                 const data = await response.json();
-                alert(data.error || 'Erro ao salvar cargo');
+                toast.error(data.error || 'Erro ao salvar cargo');
                 return;
             }
 
@@ -137,7 +139,7 @@ export default function RoleList() {
             loadRoles();
         } catch (error) {
             console.error('Error saving role:', error);
-            alert('Erro ao salvar cargo');
+            toast.error('Erro ao salvar cargo');
         } finally {
             setSaving(false);
         }

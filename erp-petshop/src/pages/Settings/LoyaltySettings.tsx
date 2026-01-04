@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Gift, Wallet } from 'lucide-react';
 import { API_URL, authFetch } from '../../services/api';
+import { useToast } from '../../components/Toast';
 
 interface Settings {
     loyalty_enabled: boolean;
@@ -11,6 +12,7 @@ interface Settings {
 }
 
 export default function LoyaltySettings() {
+    const toast = useToast();
     const [settings, setSettings] = useState<Settings>({
         loyalty_enabled: false,
         loyalty_points_per_real: 1,
@@ -55,13 +57,13 @@ export default function LoyaltySettings() {
             });
 
             if (response.ok) {
-                alert('Configurações salvas com sucesso!');
+                toast.success('Configurações salvas com sucesso!');
             } else {
-                alert('Erro ao salvar configurações');
+                toast.error('Erro ao salvar configurações');
             }
         } catch (error) {
             console.error('Erro ao salvar:', error);
-            alert('Erro ao salvar configurações');
+            toast.error('Erro ao salvar configurações');
         } finally {
             setSaving(false);
         }

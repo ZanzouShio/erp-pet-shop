@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Save, Building2, MapPin, Phone, Upload, ArrowLeft } from 'lucide-react';
 import { API_URL, authFetch } from '../../services/api';
 import { maskCNPJ, maskPhone, maskCEP } from '../../utils/masks';
+import { useToast } from '../../components/Toast';
 
 export default function CompanySettings() {
     const navigate = useNavigate();
+    const toast = useToast();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [formData, setFormData] = useState({
@@ -92,13 +94,13 @@ export default function CompanySettings() {
             });
 
             if (response.ok) {
-                alert('Configurações salvas com sucesso!');
+                toast.success('Configurações salvas com sucesso!');
             } else {
                 throw new Error('Erro ao salvar');
             }
         } catch (error) {
             console.error('Erro:', error);
-            alert('Erro ao salvar configurações');
+            toast.error('Erro ao salvar configurações');
         } finally {
             setSaving(false);
         }

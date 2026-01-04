@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Package } from 'lucide-react';
 import CategoryFormModal from '../../components/CategoryFormModal';
 import { API_URL, authFetch } from '../../services/api';
+import { useToast } from '../../components/Toast';
 
 interface Category {
     id: string;
@@ -13,6 +14,7 @@ interface Category {
 }
 
 export default function ProductCategories() {
+    const toast = useToast();
     const [categories, setCategories] = useState<Category[]>([]);
     const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
@@ -45,7 +47,7 @@ export default function ProductCategories() {
             setCategories(parsedData);
         } catch (error) {
             console.error('Erro ao carregar categorias:', error);
-            alert('Erro ao carregar categorias');
+            toast.error('Erro ao carregar categorias');
         } finally {
             setLoading(false);
         }
@@ -75,10 +77,10 @@ export default function ProductCategories() {
                 throw new Error(data.error || 'Erro ao excluir categoria');
             }
 
-            alert(data.message || 'Categoria excluída com sucesso!');
+            toast.success(data.message || 'Categoria excluída com sucesso!');
             loadCategories();
         } catch (error: any) {
-            alert(error.message || 'Erro ao excluir categoria');
+            toast.error(error.message || 'Erro ao excluir categoria');
         }
     };
 

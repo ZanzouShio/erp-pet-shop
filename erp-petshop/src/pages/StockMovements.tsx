@@ -39,6 +39,7 @@ interface MarginAlert {
 }
 
 export default function StockMovements() {
+    const toast = useToast();
     const [movements, setMovements] = useState<StockMovement[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(false);

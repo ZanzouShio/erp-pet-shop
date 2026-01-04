@@ -23,6 +23,7 @@ import { API_URL, authFetch } from '../services/api';
 import { useHardware } from '../hooks/useHardware';
 import HardwareStatusIndicator from '../components/HardwareStatusIndicator';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../components/Toast';
 
 interface POSProps {
   onExit?: () => void;
@@ -31,6 +32,7 @@ interface POSProps {
 export default function POS({ onExit }: POSProps) {
   // Auth
   const { user } = useAuth();
+  const toast = useToast();
 
   const [products, setProducts] = useState<Product[]>([]);
 
@@ -175,7 +177,7 @@ export default function POS({ onExit }: POSProps) {
       setProducts(data);
     } catch (error) {
       console.error('❌ Erro ao carregar produtos:', error);
-      alert('Erro ao carregar produtos. Verifique se o backend está rodando.');
+      toast.error('Erro ao carregar produtos. Verifique se o backend está rodando.');
     } finally {
       setLoading(false);
     }
@@ -210,7 +212,7 @@ export default function POS({ onExit }: POSProps) {
           handleBeforeCloseCash(); // Prepare summary data
           // We set showCashCloseModal(true) inside handleBeforeCloseCash usually, 
           // but we need to ensure the user knows WHY.
-          alert('O caixa foi aberto em uma data anterior. É necessário realizar o fechamento para iniciar as operações de hoje.');
+          toast.warning('O caixa foi aberto em uma data anterior. É necessário realizar o fechamento para iniciar as operações de hoje.');
         }
       }
     }
@@ -253,7 +255,7 @@ export default function POS({ onExit }: POSProps) {
       setShowCashCloseModal(true);
     } catch (error) {
       console.error('Erro ao preparar fechamento:', error);
-      alert('Erro ao carregar dados para fechamento.');
+      toast.error('Erro ao carregar dados para fechamento.');
     } finally {
       setCashLoading(false);
     }
@@ -341,7 +343,7 @@ export default function POS({ onExit }: POSProps) {
       setShowCashCloseModal(true);
     } catch (error) {
       console.error('Error fetching report for close:', error);
-      alert('Erro ao preparar fechamento de caixa');
+      toast.error('Erro ao preparar fechamento de caixa');
     } finally {
       setCashLoading(false);
     }
@@ -354,7 +356,7 @@ export default function POS({ onExit }: POSProps) {
       setCashReport(report);
       setShowReportModal(true);
     } catch (error) {
-      alert('Erro ao obter relatório');
+      toast.error('Erro ao obter relatório');
     } finally {
       setCashLoading(false);
     }
@@ -495,7 +497,7 @@ export default function POS({ onExit }: POSProps) {
       fetchProducts();
     } catch (error: any) {
       console.error('❌ Erro ao finalizar venda:', error);
-      alert(`Erro ao finalizar venda: ${error.message}`);
+      toast.error(`Erro ao finalizar venda: ${error.message}`);
     }
   };
 
@@ -672,7 +674,7 @@ export default function POS({ onExit }: POSProps) {
                 addToCart(product);
                 setSearchTerm('');
               } else {
-                alert(`Produto não encontrado para código: ${barcode}`);
+                toast.error(`Produto não encontrado para código: ${barcode}`);
               }
             }}
           />

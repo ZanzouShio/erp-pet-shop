@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 
 import { API_URL, authFetch } from '../services/api';
+import { useToast } from '../components/Toast';
 
 interface NfeItem {
     code: string;
@@ -27,6 +28,7 @@ interface NfeData {
 }
 
 export default function Finance() {
+    const toast = useToast();
     const [dragActive, setDragActive] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [nfeData, setNfeData] = useState<NfeData | null>(null);
@@ -255,11 +257,11 @@ export default function Finance() {
                                             throw new Error(errorData.error || 'Erro ao confirmar entrada');
                                         }
 
-                                        alert('Entrada confirmada com sucesso! Produtos criados/atualizados.');
+                                        toast.success('Entrada confirmada com sucesso! Produtos criados/atualizados.');
                                         setNfeData(null);
                                         setItems([]);
                                     } catch (error) {
-                                        alert('Erro ao confirmar: ' + error);
+                                        toast.error('Erro ao confirmar: ' + error);
                                     } finally {
                                         setUploading(false);
                                     }
