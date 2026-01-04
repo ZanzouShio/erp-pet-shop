@@ -48,7 +48,17 @@ class SuppliersController {
                 where: { id },
                 include: {
                     products: {
-                        select: { id: true, name: true, cost_price: true }
+                        select: {
+                            id: true,
+                            name: true,
+                            cost_price: true,
+                            sale_price: true,
+                            stock_quantity: true,
+                            unit: true
+                        },
+                        orderBy: {
+                            stock_quantity: 'asc'
+                        }
                     }
                 }
             });

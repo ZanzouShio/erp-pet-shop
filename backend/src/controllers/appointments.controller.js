@@ -104,6 +104,12 @@ export const createAppointment = async (req, res) => {
         // ... (Call calculate logic internaly - simplified for MVP: User passes end_time or duration)
         // MVP: Admin sends start_time and end_time (calculated by frontend)
         const start = parseISO(startTime);
+
+        // Validação de data retroativa
+        if (start < new Date()) {
+            return res.status(400).json({ error: 'Não é possível agendar em datas retroativas.' });
+        }
+
         const end = req.body.endTime ? parseISO(req.body.endTime) : addMinutes(start, 30); // Fallback
 
         // 2. Conflict Validation (Professional)
@@ -169,13 +175,35 @@ export const createAppointment = async (req, res) => {
         // ... (simplified connection logic - usually createMany)
         // For MVP, we assume services are linked via appointment_services
         if (serviceIds && serviceIds.length > 0) {
-            await prisma.appointment_services.createMany({
-                data: serviceIds.map(sid => ({
+            // Buscar dados para cálculo de comissão
+            const professional = await prisma.users.findUnique({
+                where: { id: professionalId },
+                select: { commission_rate: true }
+            });
+            const commissionRate = Number(professional?.commission_rate || 0);
+
+            const servicesData = await prisma.services.findMany({
+                where: { id: { in: serviceIds } },
+                select: { id: true, base_price: true }
+            });
+            const serviceMap = new Map(servicesData.map(s => [s.id, Number(s.base_price)]));
+
+            const servicesPayload = serviceIds.map(sid => {
+                const price = serviceMap.get(sid) || 0;
+                const commission = price * (commissionRate / 100);
+                return {
                     appointment_id: appointment.id,
                     service_id: sid,
-                    professional_id: professionalId, // Main pro for all (simplified)
-                    price: 0 // Fetch actual price if needed
-                }))
+                    professional_id: professionalId,
+                    price: price,
+                    commission_rate_snapshot: commissionRate,
+                    calculated_commission: commission,
+                    commission_status: 'pending'
+                };
+            });
+
+            await prisma.appointment_services.createMany({
+                data: servicesPayload
             });
         }
 
@@ -199,26 +227,37 @@ export const createAppointment = async (req, res) => {
 export const getAppointments = async (req, res) => {
     try {
         const { date, startDate, endDate } = req.query;
-        let where = { status: { not: 'cancelled' } };
 
-        if (date) {
+        let dateFilter = {};
+
+        if (startDate && endDate) {
+            // Range filter (month view)
+            dateFilter = {
+                start_time: {
+                    gte: parseISO(startDate),
+                    lte: parseISO(endDate)
+                }
+            };
+        } else if (date) {
+            // Single day filter (day view)
             const searchDate = parseISO(date);
-            // Full day search
-            // where.start_time = ... range ...
-            // Simplified: use DB date cast if available or range
-            // For now, let's filter purely by time range for the day
-            // const s = startOfDay(searchDate); const e = endOfDay(searchDate);
+            const startOfDay = new Date(searchDate);
+            startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(searchDate);
+            endOfDay.setHours(23, 59, 59, 999);
+
+            dateFilter = {
+                start_time: {
+                    gte: startOfDay,
+                    lte: endOfDay
+                }
+            };
         }
 
         const appointments = await prisma.appointments.findMany({
             where: {
                 status: { not: 'cancelled' },
-                ...(startDate && endDate ? {
-                    start_time: {
-                        gte: parseISO(startDate),
-                        lte: parseISO(endDate)
-                    }
-                } : {})
+                ...dateFilter
             },
             include: {
                 customers: { select: { name: true } },
@@ -252,7 +291,7 @@ export const cancelAppointment = async (req, res) => {
 export const updateAppointment = async (req, res) => {
     try {
         const { id } = req.params;
-        const { date, startTime } = req.body;
+        const { date, startTime, serviceIds, professionalId, conditions } = req.body;
 
         // 1. Get existing to calculate duration
         const existing = await prisma.appointments.findUnique({
@@ -275,15 +314,82 @@ export const updateAppointment = async (req, res) => {
             newEnd = new Date(newStart.getTime() + durationMs);
         }
 
-        // 3. Update
+        // 3. Update appointment base data
+        // 3. Update appointment base data
+        // Validação de data retroativa na edição também
+        if (newStart < new Date()) {
+            return res.status(400).json({ error: 'Não é possível agendar em datas retroativas.' });
+        }
+
+        // 3. Update appointment base data
+        // Validação de data retroativa na edição
+        const editStart = parseISO(startTime); // usar variável diferente para garantir
+        if (editStart < new Date()) {
+            // Permitir se a data não foi alterada (caso de update de outros campos em agendamento passado)? 
+            // O usuário disse "não deve ser possível agendar de forma alguma datas retroativas". Assumir estrito.
+            // Mas se eu estou editando uma nota de um agendamento antigo?
+            // Melhor verificar se a data mudou.
+            if (existing.start_time.getTime() !== editStart.getTime()) {
+                return res.status(400).json({ error: 'Não é possível para datas retroativas.' });
+            }
+        }
+
+        // Se a data mudou para passado, bloqueia. Se manteve a mesma (que já era passado), permite (apenas edição de notas).
+        // Simplificação: Se a data nova é < agora, bloqueia.
+        if (newStart < new Date() && existing.start_time.toISOString() !== newStart.toISOString()) {
+            return res.status(400).json({ error: 'Não é possível mover para datas retroativas.' });
+        }
+
+
         const updated = await prisma.appointments.update({
             where: { id },
             data: {
                 date: parseISO(date),
                 start_time: newStart,
-                end_time: newEnd
+                end_time: newEnd,
+                conditions: conditions || existing.conditions
             }
         });
+
+        // 4. Update services if provided
+        // 4. Update services if provided
+        if (serviceIds && serviceIds.length > 0 && professionalId) {
+            // Delete existing services
+            await prisma.appointment_services.deleteMany({
+                where: { appointment_id: id }
+            });
+
+            // Recalcular comissões
+            const professional = await prisma.users.findUnique({
+                where: { id: professionalId },
+                select: { commission_rate: true }
+            });
+            const commissionRate = Number(professional?.commission_rate || 0);
+
+            const servicesData = await prisma.services.findMany({
+                where: { id: { in: serviceIds } },
+                select: { id: true, base_price: true }
+            });
+            const serviceMap = new Map(servicesData.map(s => [s.id, Number(s.base_price)]));
+
+            const servicesPayload = serviceIds.map(sid => {
+                const price = serviceMap.get(sid) || 0;
+                const commission = price * (commissionRate / 100);
+                return {
+                    appointment_id: id,
+                    service_id: sid,
+                    professional_id: professionalId,
+                    price: price,
+                    commission_rate_snapshot: commissionRate,
+                    calculated_commission: commission,
+                    commission_status: 'pending'
+                };
+            });
+
+            await prisma.appointment_services.createMany({
+                data: servicesPayload
+            });
+        }
 
         res.json(updated);
     } catch (error) {

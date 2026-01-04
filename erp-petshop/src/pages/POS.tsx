@@ -187,6 +187,12 @@ export default function POS({ onExit }: POSProps) {
   // Persist cart to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('pos_cart', JSON.stringify(cart));
+
+    // Zerar desconto quando carrinho fica vazio
+    if (cart.length === 0 && (cartDiscount > 0 || discountReason)) {
+      setCartDiscount(0);
+      setDiscountReason('');
+    }
   }, [cart]);
 
   // Persist discount to localStorage

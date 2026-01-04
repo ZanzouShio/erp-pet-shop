@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Filter, CheckCircle, AlertCircle, Clock, Search, X, CreditCard, Wallet, Banknote, XCircle } from 'lucide-react';
+import { Plus, Filter, CheckCircle, AlertCircle, Clock, Search, X, CreditCard, Wallet, Banknote, XCircle, Info } from 'lucide-react';
 
 import { API_URL } from '../services/api';
+import { useToast } from '../components/Toast';
 
 interface AccountPayable {
     id: string;
@@ -14,11 +15,21 @@ interface AccountPayable {
     category_color?: string;
     total_paid: number;
     payment_date?: string;
+    cancel_reason?: string;
+    financial_transactions?: {
+        amount: number;
+        paid_date: string;
+        payment_method: string;
+        bank_accounts?: { name: string };
+        interest?: number;
+        discount?: number;
+    }[];
 }
 
 import { format } from 'date-fns';
 
 export default function AccountsPayable() {
+    const toast = useToast();
     const [accounts, setAccounts] = useState<AccountPayable[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,6 +72,9 @@ export default function AccountsPayable() {
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
     const [cancelReason, setCancelReason] = useState('');
     const [processingCancel, setProcessingCancel] = useState(false);
+
+    // Modal de Detalhes
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
     // Atualizar datas quando o período mudar
     useEffect(() => {
@@ -155,9 +169,9 @@ export default function AccountsPayable() {
             setIsModalOpen(false);
             setFormData({ description: '', amount: '', due_date: '', category_id: '', supplier_id: '', notes: '' });
             loadAccounts();
-            alert('Despesa criada com sucesso!');
+            toast.success('Despesa criada com sucesso!');
         } catch (error) {
-            alert('Erro ao criar despesa');
+            toast.error('Erro ao criar despesa');
         }
     };
 
@@ -195,12 +209,12 @@ export default function AccountsPayable() {
                 throw new Error(error.error || 'Erro ao processar pagamento');
             }
 
-            alert('Pagamento registrado com sucesso!');
+            toast.success('Pagamento registrado com sucesso!');
             setIsPaymentModalOpen(false);
             setSelectedAccount(null);
             loadAccounts();
         } catch (error: any) {
-            alert(error.message || 'Erro ao registrar pagamento');
+            toast.error(error.message || 'Erro ao registrar pagamento');
         } finally {
             setProcessingPayment(false);
         }
@@ -223,13 +237,13 @@ export default function AccountsPayable() {
                 const error = await response.json();
                 throw new Error(error.error || 'Erro ao cancelar');
             }
-            alert('Conta cancelada com sucesso!');
+            toast.success('Conta cancelada com sucesso!');
             setIsCancelModalOpen(false);
             setSelectedAccount(null);
             setCancelReason('');
             loadAccounts();
         } catch (error: any) {
-            alert(error.message || 'Erro ao cancelar conta');
+            toast.error(error.message || 'Erro ao cancelar conta');
         } finally {
             setProcessingCancel(false);
         }
@@ -245,13 +259,20 @@ export default function AccountsPayable() {
         return new Date(dateString).toLocaleDateString('pt-BR');
     };
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
+    const getStatusBadge = (account: AccountPayable) => {
+        switch (account.status) {
             case 'paid': return <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium flex items-center gap-1"><CheckCircle size={12} /> Pago</span>;
             case 'partial': return <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium flex items-center gap-1"><Clock size={12} /> Parcial</span>;
             case 'overdue': return <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium flex items-center gap-1"><AlertCircle size={12} /> Vencido</span>;
             case 'pending': return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium flex items-center gap-1"><Clock size={12} /> Pendente</span>;
-            default: return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">Cancelado</span>;
+            default: return (
+                <span
+                    className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium cursor-help flex items-center gap-1"
+                    title={account.cancel_reason ? `Motivo: ${account.cancel_reason}` : 'Cancelado'}
+                >
+                    <XCircle size={12} /> Cancelado
+                </span>
+            );
         }
     };
 
@@ -546,6 +567,74 @@ export default function AccountsPayable() {
                 </div>
             )}
 
+            {/* Modal de Detalhes do Pagamento */}
+            {isDetailsModalOpen && selectedAccount && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                <Info size={24} className="text-blue-600" />
+                                Detalhes do Pagamento
+                            </h2>
+                            <button onClick={() => setIsDetailsModalOpen(false)} className="text-gray-500 hover:text-gray-700">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-4">
+                                <p className="text-sm text-blue-800 mb-1">Conta Referência</p>
+                                <p className="font-bold text-gray-900">{selectedAccount.description}</p>
+                                <div className="flex justify-between mt-2 text-sm">
+                                    <span className="text-gray-600">Valor Original:</span>
+                                    <span className="font-medium">{formatCurrency(selectedAccount.amount)}</span>
+                                </div>
+                            </div>
+
+                            <h3 className="font-semibold text-gray-700 border-b pb-2">Histórico de Pagamentos</h3>
+
+                            {!selectedAccount.financial_transactions || selectedAccount.financial_transactions.length === 0 ? (
+                                <p className="text-gray-500 text-sm italic">Nenhum registro de pagamento encontrado.</p>
+                            ) : (
+                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                                    {selectedAccount.financial_transactions.map((tx, idx) => (
+                                        <div key={idx} className="bg-gray-50 p-3 rounded-lg border border-gray-100 text-sm">
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <span className="text-gray-500 block text-xs">Data</span>
+                                                    <span className="font-medium">{formatDate(tx.paid_date)}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500 block text-xs">Valor Pago</span>
+                                                    <span className="font-bold text-green-700">{formatCurrency(Number(tx.amount))}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500 block text-xs">Forma</span>
+                                                    <span className="font-medium">{tx.payment_method || '-'}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500 block text-xs">Conta de Saída</span>
+                                                    <span className="font-medium">{tx.bank_accounts?.name || 'Caixa Físico/Outro'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-6 flex justify-end">
+                            <button
+                                onClick={() => setIsDetailsModalOpen(false)}
+                                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                            >
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Filtros Rápidos */}
             <div className="flex gap-2 overflow-x-auto pb-2">
                 {['ALL', 'pending', 'paid', 'overdue'].map(status => (
@@ -666,10 +755,10 @@ export default function AccountsPayable() {
                                             {Number(account.total_paid) > 0 ? formatCurrency(Number(account.total_paid)) : '-'}
                                         </td>
                                         <td className="px-6 py-4">
-                                            {getStatusBadge(account.status)}
+                                            {getStatusBadge(account)}
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            {account.status !== 'paid' && account.status !== 'cancelled' && (
+                                            {account.status !== 'paid' && account.status !== 'cancelled' ? (
                                                 <div className="flex gap-2 justify-end">
                                                     <button
                                                         onClick={() => handleOpenPayment(account)}
@@ -684,7 +773,16 @@ export default function AccountsPayable() {
                                                         Cancelar
                                                     </button>
                                                 </div>
-                                            )}
+                                            ) : (account.status === 'paid' || account.status === 'partial') ? (
+                                                <div className="flex gap-2 justify-end">
+                                                    <button
+                                                        onClick={() => { setSelectedAccount(account); setIsDetailsModalOpen(true); }}
+                                                        className="text-gray-600 hover:text-blue-600 text-sm font-medium flex items-center gap-1"
+                                                    >
+                                                        <Info size={16} /> Detalhes
+                                                    </button>
+                                                </div>
+                                            ) : null}
                                         </td>
                                     </tr>
                                 ))

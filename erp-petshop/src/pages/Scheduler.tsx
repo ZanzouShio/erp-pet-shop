@@ -43,11 +43,15 @@ const AppointmentCard = ({ appointment, top, height, onClick }: { appointment: A
 // ---------------------------------------------------------------------------
 // Droppable Slot Component (Static - Click to Create only)
 // ---------------------------------------------------------------------------
-const TimeSlot = ({ children, onClick }: { children?: React.ReactNode, onClick?: () => void }) => {
+const TimeSlot = ({ children, onClick, disabled }: { children?: React.ReactNode, onClick?: () => void, disabled?: boolean }) => {
     return (
         <div
-            onClick={onClick}
-            className={`h-12 border-b border-gray-100 relative group transition-colors hover:bg-blue-50 cursor-pointer`}
+            onClick={!disabled ? onClick : undefined}
+            className={`h-12 border-b border-gray-100 relative group transition-colors 
+                ${disabled
+                    ? 'bg-gray-50 cursor-not-allowed'
+                    : 'hover:bg-blue-50 cursor-pointer'
+                }`}
         >
             {children}
         </div>
@@ -258,7 +262,14 @@ export default function Scheduler() {
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
+                    disabled={selectedDate < startOfToday()}
+                    className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm
+                        ${selectedDate < startOfToday()
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'
+                        }
+                    `}
+                    title={selectedDate < startOfToday() ? "Não é possível agendar em datas passadas" : "Novo Agendamento"}
                 >
                     <Scissors size={18} />
                     Novo Agendamento
@@ -282,44 +293,51 @@ export default function Scheduler() {
                 /* Grid Area (Day View) */
                 <div className="flex-1 overflow-auto flex">
                     {/* Time Column */}
-                    <div className="w-16 flex-shrink-0 bg-white border-r sticky left-0 z-10">
-                        <div className="h-10 border-b bg-gray-50"></div>
-                        {timeSlots.map((slot, i) => (
-                            <div key={i} className="h-12 border-b flex items-center justify-center text-xs text-gray-500">
-                                {format(slot, 'HH:mm')}
-                            </div>
-                        ))}
+                    <div className="w-16 flex-shrink-0 bg-white border-r sticky left-0 z-20 flex flex-col">
+                        <div className="h-10 border-b bg-gray-50 sticky top-0 z-20 flex-shrink-0"></div>
+                        <div className="relative">
+                            {timeSlots.map((slot, i) => (
+                                <div key={i} className="h-12 border-b flex items-center justify-center text-xs text-gray-500">
+                                    {format(slot, 'HH:mm')}
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Professional Columns */}
                     {professionals.map(prof => (
                         <div key={prof.id} className="min-w-[200px] flex-1 border-r flex flex-col">
-                            <div className="h-10 border-b bg-gray-50 flex items-center justify-center font-medium sticky top-0 z-10">
+                            <div className="h-10 border-b bg-gray-50 flex items-center justify-center font-medium sticky top-0 z-10 flex-shrink-0">
                                 {prof.name}
                             </div>
-                            <div className="relative flex-1">
-                                {timeSlots.map((slot, i) => (
-                                    <TimeSlot
-                                        key={i}
-                                        onClick={() => {
-                                            setModalDefaults({
-                                                startHour: format(slot, 'HH:mm'),
-                                                professionalId: prof.id
-                                            });
-                                            setIsModalOpen(true);
-                                        }}
-                                    />
-                                ))}
+                            <div className="relative">
+                                {timeSlots.map((slot, i) => {
+                                    const isRetroactive = slot < new Date();
+                                    return (
+                                        <TimeSlot
+                                            key={i}
+                                            disabled={isRetroactive}
+                                            onClick={() => {
+                                                setModalDefaults({
+                                                    startHour: format(slot, 'HH:mm'),
+                                                    professionalId: prof.id
+                                                });
+                                                setIsModalOpen(true);
+                                            }}
+                                        />
+                                    );
+                                })}
                                 {appointments
                                     .filter(app => app.services.some((s: any) => s.professional_id === prof.id || s.professional?.id === prof.id))
                                     .map(app => {
-                                        const start = parseISO(app.start_time);
-                                        const end = parseISO(app.end_time);
+                                        const start = new Date(app.start_time);
+                                        const end = new Date(app.end_time);
 
+                                        // Usar hora local para posicionamento
                                         const startMinutes = (start.getHours() * 60) + start.getMinutes();
                                         const dayStartMinutes = (START_HOUR * 60);
                                         const offsetMinutes = startMinutes - dayStartMinutes;
-                                        const PIXELS_PER_MIN = 48 / 15;
+                                        const PIXELS_PER_MIN = 48 / 15; // h-12 = 48px / 15min slot
                                         const top = offsetMinutes * PIXELS_PER_MIN;
                                         const durationMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
                                         const height = durationMinutes * PIXELS_PER_MIN;

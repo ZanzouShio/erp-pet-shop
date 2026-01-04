@@ -379,7 +379,11 @@ export default function PaymentModal({
 
                             <div className="flex gap-3 pt-4">
                                 <button
-                                    onClick={() => setStep('method')}
+                                    onClick={() => {
+                                        setStep('method');
+                                        setInstallments(1);
+                                        setSelectedConfigId('');
+                                    }}
                                     className="flex-1 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50"
                                 >
                                     Voltar

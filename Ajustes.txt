@@ -1,0 +1,65 @@
+-Na aba estoque em movimentações não está sendo exibido corretamente o horário da compra (atualmente o horário está adiantado 3 horas, então se uma compra for feita as 10h da manhã, o sistema ira dizer que a compra foi realizada as 13h da tarde.
+* Ajustado
+
+-Na aba estoque em movimentações, mesmo o produto sendo tipo "saída"  a quantidade exibida é +1, para maior facilidade e compreensão do sistema, acho pertinente que quando o produto for tipo "saída" a quantidade deverá ser -1 pois vendemos esse produto e ele (em especifico) não está mais presente na loja, e quando o tipo for "entrada" a quantidade comprada e adquirida deverá ser +1.
+* Ajustado
+
+-Na aba estoque em "gestão de estoque" existe dois produtos com o nome "Apoquel 5.mg" onde os dois tem códigos EAN distintos além de preços de custo e venda individuais.
+* Não é necessário ajustar
+
+-No momento, em sistema PDV, é possível fazer a venda de um produto que não tenha estoque e inclusive acaba deixando o produto com estoque -1 na aba "estoque" em "movimentações".
+* Não é necessário ajustar
+
+-Em PDV, na opção em dar desconto em uma venda, na opção de dar desconto em porcentagem o sistema não identifica uma casa decimal, então não é possível dar desconto de 1,5% ou até mesmo 0,5% (que seria o valor do cashback).
+* Ajustado, era possível fazer se colocasse o ponto ao invés da vírgula.
+
+-Na minha tentativa de realizar uma venda com desconto no sistema PDV, selecionei a opção de credito, maquininha infinitePay, em duas vezes de R$8,55, o sistema mandou a mensagem:"Erro ao finalizar venda: Erro ao criar venda: value too long for type character varying(50)"
+O erro se mostra presente me todas as formas de pagamentos, e caso eu utilize a opção "voltar" e selecionar a opção "Debit card" aparece "parcelas", como se o sistema tivesse gravado a opção anterior de pagamento, a opção de parcelas não deve aparecer caso a forma de pagamento selecionada seja Debito.
+* Não foi descrito que o erro acontecia quando era selecionado o motivo outros e escrito algo, foi corrigido.
+
+-Caso o usuário tente fazer uma venda por desconto, caso o usuário desista da compra e cancele, quando outro produto entrar no carrinho o desconto do produto anterior será aplicado ainda de maneira errônea (EX: Na primeira tentativa de venda em coloquei um produto de exatamente R$ 18,00 e dei desconto em porcentagem para que o produto comece a custar R$ 17,10 [Desconto de 90 centavos], quando o produto do carrinho foi apagado e foi inserido um produto no valor de R$ 315,00, o desconto continuou de 90 centavos, o que mostra que o sistema não calcula em tempo real o desconto em forma de porcentagem.
+* Ajustado, foi corrigido.
+
+-No momento na opção "Vendas", caso o usuário queira ver os detalhes de uma venda a primeira opção (a esquerda) é pagamento e a direita fica a informação de resumo com subtotal e desconto porém é pertinente levar em conta que as pessoas leem da esquerda para a direita, então quando o usuário visualiza a forma de pagamento e nota um valor menor do o produto realmente é, pode causar confusão no usuário, acho pertinente trocar resumo e pagamentos de lugar uns com os outros.
+* Entendi o enunciado, porém não ajustei porque leva em consideração como é disponilizado em notas fiscais.
+
+-Em vendas, mesmo com um período "personalizado" o sistema não me mostra todas as vendas realizadas no período escolhido pelo usuário (o que aconteceu é que eu consegui pesquisar pela venda de número #10 realizada no dia 07/12/2025, então escolhi um período personalizado de 01/05/2025 até 30/12/2025, no entanto o sistema mostrou somente 50 vendas e acabou não me mostrando a venda de número #10).
+* Não tinha paginação na tela, agora tem, ajsutado.
+
+-Ao realizar uma venda com desconto e dar o motivo, não encontrei o lugar onde seria possível ver o motivo do porque o desconto foi aplicado.
+* Era possível ver na tela de relatórios de desconto, porém era sintetico, agora ao passar o mouse por cima do desconto, é possível ver o motivo na tela de detalhes das vendas.
+
+-Na minha tentativa de agendamento, reparei que os agendamentos existem independentemente da data escolhida (EX: existia um agendamento para dia 15 para um cliente realizar banho e tosa em seu cachorro, então o sistema contabilizou, no entanto, após eu selecionar o dia 30 para um novo agendamento, mas, apareceu os agendamentos realizados no dia 15, e isso acontece com todas as datas).
+* Ajustado.
+
+-Em agendamento, caso o usuário queira editar o serviço, não será possível, pois não fica salvo e acrescenta mais algumas horas, além disso, não é possível modificar o horário de inicio, pois quando isso é feito, o sistema não salva.
+* Ajustado.
+
+-Existe duas contas de luz e quando a mesma é cancelada, não identifiquei o local onde é possível ver o motivo por trás do cancelamento.
+* Ajustado: Adicionado tooltip com o motivo do cancelamento ao passar o mouse sobre o status 'Cancelado' na lista de contas a pagar.
+
+-Na aba "Financeiro" em "Notas fiscais" os botões "filtro", "revisar produtos", "Baixar documentos fiscais", "NFC-e", "NF-e" e "Período" não estão funcionando de forma correta ou só não estão funcionando.
+* Não está funcional
+
+-Na aba "financeiro" em "contas a receber" é perceptível que as vendas são de cima para baixo, sendo a de cima a mais recente, no entanto notei que algumas vendas aparentemente não aparecem, é possível ver a compra #33 e a próxima ser a #38. 
+* Não aparecem devido a data, se a venda for parcelada com recebimento no fluxo, só iremos receber esse valor que passou na maquininha no proximo mês.
+
+-Imagino que quando a data de um agendamento passa, e o serviço não é cancelado, o valor da comissão deveria ir para "Financeiros" - "Comissões" de maneira automática.
+* Ajustado: Implementado cálculo automático de comissões ao criar/editar agendamentos. A comissão (baseada na taxa do profissional) agora é registrada e exibida na aba Financeiro > Comissões.
+* Ajustado: Implementado bloqueio rigoroso para agendamentos com data/horário retroativo (passado), tanto validação visual no Frontend quanto segurança no Backend. Além disso, os horários passados e botões de agendamento são desabilitados visualmente na interface (Scheduler) para evitar erros intuitivos.
+
+-Talvez erro em programa de fidelidade em total gasto, para confirmar se é ou não erro, eu deveria ter o conhecimento se o total gasto é o dinheiro gasto por conta do programa de fidelidade ou se é o total que o cliente gastou ao decorrer do tempo. 
+* O programa de pontos estava desligado.
+
+-Em fornecedores acho pertinente que na ação de editar seja possível colocar o principal ou principais produtos que o fornecedor vende para nós.
+* Ajustado: Adicionado campo 'Fornecedor Principal' no formulário de produtos e botão 'Ver Produtos' na lista de fornecedores, exibindo produtos ordenados por estoque.
+-Na aba "Configurações" em "Financeiro" e logo em seguida em "Métodos de pagamento" na aba PIX, aparece novamente infinitepay, talvez fosse melhor colocar apenas a chave pix completa ou com alguma censura.
+* Não irei ajustar, pois está correto, o código de pix será gerado pela maquininha, então tem que saber qual maquininha foi pago o pix, PJ não recebe o pix diretamente na conta.
+
+-Em logs de auditoria poderia também aparecer as vendas que foram realizas com desconto juntamente com o motivo, semelhante ao que acontece ao eu cancelar alguma compra.
+* O desconto já é registrado no sistema e qual foi o PDV que registrou o desconto e o motivo do desconto.
+
+-Em relatórios- "resumo de vendas do dia" o valor de total de vendas do turno (que aparece na opção fechar caixa) e o total de vendas não batem.
+
+-Em relatórios - posição de caixa diária, o valor de saldo atual em contas não está sendo atualizado, juntamente com as movimentações e entradas por forma de pagamento.
+* Ajustado: Corrigido o registro da data de pagamento (`paid_date`) nos controladores de Vendas, Contas a Receber e Contas a Pagar. Agora as transações aparecem corretamente no relatório.

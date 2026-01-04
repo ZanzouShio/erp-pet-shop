@@ -4,10 +4,17 @@ import { X, Package, Tag, DollarSign, Layers, Scale, PackageOpen, Plus } from 'l
 import { API_URL } from '../services/api';
 import OpenPackageModal from './OpenPackageModal';
 import CategoryFormModal from './CategoryFormModal';
+import { useToast } from './Toast';
 
 interface Category {
     id: string;
     name: string;
+}
+
+interface Supplier {
+    id: string;
+    company_name: string;
+    trade_name?: string;
 }
 
 interface ProductFormData {
@@ -16,6 +23,7 @@ interface ProductFormData {
     description: string;
     brand: string;
     category_id: string;
+    supplier_id: string;
     internal_code: string;
     ean: string;
     sku: string;
@@ -45,15 +53,18 @@ interface ProductFormModalProps {
 export default function ProductFormModal({ isOpen, onClose, onSuccess, product, initialParentId }: ProductFormModalProps) {
     const [activeTab, setActiveTab] = useState<'basic' | 'codes' | 'prices' | 'stock' | 'bulk'>('basic');
     const [categories, setCategories] = useState<Category[]>([]);
+    const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [loading, setLoading] = useState(false);
     const [showOpenPackageModal, setShowOpenPackageModal] = useState(false);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
+    const toast = useToast();
 
     const [formData, setFormData] = useState<ProductFormData>({
         name: '',
         description: '',
         brand: '',
         category_id: '',
+        supplier_id: '',
         internal_code: '',
         ean: '',
         sku: '',
@@ -76,6 +87,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
     useEffect(() => {
         if (isOpen) {
             loadCategories();
+            loadSuppliers();
 
             // Se está editando, preencher dados
             if (product) {
@@ -93,6 +105,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
                     description: product.description || '',
                     brand: product.brand || '',
                     category_id: product.category_id || '',
+                    supplier_id: product.supplier_id || '',
                     internal_code: product.internal_code || '',
                     ean: product.ean || '',
                     sku: product.sku || '',
@@ -116,6 +129,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
                     description: '',
                     brand: '',
                     category_id: '',
+                    supplier_id: '',
                     internal_code: '',
                     ean: '',
                     sku: '',
@@ -145,6 +159,16 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
             setCategories(data);
         } catch (error) {
             console.error('Erro ao carregar categorias:', error);
+        }
+    };
+
+    const loadSuppliers = async () => {
+        try {
+            const response = await fetch(`${API_URL}/suppliers`);
+            const data = await response.json();
+            setSuppliers(data);
+        } catch (error) {
+            console.error('Erro ao carregar fornecedores:', error);
         }
     };
 
@@ -252,18 +276,18 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
             // Navegar para aba com erro
             if (errors.name || errors.category_id) {
                 setActiveTab('basic');
-                alert('Por favor, preencha todos os campos obrigatórios na aba "Informações Básicas"');
+                toast.error('Por favor, preencha todos os campos obrigatórios na aba "Informações Básicas"');
             } else if (errors.cost_price || errors.sale_price) {
                 setActiveTab('prices');
-                alert('Por favor, corrija os erros na aba "Preços"');
+                toast.error('Por favor, corrija os erros na aba "Preços"');
             } else if (errors.stock_quantity || errors.min_stock) {
                 setActiveTab('stock');
-                alert('Por favor, corrija os erros na aba "Estoque"');
+                toast.error('Por favor, corrija os erros na aba "Estoque"');
             } else if (errors.bulk_conversion_factor || errors.bulk_unit) {
                 setActiveTab('bulk');
-                alert('Por favor, corrija os erros na aba "Venda a Granel"');
+                toast.error('Por favor, corrija os erros na aba "Venda a Granel"');
             } else {
-                alert('Por favor, corrija os erros no formulário');
+                toast.error('Por favor, corrija os erros no formulário');
             }
             return;
         }
@@ -276,6 +300,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
                 description: formData.description.trim(),
                 brand: formData.brand.trim() || null,
                 category_id: formData.category_id,
+                supplier_id: formData.supplier_id || null, // Optional
                 internal_code: formData.internal_code.trim() || null,
                 ean: formData.ean.trim() || null,
                 sku: formData.sku.trim() || null,
@@ -317,12 +342,12 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
                 throw new Error(error.error || 'Erro ao salvar produto');
             }
 
-            alert(product ? 'Produto atualizado com sucesso!' : 'Produto cadastrado com sucesso!');
+            toast.success(product ? 'Produto atualizado com sucesso!' : 'Produto cadastrado com sucesso!');
             onSuccess();
             onClose();
         } catch (error: any) {
             console.error('Erro ao salvar produto:', error);
-            alert(error.message || 'Erro ao salvar produto');
+            toast.error(error.message || 'Erro ao salvar produto');
         } finally {
             setLoading(false);
         }
@@ -346,7 +371,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
                 {/* Header */}
                 <div className="flex justify-between items-center p-6 border-b border-gray-200">
                     <div>
@@ -440,7 +465,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Marca
@@ -475,14 +500,31 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product, 
                                             <button
                                                 type="button"
                                                 onClick={() => setShowCategoryModal(true)}
-                                                className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1 whitespace-nowrap"
-                                                title="Nova categoria"
+                                                className="p-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                                title="Nova Categoria"
                                             >
-                                                <Plus size={18} />
-                                                <span className="hidden sm:inline">Nova</span>
+                                                <Plus size={20} />
                                             </button>
                                         </div>
                                         {errors.category_id && <p className="text-red-500 text-sm mt-1">{errors.category_id}</p>}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Fornecedor Principal
+                                        </label>
+                                        <select
+                                            value={formData.supplier_id}
+                                            onChange={(e) => handleChange('supplier_id', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        >
+                                            <option value="">Selecione...</option>
+                                            {suppliers.map((s) => (
+                                                <option key={s.id} value={s.id}>
+                                                    {s.trade_name || s.company_name}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
 

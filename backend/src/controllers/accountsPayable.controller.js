@@ -35,17 +35,53 @@ export const accountsPayableController = {
                     },
                     expense_categories: {
                         select: { name: true, color: true }
+                    },
+                    financial_transactions: {
+                        select: {
+                            amount: true,
+                            paid_date: true,
+                            payment_method: true,
+                            bank_accounts: { select: { name: true } },
+                            interest: true,
+                            discount: true
+                        }
                     }
                 },
                 orderBy: { due_date: 'asc' }
             });
+
+            // Buscar motivos de cancelamento para contas canceladas
+            const cancelledIds = accounts
+                .filter(acc => acc.status === 'cancelled')
+                .map(acc => acc.id);
+
+            let cancelReasons = {};
+            if (cancelledIds.length > 0) {
+                const logs = await prisma.audit_logs.findMany({
+                    where: {
+                        entity_type: 'accounts_payable',
+                        entity_id: { in: cancelledIds },
+                        action: 'CANCEL'
+                    },
+                    orderBy: { created_at: 'desc' },
+                    select: { entity_id: true, reason: true }
+                });
+
+                logs.forEach(log => {
+                    // Pega apenas o primeiro (mais recente) motivo encontrado para cada ID
+                    if (!cancelReasons[log.entity_id]) {
+                        cancelReasons[log.entity_id] = log.reason;
+                    }
+                });
+            }
 
             // Mapear para formato amigável ao frontend
             const formattedAccounts = accounts.map(acc => ({
                 ...acc,
                 supplier_name: acc.suppliers?.trade_name,
                 category_name: acc.expense_categories?.name,
-                category_color: acc.expense_categories?.color
+                category_color: acc.expense_categories?.color,
+                cancel_reason: cancelReasons[acc.id] || null
             }));
 
             res.json(formattedAccounts);
@@ -152,6 +188,7 @@ export const accountsPayableController = {
                         date: pDate,
                         issue_date: pDate,
                         due_date: bill.due_date,
+                        paid_date: pDate,
                         category: categoryName,
                         payment_method: payment_method,
                         account_payable_id: id,

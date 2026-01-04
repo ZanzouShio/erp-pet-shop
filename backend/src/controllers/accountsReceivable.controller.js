@@ -70,6 +70,7 @@ class AccountsReceivableController {
                                 date: settlementDate,
                                 issue_date: settlementDate,
                                 due_date: title.due_date,
+                                paid_date: settlementDate,
                                 category: 'Recebimento de Cliente',
                                 payment_method: title.payment_method,
                                 status: 'paid',
@@ -218,6 +219,7 @@ class AccountsReceivableController {
                         date: pDate,
                         issue_date: pDate,
                         due_date: pDate,
+                        paid_date: pDate,
                         category: 'Recebimento de Cliente',
                         payment_method: payment_method || title.payment_method, // Permitir override ou usar original
                         status: 'paid',

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit, Trash2, Truck, Phone, Mail, MapPin } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Truck, Phone, Mail, MapPin, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../../services/api';
 import { maskPhone, maskMobile } from '../../utils/masks';
+import SupplierProductsModal from './SupplierProductsModal';
 
 interface Supplier {
     id: string;
@@ -11,6 +12,7 @@ interface Supplier {
     cnpj: string;
     email: string | null;
     phone: string | null;
+    mobile?: string | null;
     city: string | null;
     state: string | null;
     status: string;
@@ -21,6 +23,8 @@ export default function SuppliersList() {
     const [suppliers, setSuppliers] = useState<Supplier[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedSupplierForProducts, setSelectedSupplierForProducts] = useState<Supplier | null>(null);
+    const [showProductsModal, setShowProductsModal] = useState(false);
 
     useEffect(() => {
         loadSuppliers();
@@ -180,6 +184,16 @@ export default function SuppliersList() {
                                                     <Edit size={18} />
                                                 </button>
                                                 <button
+                                                    onClick={() => {
+                                                        setSelectedSupplierForProducts(supplier);
+                                                        setShowProductsModal(true);
+                                                    }}
+                                                    className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                                    title="Ver Produtos"
+                                                >
+                                                    <Package size={18} />
+                                                </button>
+                                                <button
                                                     onClick={() => handleDelete(supplier.id)}
                                                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                     title="Excluir"
@@ -195,6 +209,13 @@ export default function SuppliersList() {
                     </table>
                 </div>
             </div>
+
+            <SupplierProductsModal
+                isOpen={showProductsModal}
+                onClose={() => setShowProductsModal(false)}
+                supplierId={selectedSupplierForProducts?.id || null}
+                supplierName={selectedSupplierForProducts?.company_name || ''}
+            />
         </div>
     );
 }

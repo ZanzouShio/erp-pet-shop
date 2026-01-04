@@ -37,6 +37,14 @@ export const createSale = async (req, res) => {
             return res.status(400).json({ error: 'Nenhum usuário encontrado no sistema para vincular a venda' });
         }
 
+        // Truncar discount_reason para evitar erro de varchar(100)
+        const truncatedDiscountReason = discount_reason ? discount_reason.substring(0, 100) : null;
+
+        // Arredondar valores monetários para 2 casas decimais (evitar dízimas)
+        const roundedSubtotal = Math.round(subtotal * 100) / 100;
+        const roundedDiscount = Math.round(total_discount * 100) / 100;
+        const roundedTotal = Math.round(total_amount * 100) / 100;
+
         // 1. Criar Venda
         const saleResult = await client.query(`
             INSERT INTO sales (
@@ -44,7 +52,7 @@ export const createSale = async (req, res) => {
                 status, user_id, synced, customer_id, cash_register_id
             ) VALUES ($1, $2, $3, $4, $5, 'completed', $6, false, $7, $8)
             RETURNING *
-        `, [sale_number, subtotal, total_discount, discount_reason || null, total_amount, user_id, customer_id || null, cash_register_id || null]);
+        `, [sale_number, roundedSubtotal, roundedDiscount, truncatedDiscountReason, roundedTotal, user_id, customer_id || null, cash_register_id || null]);
 
         const sale = saleResult.rows[0];
 
@@ -87,7 +95,7 @@ export const createSale = async (req, res) => {
                 ) VALUES ($1, 'OUT', $2, $3, 'sale', $4, 'Venda realizada', NOW())
             `, [
                 item.product_id,
-                item.quantity,
+                -item.quantity,
                 productCost,
                 sale.id
             ]);
@@ -242,8 +250,8 @@ export const createSale = async (req, res) => {
 
                     await client.query(`
                         INSERT INTO financial_transactions 
-                        (type, amount, description, date, issue_date, due_date, category, payment_method, payment_config_id, status, customer_id, bank_account_id)
-                        VALUES ('revenue', $1, $2, $3, $4, $5, 'Venda de Produtos', $6, $7, 'paid', $8, $9)
+                        (type, amount, description, date, issue_date, due_date, paid_date, category, payment_method, payment_config_id, status, customer_id, bank_account_id)
+                        VALUES ('revenue', $1, $2, $3, $4, $5, $3, 'Venda de Produtos', $6, $7, 'paid', $8, $9)
                     `, [
                         netAmount,
                         `Recebimento Venda #${sale_number}`,
@@ -442,6 +450,18 @@ export const getAllSales = async (req, res) => {
         params.push(parseInt(offset));
         const offsetParam = paramCount;
 
+        // Query para contar total de registros (sem LIMIT/OFFSET)
+        const countParams = params.slice(0, -2); // Remove limit e offset dos params
+        const countResult = await pool.query(`
+            SELECT COUNT(DISTINCT s.id) as total
+            FROM sales s
+            LEFT JOIN sale_items si ON s.id = si.sale_id
+            LEFT JOIN sale_payments sp ON s.id = sp.sale_id
+            WHERE ${whereClause}
+        `, countParams);
+
+        const totalCount = parseInt(countResult.rows[0]?.total || 0);
+
         const result = await pool.query(`
             SELECT
                 s.id,
@@ -508,7 +528,19 @@ export const getAllSales = async (req, res) => {
             });
         }
 
-        res.json(sales);
+        const currentLimit = parseInt(limit);
+        const currentPage = Math.floor(parseInt(offset) / currentLimit) + 1;
+        const totalPages = Math.ceil(totalCount / currentLimit);
+
+        res.json({
+            data: sales,
+            pagination: {
+                total: totalCount,
+                page: currentPage,
+                limit: currentLimit,
+                totalPages: totalPages
+            }
+        });
     } catch (error) {
         console.error('❌ Erro ao buscar vendas:', error);
         res.status(500).json({ error: 'Erro ao buscar vendas' });
@@ -522,7 +554,7 @@ export const getSaleById = async (req, res) => {
         // 1. Buscar venda
         const saleResult = await pool.query(`
             SELECT 
-                s.id, s.sale_number, s.subtotal, s.discount, s.total,
+                s.id, s.sale_number, s.subtotal, s.discount, s.discount_reason, s.total,
                 s.status, s.created_at,
                 u.name as user_name
             FROM sales s
@@ -589,6 +621,7 @@ export const getSaleById = async (req, res) => {
             sale_number: sale.sale_number,
             subtotal: parseFloat(sale.subtotal),
             discount_amount: parseFloat(sale.discount),
+            discount_reason: sale.discount_reason || null,
             total_amount: parseFloat(sale.total),
             status: sale.status,
             created_at: sale.created_at,

@@ -2,7 +2,7 @@
  * DiscountModal - Modal para aplicar desconto com motivo obrigatório
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Tag, AlertTriangle } from 'lucide-react';
 
 interface DiscountModalProps {
@@ -32,6 +32,16 @@ export default function DiscountModal({
     const [discountType, setDiscountType] = useState<'value' | 'percent'>('value');
     const [reason, setReason] = useState('');
     const [otherReason, setOtherReason] = useState('');
+
+    // Resetar formulário quando o modal abre
+    useEffect(() => {
+        if (isOpen) {
+            setDiscountValue('');
+            setDiscountType('value');
+            setReason('');
+            setOtherReason('');
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -64,7 +74,7 @@ export default function DiscountModal({
 
     const numericDiscount = discountType === 'value'
         ? parseFormattedValue(discountValue)
-        : (parseFloat(discountValue) || 0);
+        : (parseFloat(discountValue.replace(',', '.')) || 0);
 
     const finalDiscount = discountType === 'percent'
         ? (subtotal * numericDiscount / 100)
@@ -277,6 +287,7 @@ export default function DiscountModal({
                                 placeholder="Descreva o motivo..."
                                 value={otherReason}
                                 onChange={(e) => setOtherReason(e.target.value)}
+                                maxLength={93}
                                 style={{
                                     width: '100%',
                                     padding: '0.75rem',
@@ -284,6 +295,9 @@ export default function DiscountModal({
                                     borderRadius: '0.5rem'
                                 }}
                             />
+                            <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                {otherReason.length}/93 caracteres
+                            </span>
                         </div>
                     )}
                 </div>

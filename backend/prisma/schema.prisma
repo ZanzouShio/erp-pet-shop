@@ -687,7 +687,7 @@ model sales {
   user_id                         String                @db.Uuid
   subtotal                        Decimal               @default(0) @db.Decimal(10, 2)
   discount                        Decimal?              @default(0) @db.Decimal(10, 2)
-  discount_reason                 String?               @db.VarChar(50)
+  discount_reason                 String?               @db.VarChar(100)
   total                           Decimal               @default(0) @db.Decimal(10, 2)
   status                          String?               @default("completed") @db.VarChar(20)
   cancelled_reason                String?

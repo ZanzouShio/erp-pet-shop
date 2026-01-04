@@ -142,7 +142,7 @@ export const getStockMovements = async (req, res) => {
                 sm.reference_type,
                 sm.reference_id,
                 sm.notes,
-                sm.created_at,
+                sm.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo' as created_at,
                 p.name as product_name,
                 p.stock_quantity as current_stock
             FROM stock_movements sm

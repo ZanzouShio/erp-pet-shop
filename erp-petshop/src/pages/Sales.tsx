@@ -46,6 +46,7 @@ interface SaleDetails {
     sale_number: number;
     subtotal: number;
     discount_amount: number;
+    discount_reason?: string | null;
     total_amount: number;
     status: string;
     created_at: string;
@@ -74,8 +75,12 @@ const paymentMethodLabels: Record<string, string> = {
 export default function Sales() {
     const [sales, setSales] = useState<Sale[]>([]);
     const [loading, setLoading] = useState(true);
-    const [hasMore, setHasMore] = useState(false);
     const [total, setTotal] = useState(0);
+
+    // Paginação
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const ITEMS_PER_PAGE = 50;
 
     // Filtros
     const [dateFilter, setDateFilter] = useState<DateFilter>('today');
@@ -101,9 +106,14 @@ export default function Sales() {
             .catch(err => console.error('Erro ao carregar empresa:', err));
     }, []);
 
+    // Resetar para página 1 quando filtros mudam
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [dateFilter, startDate, endDate, paymentMethod, searchTerm]);
+
     useEffect(() => {
         loadSales();
-    }, [dateFilter, startDate, endDate, paymentMethod, searchTerm]);
+    }, [dateFilter, startDate, endDate, paymentMethod, searchTerm, currentPage]);
 
     const getDateRange = () => {
         const today = new Date();
@@ -157,17 +167,24 @@ export default function Sales() {
             if (end) params.append('endDate', end);
             if (paymentMethod !== 'all') params.append('paymentMethod', paymentMethod);
             if (searchTerm) params.append('search', searchTerm);
-            params.append('limit', '50');
-            params.append('offset', '0');
+            params.append('limit', String(ITEMS_PER_PAGE));
+            params.append('offset', String((currentPage - 1) * ITEMS_PER_PAGE));
 
             const response = await fetch(`${API_URL}/sales?${params}`);
             const data = await response.json();
 
-            // Backend retorna array direto, não objeto {sales: [...]}
-            const salesArray = Array.isArray(data) ? data : [];
-            setSales(salesArray);
-            setTotal(salesArray.length);
-            setHasMore(false);
+            // Backend agora retorna { data: [...], pagination: {...} }
+            if (data.data && data.pagination) {
+                setSales(data.data);
+                setTotal(data.pagination.total);
+                setTotalPages(data.pagination.totalPages);
+            } else {
+                // Fallback para formato antigo
+                const salesArray = Array.isArray(data) ? data : [];
+                setSales(salesArray);
+                setTotal(salesArray.length);
+                setTotalPages(1);
+            }
         } catch (error) {
             console.error('Erro ao carregar vendas:', error);
             setSales([]);
@@ -671,19 +688,30 @@ export default function Sales() {
                             </table>
                         </div>
 
-                        {/* Footer com info de paginação */}
+                        {/* Footer com paginação */}
                         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
                             <div className="text-sm text-gray-500">
-                                Mostrando {sales.length} de {total} vendas
+                                Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, total)} de {total} vendas
                             </div>
-                            {hasMore && (
+                            <div className="flex items-center gap-2">
                                 <button
-                                    onClick={() => alert('Paginação em desenvolvimento')}
-                                    className="px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Carregar mais
+                                    ← Anterior
                                 </button>
-                            )}
+                                <span className="px-3 py-1.5 text-sm font-medium text-gray-700">
+                                    Página {currentPage} de {totalPages}
+                                </span>
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage >= totalPages}
+                                    className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Próximo →
+                                </button>
+                            </div>
                         </div>
                     </>
                 )}
@@ -775,7 +803,10 @@ export default function Sales() {
                                             <span className="text-sm font-medium text-gray-900">{formatCurrency(selectedSale.subtotal)}</span>
                                         </div>
                                         {selectedSale.discount_amount > 0 && (
-                                            <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
+                                            <div
+                                                className="flex justify-between items-center p-3 bg-orange-50 rounded-lg cursor-help"
+                                                title={selectedSale.discount_reason ? `Motivo: ${selectedSale.discount_reason}` : 'Sem motivo informado'}
+                                            >
                                                 <span className="text-sm text-orange-700">Desconto</span>
                                                 <span className="text-sm font-medium text-orange-700">-{formatCurrency(selectedSale.discount_amount)}</span>
                                             </div>

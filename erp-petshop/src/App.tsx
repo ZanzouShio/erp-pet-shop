@@ -1,7 +1,9 @@
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AdminLayout from './layouts/AdminLayout';
 import Dashboard from './pages/Dashboard';
 import POS from './pages/POS';
+import { ToastProvider } from './components/Toast';
 import Inventory from './pages/Inventory';
 import Sales from './pages/Sales';
 import Scheduler from './pages/Scheduler';
@@ -54,7 +56,7 @@ import GroomingManagement from './pages/GroomingManagement';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 
-function ProtectedRoute({ children }: { children: JSX.Element }) {
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return <div>Carregando...</div>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -63,28 +65,30 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
+    <ToastProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
 
-          <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
 
-          {/* Rotas Protegidas */}
-          <Route path="/pos" element={
-            <ProtectedRoute>
-              <POSPage />
-            </ProtectedRoute>
-          } />
+            {/* Rotas Protegidas */}
+            <Route path="/pos" element={
+              <ProtectedRoute>
+                <POSPage />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/admin/*" element={
-            <ProtectedRoute>
-              <AdminRoutes />
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            <Route path="/admin/*" element={
+              <ProtectedRoute>
+                <AdminRoutes />
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ToastProvider>
   );
 }
 
