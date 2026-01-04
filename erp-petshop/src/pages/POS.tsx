@@ -121,7 +121,7 @@ export default function POS({ onExit }: POSProps) {
   }>({ show: false, title: '', message: '', type: 'success' });
 
   // Hardware Service Integration
-  const { status: hardwareStatus, lastBarcode, lastWeight, openDrawer, printReceipt, printCashClose, printerConnected } = useHardware();
+  const { status: hardwareStatus, lastBarcode, printReceipt, printCashClose, printerConnected } = useHardware();
 
   // Handle barcode from hardware scanner
   const handleBarcodeScanned = useCallback(async (barcode: string) => {

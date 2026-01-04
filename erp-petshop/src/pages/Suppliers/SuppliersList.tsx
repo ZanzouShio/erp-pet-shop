@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, Truck, Phone, Mail, MapPin, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { API_URL, authFetch } from '../../services/api';

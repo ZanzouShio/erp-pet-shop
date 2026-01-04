@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Upload, FileText, CheckCircle, AlertCircle, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import { FileText, CheckCircle, AlertCircle } from 'lucide-react';
 
 import { API_URL, authFetch } from '../services/api';
 import { useToast } from '../components/Toast';

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, Save, X } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save } from 'lucide-react';
 
 import { API_URL, authFetch } from '../services/api';
 import { useToast } from '../components/Toast';

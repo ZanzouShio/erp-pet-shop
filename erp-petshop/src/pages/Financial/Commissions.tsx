@@ -3,11 +3,8 @@ import { commissionService } from '../../services/commissionService';
 import type { Commission } from '../../services/commissionService';
 import { managementService } from '../../services/managementService'; // Assuming this exists or similar
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import {
     DollarSign,
-    Calendar,
-    User,
     Filter,
     Printer,
     CheckCircle,
