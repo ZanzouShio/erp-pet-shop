@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { API_URL } from '../services/api';
+import { API_URL, authFetch } from '../services/api';
 
 interface CategoryFormModalProps {
     isOpen: boolean;
@@ -58,7 +58,7 @@ export default function CategoryFormModal({ isOpen, onClose, onSuccess, category
 
             const method = category ? 'PUT' : 'POST';
 
-            const response = await fetch(url, {
+            const response = await authFetch(url, {
                 method,
                 headers: {
                     'Content-Type': 'application/json',

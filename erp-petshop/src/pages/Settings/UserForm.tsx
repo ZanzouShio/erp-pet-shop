@@ -132,11 +132,10 @@ export default function UserForm() {
             const url = isEditing ? `${API_URL}/users/${id}` : `${API_URL}/users`;
             const method = isEditing ? 'PUT' : 'POST';
 
-            const response = await fetch(url, {
+            const response = await authFetch(url, {
                 method,
                 headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(payload)
             });

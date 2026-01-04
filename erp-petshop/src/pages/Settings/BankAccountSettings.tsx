@@ -60,7 +60,7 @@ const BankAccountSettings: React.FC = () => {
 
             const method = editingId ? 'PUT' : 'POST';
 
-            const response = await fetch(url, {
+            const response = await authFetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)

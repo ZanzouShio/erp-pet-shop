@@ -332,7 +332,7 @@ export default function ProductFormModal({ isOpen, onClose, onSuccess, product }
 
             const method = product ? 'PUT' : 'POST';
 
-            const response = await fetch(url, {
+            const response = await authFetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),

@@ -169,7 +169,7 @@ export default function CustomerForm() {
                 pets: !isEditing ? pets : undefined // Envia pets apenas na criação
             };
 
-            const res = await fetch(url, {
+            const res = await authFetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -222,7 +222,7 @@ export default function CustomerForm() {
             const url = pet.id ? `${API_URL}/customers/pets/${pet.id}` : `${API_URL}/customers/${id}/pets`;
             const method = pet.id ? 'PUT' : 'POST';
 
-            const res = await fetch(url, {
+            const res = await authFetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

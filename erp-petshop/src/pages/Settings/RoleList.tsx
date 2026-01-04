@@ -120,11 +120,10 @@ export default function RoleList() {
             const url = editingRole ? `${API_URL}/roles/${editingRole.id}` : `${API_URL}/roles`;
             const method = editingRole ? 'PUT' : 'POST';
 
-            const response = await fetch(url, {
+            const response = await authFetch(url, {
                 method,
                 headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(formData)
             });
