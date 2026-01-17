@@ -1,114 +1,348 @@
 ---
 name: Architect Specialist
-description: Design overall system architecture and patterns
-status: unfilled
+description: Design overall system architecture and patterns for ERP Pet Shop
+status: filled
 generated: 2026-01-17
 ---
 
 # Architect Specialist Agent Playbook
 
-## Mission
-Describe how the architect specialist agent supports the team and when to engage it.
+## 🎯 Mission
 
-## Responsibilities
-- Design overall system architecture and patterns
-- Define technical standards and best practices
-- Evaluate and recommend technology choices
-- Plan system scalability and maintainability
-- Create architectural documentation and diagrams
+O Architect Specialist é responsável por garantir que as decisões arquiteturais do ERP Pet Shop sejam consistentes, escaláveis e alinhadas com os requisitos de negócio. Este agente é acionado quando há necessidade de:
 
-## Best Practices
-- Consider long-term maintainability and scalability
-- Balance technical debt with business requirements
-- Document architectural decisions and rationale
-- Promote code reusability and modularity
-- Stay updated on industry trends and technologies
+- Definir ou revisar padrões arquiteturais
+- Avaliar novas tecnologias ou integrações
+- Planejar refatorações estruturais
+- Resolver conflitos de design entre módulos
+- Documentar decisões arquiteturais (ADRs)
 
-## Key Project Resources
-- Documentation index: [docs/README.md](../docs/README.md)
-- Agent handbook: [agents/README.md](./README.md)
-- Agent knowledge base: [AGENTS.md](../../AGENTS.md)
-- Contributor guide: [CONTRIBUTING.md](../../CONTRIBUTING.md)
+---
 
-## Repository Starting Points
-- `backend/` — TODO: Describe the purpose of this directory.
-- `backups/` — TODO: Describe the purpose of this directory.
-- `bkp/` — TODO: Describe the purpose of this directory.
-- `docs/` — TODO: Describe the purpose of this directory.
-- `erp-petshop/` — TODO: Describe the purpose of this directory.
-- `hardware-service/` — TODO: Describe the purpose of this directory.
-- `migrations/` — TODO: Describe the purpose of this directory.
-- `old/` — TODO: Describe the purpose of this directory.
+## 📐 Arquitetura Atual
 
-## Key Files
-**Entry Points:**
-- [`..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\types\index.ts`](..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\types\index.ts)
-- [`..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\types\index.ts`](..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\types\index.ts)
-- [`..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\main.tsx`](..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\main.tsx)
-- [`..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\main.tsx`](..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\main.tsx)
-- [`..\..\..\AppData\Local\Programs\Antigravity\hardware-service\src\index.js`](..\..\..\AppData\Local\Programs\Antigravity\hardware-service\src\index.js)
-- [`..\..\..\AppData\Local\Programs\Antigravity\backend\src\server.js`](..\..\..\AppData\Local\Programs\Antigravity\backend\src\server.js)
-- [`..\..\..\AppData\Local\Programs\Antigravity\backend\src\app.js`](..\..\..\AppData\Local\Programs\Antigravity\backend\src\app.js)
+### Visão Geral
 
-**Pattern Implementations:**
-- Controller: [`UploadController`](backend\src\controllers\upload.controller.js), [`SuppliersController`](backend\src\controllers\suppliers.controller.js), [`PetSpeciesController`](backend\src\controllers\petSpecies.controller.js), [`PaymentRateController`](backend\src\controllers\paymentRate.controller.js), [`PaymentConfigurationController`](backend\src\controllers\paymentConfiguration.controller.js), [`CustomersController`](backend\src\controllers\customers.controller.js), [`BankReconciliationController`](backend\src\controllers\bankReconciliation.controller.js), [`BankAccountController`](backend\src\controllers\bankAccount.controller.js), [`AccountsReceivableController`](backend\src\controllers\accountsReceivable.controller.js)
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                           ERP PET SHOP                                    │
+├──────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│  ┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐  │
+│  │   FRONTEND      │      │    BACKEND      │      │   DATABASE      │  │
+│  │   React/Vite    │◄────►│  Express/Node   │◄────►│   PostgreSQL    │  │
+│  │   TypeScript    │      │   JavaScript    │      │   Prisma ORM    │  │
+│  │   TailwindCSS   │      │   Port: 3001    │      │   Port: 5432    │  │
+│  │   Port: 5173    │      │                 │      │                 │  │
+│  └────────┬────────┘      └─────────────────┘      └─────────────────┘  │
+│           │                                                              │
+│           │ WebSocket                                                    │
+│           ▼                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐│
+│  │                     HARDWARE SERVICE                                 ││
+│  │                     Node.js Standalone                               ││
+│  │                     ws://localhost:3002                              ││
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐            ││
+│  │  │Impressora│  │ Balança  │  │  Gaveta  │  │ Scanner  │            ││
+│  │  │ ESC/POS  │  │  Serial  │  │  Serial  │  │ USB HID  │            ││
+│  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘            ││
+│  └─────────────────────────────────────────────────────────────────────┘│
+│                                                                           │
+└──────────────────────────────────────────────────────────────────────────┘
+```
 
-## Architecture Context
+### Stack Tecnológica
 
-### Utils
-Shared utilities and helpers
-- **Directories**: `erp-petshop\src\utils`, `backend\src\generated\prisma`, `backend\src\utils`
-- **Symbols**: 5 total
-- **Key exports**: [`isValidCPF`](erp-petshop\src\utils\validators.ts#L1), [`formatCPF`](erp-petshop\src\utils\validators.ts#L17), [`isValidCPF`](backend\src\utils\validators.js#L1), [`formatCPF`](backend\src\utils\validators.js#L17), [`formatCNPJ`](backend\src\utils\validators.js#L26)
+| Camada | Tecnologia | Versão |
+|--------|------------|--------|
+| **Frontend** | React, Vite, TypeScript | 18+, 5+, 5+ |
+| **Estilização** | TailwindCSS | 3+ |
+| **Backend** | Node.js, Express | 18+, 4+ |
+| **Banco de Dados** | PostgreSQL | 15+ |
+| **ORM** | Prisma | 5+ |
+| **Hardware** | node-thermal-printer, serialport | 4+, 12+ |
+| **Comunicação** | REST API, WebSocket | - |
 
-### Services
-Business logic and orchestration
-- **Directories**: `erp-petshop\src\services`, `backend\src\services`, `bkp\pdv-electron\src\services`, `erp-petshop\src\components\management`, `hardware-service\src`, `hardware-service\src\devices`, `backend\src\routes`, `backend\src\controllers`
-- **Symbols**: 44 total
-- **Key exports**: [`Groomer`](erp-petshop\src\services\managementService.ts#L3), [`GroomingService`](erp-petshop\src\services\managementService.ts#L13), [`GroomingResource`](erp-petshop\src\services\managementService.ts#L22), [`ServiceMatrixEntry`](erp-petshop\src\services\managementService.ts#L29), [`Commission`](erp-petshop\src\services\commissionService.ts#L3), [`CommissionFilters`](erp-petshop\src\services\commissionService.ts#L16), [`Appointment`](erp-petshop\src\services\appointmentService.ts#L3), [`authFetch`](erp-petshop\src\services\api.ts#L48), [`SeniorityLevel`](backend\src\services\durationCalculator.ts#L1), [`CoatType`](backend\src\services\durationCalculator.ts#L2), [`BreedSize`](backend\src\services\durationCalculator.ts#L3), [`calculateAppointmentDuration`](backend\src\services\durationCalculator.ts#L36), [`initDatabase`](bkp\pdv-electron\src\services\database.ts#L11), [`saveToIndexedDB`](bkp\pdv-electron\src\services\database.ts#L192), [`getDatabase`](bkp\pdv-electron\src\services\database.ts#L266), [`closeDatabase`](bkp\pdv-electron\src\services\database.ts#L273)
+---
 
-### Repositories
-Data access and persistence
-- **Directories**: `erp-petshop\src\data`, `erp-petshop\src\components`, `erp-petshop\src\pages\Settings`
-- **Symbols**: 3 total
-- **Key exports**: [`NFeEmissionData`](erp-petshop\src\pages\Settings\NFeEmissionData.tsx#L5), [`NFCeEmissionData`](erp-petshop\src\pages\Settings\NFCeEmissionData.tsx#L5)
+## 📁 Estrutura de Diretórios
 
-### Components
-UI components and views
-- **Directories**: `erp-petshop\src\pages`, `erp-petshop\src\components`, `erp-petshop\src\pages\Suppliers`, `erp-petshop\src\pages\Settings`, `erp-petshop\src\pages\Reports`, `erp-petshop\src\pages\Financial`, `erp-petshop\src\pages\Customers`, `erp-petshop\src\components\management`, `bkp\pdv-electron\src\pages`, `bkp\pdv-electron\src\components`
-- **Symbols**: 123 total
-- **Key exports**: [`Sidebar`](erp-petshop\src\components\Sidebar.tsx#L55), [`QuickCustomerModal`](erp-petshop\src\components\QuickCustomerModal.tsx#L12), [`OpenPackageModal`](erp-petshop\src\components\OpenPackageModal.tsx#L19), [`Header`](erp-petshop\src\components\Header.tsx#L19), [`CustomerSearch`](erp-petshop\src\components\CustomerSearch.tsx#L18), [`ConfirmationModal`](erp-petshop\src\components\ConfirmationModal.tsx#L15), [`NFeCertificate`](erp-petshop\src\pages\Settings\NFeCertificate.tsx#L5), [`NFCeCertificate`](erp-petshop\src\pages\Settings\NFCeCertificate.tsx#L5), [`InvoiceSettings`](erp-petshop\src\pages\Settings\InvoiceSettings.tsx#L5), [`BusinessSettingsDashboard`](erp-petshop\src\pages\Settings\BusinessSettingsDashboard.tsx#L5), [`AuditLogs`](erp-petshop\src\pages\Settings\AuditLogs.tsx#L21), [`ProductPerformanceReport`](erp-petshop\src\pages\Reports\ProductPerformanceReport.tsx#L7), [`DailySalesReport`](erp-petshop\src\pages\Reports\DailySalesReport.tsx#L7), [`QuickCustomerModal`](bkp\pdv-electron\src\components\QuickCustomerModal.tsx#L29)
+```
+ERP Pet Shop/
+├── backend/                    # API REST
+│   ├── src/
+│   │   ├── controllers/        # Lógica de negócio (MVC)
+│   │   ├── routes/             # Definição de rotas
+│   │   ├── middleware/         # Auth, validation, error handling
+│   │   ├── services/           # Serviços auxiliares
+│   │   ├── utils/              # Helpers
+│   │   ├── server.js           # Entry point
+│   │   └── app.js              # Express config
+│   └── prisma/
+│       ├── schema.prisma       # Schema do banco
+│       └── migrations/         # Histórico de migrações
+│
+├── erp-petshop/                # Frontend React
+│   ├── src/
+│   │   ├── components/         # Componentes reutilizáveis
+│   │   ├── pages/              # Páginas/rotas
+│   │   ├── contexts/           # React Context (Auth, etc.)
+│   │   ├── hooks/              # Custom hooks
+│   │   ├── services/           # API clients
+│   │   ├── types/              # TypeScript interfaces
+│   │   ├── utils/              # Helpers
+│   │   ├── layouts/            # Layout components
+│   │   └── main.tsx            # Entry point
+│   └── public/                 # Assets estáticos
+│
+├── hardware-service/           # Módulo Desktop
+│   └── src/
+│       ├── index.js            # WebSocket server
+│       └── devices/            # Drivers de periféricos
+│           ├── printer.js      # ESC/POS
+│           ├── scale.js        # Balança Toledo
+│           ├── drawer.js       # Gaveta
+│           └── scanner.js      # Leitor
+│
+├── .context/                   # Documentação AI Context
+│   ├── docs/                   # Documentação técnica
+│   └── agents/                 # Playbooks de agentes
+│
+└── docker-compose.yml          # Infraestrutura local
+```
 
-### Controllers
-Request handling and routing
-- **Directories**: `erp-petshop\src\components`, `backend\src\routes`, `backend\src\middleware`, `backend\src\controllers`
-- **Symbols**: 13 total
-- **Key exports**: [`RoleProtectedRoute`](erp-petshop\src\components\RoleProtectedRoute.tsx#L19), [`canAccessPath`](erp-petshop\src\components\RoleProtectedRoute.tsx#L45)
-## Key Symbols for This Agent
-- [`Product`](erp-petshop\src\types\index.ts#L1) (interface)
-- [`CartItem`](erp-petshop\src\types\index.ts#L13) (interface)
-- [`Sale`](erp-petshop\src\types\index.ts#L19) (interface)
-- [`Customer`](erp-petshop\src\types\index.ts#L32) (interface)
-- [`Groomer`](erp-petshop\src\services\managementService.ts#L3) (interface)
+---
 
-## Documentation Touchpoints
-- [Documentation Index](../docs/README.md)
-- [Project Overview](../docs/project-overview.md)
-- [Architecture Notes](../docs/architecture.md)
-- [Development Workflow](../docs/development-workflow.md)
-- [Testing Strategy](../docs/testing-strategy.md)
-- [Glossary & Domain Concepts](../docs/glossary.md)
-- [Data Flow & Integrations](../docs/data-flow.md)
-- [Security & Compliance Notes](../docs/security.md)
-- [Tooling & Productivity Guide](../docs/tooling.md)
+## 🏗️ Padrões Arquiteturais
 
-## Collaboration Checklist
+### Backend (MVC Simplificado)
 
-1. Confirm assumptions with issue reporters or maintainers.
-2. Review open pull requests affecting this area.
-3. Update the relevant doc section listed above.
-4. Capture learnings back in [docs/README.md](../docs/README.md).
+```
+Request → Router → Controller → Prisma ORM → Database
+                       ↓
+                   Response
+```
 
-## Hand-off Notes
+**Convenções:**
+- Um controller por entidade (products, customers, sales, etc.)
+- Validação no middleware ou no início do controller
+- Transações Prisma para operações compostas
+- Responses padronizadas: `{ success, data, error, message }`
 
-Summarize outcomes, remaining risks, and suggested follow-up actions after the agent completes its work.
+### Frontend (Component-Based)
+
+```
+App.tsx
+    └── Layout
+           └── Page
+                  └── Components
+                         └── Hooks (lógica de estado)
+                                └── Services (API calls)
+```
+
+**Convenções:**
+- Páginas em `/pages` com nome PascalCase
+- Componentes reutilizáveis em `/components`
+- Lógica de estado complexa em custom hooks
+- Context para estados globais (auth, theme)
+- Tipos TypeScript em `/types/index.ts`
+
+### Hardware Service (Event-Driven)
+
+```
+WebSocket Connection
+    ├── onMessage → Command Handler
+    │                    ├── printReceipt
+    │                    ├── openDrawer
+    │                    └── readWeight
+    └── Device Events → Broadcast to clients
+              ├── barcode
+              └── weight
+```
+
+---
+
+## 🔧 Decisões Arquiteturais (ADRs)
+
+### ADR-001: Abandono do Modo Offline Electron
+
+**Status:** Aceito  
+**Data:** 2026-01-17
+
+**Contexto:**  
+O modo offline com Electron + SQLite adicionava complexidade significativa (sincronização, conflitos, duplicidade de código).
+
+**Decisão:**  
+Abandonar o PDV Electron em favor de um PDV web + Hardware Service standalone.
+
+**Consequências:**
+- ✅ Simplificação da arquitetura
+- ✅ Código único para frontend
+- ✅ Manutenção facilitada
+- ⚠️ Sistema requer conexão com internet
+- ⚠️ Hardware Service deve estar rodando para periféricos
+
+---
+
+### ADR-002: Hardware Service via WebSocket
+
+**Status:** Aceito  
+**Data:** 2026-01-17
+
+**Contexto:**  
+Navegadores não podem acessar hardware diretamente (portas seriais, USB).
+
+**Decisão:**  
+Criar um serviço Node.js que roda localmente e expõe periféricos via WebSocket.
+
+**Consequências:**
+- ✅ Frontend web pode acessar periféricos
+- ✅ Instalação única por máquina PDV
+- ✅ Protocolo simples e stateless
+- ⚠️ Requer instalação do Hardware Service em cada PDV
+
+---
+
+### ADR-003: Prisma como ORM
+
+**Status:** Aceito  
+**Data:** 2025-11
+
+**Contexto:**  
+Necessidade de ORM type-safe com migrations versionadas.
+
+**Decisão:**  
+Usar Prisma para interação com PostgreSQL.
+
+**Consequências:**
+- ✅ Schema como código
+- ✅ Migrations automáticas
+- ✅ Type-safe queries
+- ⚠️ Algumas queries complexas requerem raw SQL
+
+---
+
+## 📋 Responsabilidades
+
+### O que o Architect faz:
+- ✅ Define estrutura de diretórios e padrões de código
+- ✅ Avalia impacto de novas features na arquitetura
+- ✅ Documenta decisões técnicas (ADRs)
+- ✅ Revisa integrações com sistemas externos
+- ✅ Planeja refatorações e migrações
+- ✅ Define interfaces entre módulos
+
+### O que o Architect NÃO faz:
+- ❌ Implementar features (ver: feature-developer)
+- ❌ Corrigir bugs (ver: bug-fixer)
+- ❌ Revisar código em detalhes (ver: code-reviewer)
+- ❌ Escrever testes (ver: test-writer)
+
+---
+
+## 🔍 Checklist de Avaliação Arquitetural
+
+Ao avaliar uma nova feature ou mudança:
+
+### 1. Impacto
+- [ ] Afeta mais de um módulo?
+- [ ] Requer mudanças no schema do banco?
+- [ ] Adiciona nova dependência externa?
+- [ ] Altera fluxos de dados existentes?
+
+### 2. Escalabilidade
+- [ ] Suporta crescimento de usuários/dados?
+- [ ] Performance será afetada?
+- [ ] Há gargalos potenciais?
+
+### 3. Manutenibilidade
+- [ ] Código será fácil de entender?
+- [ ] Segue os padrões existentes?
+- [ ] Documentação será necessária?
+
+### 4. Segurança
+- [ ] Dados sensíveis estão protegidos?
+- [ ] Autenticação/autorização corretas?
+- [ ] Validação de inputs adequada?
+
+---
+
+## 🔗 Integrações Planejadas
+
+### APIs Externas
+
+| Sistema | Status | Complexidade | Notas |
+|---------|--------|--------------|-------|
+| SEFAZ (NF-e/NFC-e) | Planejado | Alta | Certificado digital, XML, retorno |
+| PIX (QR Code) | Planejado | Média | Webhook para confirmação |
+| Stone | Manual | Baixa | Registro manual de transações |
+
+### Recomendações de Integração
+
+**SEFAZ:**
+- Criar módulo isolado `/backend/src/services/fiscal/`
+- Usar biblioteca nfe-io ou similar
+- Implementar fila para retransmissão
+- Armazenar XMLs para auditoria
+
+**PIX:**
+- Webhook endpoint para confirmação
+- QR Code dinâmico por transação
+- Timeout configurável
+- Fallback para registro manual
+
+---
+
+## 📊 Métricas de Qualidade
+
+### Performance
+| Métrica | Target | Atual |
+|---------|--------|-------|
+| Tempo resposta API (p95) | < 200ms | ✅ OK |
+| Carregamento de página | < 2s | ✅ OK |
+| Hardware Service | < 100ms | ✅ OK |
+
+### Código
+| Métrica | Target |
+|---------|--------|
+| Cobertura de testes | > 70% |
+| Complexidade ciclomática | < 10 |
+| Duplicação de código | < 5% |
+
+---
+
+## 📖 Documentação de Referência
+
+- [Arquitetura Detalhada](../docs/architecture.md)
+- [Fluxo de Dados](../docs/data-flow.md)
+- [Segurança](../docs/security.md)
+- [Tooling](../docs/tooling.md)
+- [PRD](../../prd-erp-petshop.md)
+
+---
+
+## 🤝 Colaboração com Outros Agentes
+
+| Quando | Colaborar com |
+|--------|---------------|
+| Implementar decisão | Feature Developer |
+| Revisar código | Code Reviewer |
+| Mudanças no schema | Database Specialist |
+| Performance issues | Backend Specialist |
+| Segurança | Security Specialist |
+
+---
+
+## ✅ Handoff Notes
+
+Após completar uma análise arquitetural:
+
+1. **Documentar** a decisão em formato ADR
+2. **Comunicar** impactos para os desenvolvedores
+3. **Atualizar** documentação em `.context/docs/`
+4. **Criar issues** para trabalho de implementação
+5. **Registrar** riscos identificados
+
+---
+
+*Última atualização: Janeiro 2026*
