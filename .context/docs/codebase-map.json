@@ -1,0 +1,1853 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-01-17T03:01:51.657Z",
+  "stack": {
+    "primaryLanguage": "typescript",
+    "languages": [
+      "javascript",
+      "typescript",
+      "c",
+      "python"
+    ],
+    "frameworks": [],
+    "buildTools": [
+      "docker-compose"
+    ],
+    "testFrameworks": [],
+    "packageManager": "npm",
+    "isMonorepo": false,
+    "hasDocker": true,
+    "hasCI": false
+  },
+  "structure": {
+    "totalFiles": 68208,
+    "topDirectories": [
+      {
+        "name": "Ajustes.txt",
+        "fileCount": 1
+      },
+      {
+        "name": "backend",
+        "fileCount": 14969
+      },
+      {
+        "name": "backups",
+        "fileCount": 0
+      },
+      {
+        "name": "bkp",
+        "fileCount": 22232
+      },
+      {
+        "name": "database-schema-erp.sql",
+        "fileCount": 1
+      },
+      {
+        "name": "dev.js",
+        "fileCount": 1
+      },
+      {
+        "name": "docker-compose.yml",
+        "fileCount": 1
+      },
+      {
+        "name": "docs",
+        "fileCount": 5
+      },
+      {
+        "name": "erp-petshop",
+        "fileCount": 30653
+      },
+      {
+        "name": "hardware-service",
+        "fileCount": 328
+      },
+      {
+        "name": "hardware.js",
+        "fileCount": 1
+      },
+      {
+        "name": "migrations",
+        "fileCount": 1
+      },
+      {
+        "name": "nfe_exemplo.xml",
+        "fileCount": 1
+      },
+      {
+        "name": "old",
+        "fileCount": 5
+      },
+      {
+        "name": "package-lock.json",
+        "fileCount": 1
+      },
+      {
+        "name": "prd-erp-petshop.md",
+        "fileCount": 1
+      },
+      {
+        "name": "README.md",
+        "fileCount": 1
+      },
+      {
+        "name": "restart_dev.bat",
+        "fileCount": 1
+      },
+      {
+        "name": "restock_products.js",
+        "fileCount": 1
+      },
+      {
+        "name": "sample_nfe_large.xml",
+        "fileCount": 1
+      },
+      {
+        "name": "sample_nfe.xml",
+        "fileCount": 1
+      },
+      {
+        "name": "test_product_codes.js",
+        "fileCount": 1
+      },
+      {
+        "name": "test_sql.sql",
+        "fileCount": 1
+      }
+    ],
+    "languageDistribution": [
+      {
+        "extension": ".js",
+        "count": 29214
+      },
+      {
+        "extension": ".ts",
+        "count": 12747
+      },
+      {
+        "extension": ".map",
+        "count": 9687
+      },
+      {
+        "extension": ".cjs",
+        "count": 4284
+      },
+      {
+        "extension": ".cts",
+        "count": 4112
+      },
+      {
+        "extension": ".json",
+        "count": 2183
+      },
+      {
+        "extension": ".md",
+        "count": 2016
+      },
+      {
+        "extension": ".mjs",
+        "count": 752
+      },
+      {
+        "extension": ".mts",
+        "count": 661
+      },
+      {
+        "extension": ".pak",
+        "count": 174
+      }
+    ]
+  },
+  "architecture": {
+    "layers": [
+      {
+        "name": "Utils",
+        "description": "Shared utilities and helpers",
+        "directories": [
+          "erp-petshop\\src\\utils",
+          "backend\\src\\generated\\prisma",
+          "backend\\src\\utils"
+        ],
+        "symbolCount": 5,
+        "dependsOn": []
+      },
+      {
+        "name": "Services",
+        "description": "Business logic and orchestration",
+        "directories": [
+          "erp-petshop\\src\\services",
+          "backend\\src\\services",
+          "bkp\\pdv-electron\\src\\services",
+          "erp-petshop\\src\\components\\management",
+          "hardware-service\\src",
+          "hardware-service\\src\\devices",
+          "backend\\src\\routes",
+          "backend\\src\\controllers"
+        ],
+        "symbolCount": 44,
+        "dependsOn": []
+      },
+      {
+        "name": "Repositories",
+        "description": "Data access and persistence",
+        "directories": [
+          "erp-petshop\\src\\data",
+          "erp-petshop\\src\\components",
+          "erp-petshop\\src\\pages\\Settings"
+        ],
+        "symbolCount": 3,
+        "dependsOn": [
+          "Utils"
+        ]
+      },
+      {
+        "name": "Components",
+        "description": "UI components and views",
+        "directories": [
+          "erp-petshop\\src\\pages",
+          "erp-petshop\\src\\components",
+          "erp-petshop\\src\\pages\\Suppliers",
+          "erp-petshop\\src\\pages\\Settings",
+          "erp-petshop\\src\\pages\\Reports",
+          "erp-petshop\\src\\pages\\Financial",
+          "erp-petshop\\src\\pages\\Customers",
+          "erp-petshop\\src\\components\\management",
+          "bkp\\pdv-electron\\src\\pages",
+          "bkp\\pdv-electron\\src\\components"
+        ],
+        "symbolCount": 123,
+        "dependsOn": [
+          "Services",
+          "Controllers",
+          "Utils"
+        ]
+      },
+      {
+        "name": "Controllers",
+        "description": "Request handling and routing",
+        "directories": [
+          "erp-petshop\\src\\components",
+          "backend\\src\\middleware",
+          "backend\\src\\routes",
+          "backend\\src\\controllers"
+        ],
+        "symbolCount": 13,
+        "dependsOn": [
+          "Utils"
+        ]
+      }
+    ],
+    "patterns": [
+      {
+        "name": "Controller",
+        "confidence": 0.9,
+        "description": "Handles incoming requests and returns responses",
+        "occurrences": 9
+      }
+    ],
+    "entryPoints": [
+      "erp-petshop\\src\\types\\index.ts",
+      "bkp\\pdv-electron\\src\\types\\index.ts",
+      "erp-petshop\\src\\main.tsx",
+      "bkp\\pdv-electron\\src\\main.tsx",
+      "hardware-service\\src\\index.js",
+      "backend\\src\\server.js",
+      "backend\\src\\app.js"
+    ]
+  },
+  "symbols": {
+    "classes": [
+      {
+        "name": "AccountsReceivableController",
+        "kind": "class",
+        "file": "backend\\src\\controllers\\accountsReceivable.controller.js",
+        "line": 3,
+        "exported": false
+      },
+      {
+        "name": "BankAccountController",
+        "kind": "class",
+        "file": "backend\\src\\controllers\\bankAccount.controller.js",
+        "line": 3,
+        "exported": false
+      },
+      {
+        "name": "BankReconciliationController",
+        "kind": "class",
+        "file": "backend\\src\\controllers\\bankReconciliation.controller.js",
+        "line": 3,
+        "exported": false
+      },
+      {
+        "name": "CustomersController",
+        "kind": "class",
+        "file": "backend\\src\\controllers\\customers.controller.js",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "DrawerDevice",
+        "kind": "class",
+        "file": "hardware-service\\src\\devices\\drawer.js",
+        "line": 10,
+        "exported": false
+      },
+      {
+        "name": "PaymentConfigurationController",
+        "kind": "class",
+        "file": "backend\\src\\controllers\\paymentConfiguration.controller.js",
+        "line": 3,
+        "exported": false
+      },
+      {
+        "name": "PaymentRateController",
+        "kind": "class",
+        "file": "backend\\src\\controllers\\paymentRate.controller.js",
+        "line": 3,
+        "exported": false
+      },
+      {
+        "name": "PetSpeciesController",
+        "kind": "class",
+        "file": "backend\\src\\controllers\\petSpecies.controller.js",
+        "line": 3,
+        "exported": false
+      },
+      {
+        "name": "PrinterDevice",
+        "kind": "class",
+        "file": "hardware-service\\src\\devices\\printer.js",
+        "line": 11,
+        "exported": false
+      },
+      {
+        "name": "ScaleDevice",
+        "kind": "class",
+        "file": "hardware-service\\src\\devices\\scale.js",
+        "line": 10,
+        "exported": false
+      },
+      {
+        "name": "ScannerDevice",
+        "kind": "class",
+        "file": "hardware-service\\src\\devices\\scanner.js",
+        "line": 11,
+        "exported": false
+      },
+      {
+        "name": "SuppliersController",
+        "kind": "class",
+        "file": "backend\\src\\controllers\\suppliers.controller.js",
+        "line": 3,
+        "exported": false
+      },
+      {
+        "name": "UploadController",
+        "kind": "class",
+        "file": "backend\\src\\controllers\\upload.controller.js",
+        "line": 16,
+        "exported": false
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "Appointment",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\services\\appointmentService.ts",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "CartItem",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\types\\index.ts",
+        "line": 13,
+        "exported": true
+      },
+      {
+        "name": "CartItem",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\types\\index.ts",
+        "line": 12,
+        "exported": true
+      },
+      {
+        "name": "CashCloseData",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\hooks\\useHardware.ts",
+        "line": 47,
+        "exported": true
+      },
+      {
+        "name": "CashMovement",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\types\\index.ts",
+        "line": 55,
+        "exported": true
+      },
+      {
+        "name": "CashRegister",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\types\\index.ts",
+        "line": 42,
+        "exported": true
+      },
+      {
+        "name": "Commission",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\services\\commissionService.ts",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "CommissionFilters",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\services\\commissionService.ts",
+        "line": 16,
+        "exported": true
+      },
+      {
+        "name": "Customer",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\types\\index.ts",
+        "line": 32,
+        "exported": true
+      },
+      {
+        "name": "Customer",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\types\\index.ts",
+        "line": 33,
+        "exported": true
+      },
+      {
+        "name": "Database",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\sql.js.d.ts",
+        "line": 2,
+        "exported": true
+      },
+      {
+        "name": "Groomer",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\services\\managementService.ts",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "GroomingResource",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\services\\managementService.ts",
+        "line": 22,
+        "exported": true
+      },
+      {
+        "name": "GroomingService",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\services\\managementService.ts",
+        "line": 13,
+        "exported": true
+      },
+      {
+        "name": "PrinterInfo",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\hooks\\useHardware.ts",
+        "line": 42,
+        "exported": true
+      },
+      {
+        "name": "Product",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\types\\index.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "Product",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\types\\index.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "ReceiptData",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\hooks\\useHardware.ts",
+        "line": 15,
+        "exported": true
+      },
+      {
+        "name": "Sale",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\types\\index.ts",
+        "line": 19,
+        "exported": true
+      },
+      {
+        "name": "Sale",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\types\\index.ts",
+        "line": 18,
+        "exported": true
+      },
+      {
+        "name": "ServiceMatrixEntry",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\services\\managementService.ts",
+        "line": 29,
+        "exported": true
+      },
+      {
+        "name": "SqlJsStatic",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\sql.js.d.ts",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "AdminLayoutProps",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\layouts\\AdminLayout.tsx",
+        "line": 7,
+        "exported": false
+      },
+      {
+        "name": "AuditLog",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\pages\\Settings\\AuditLogs.tsx",
+        "line": 7,
+        "exported": false
+      },
+      {
+        "name": "AuthContextType",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\contexts\\AuthContext.tsx",
+        "line": 11,
+        "exported": false
+      },
+      {
+        "name": "AuthContextType",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\contexts\\AuthContext.tsx",
+        "line": 11,
+        "exported": false
+      },
+      {
+        "name": "BankAccount",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\pages\\BankReconciliation.tsx",
+        "line": 24,
+        "exported": false
+      },
+      {
+        "name": "BankAccount",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\pages\\Settings\\PaymentSettings.tsx",
+        "line": 20,
+        "exported": false
+      },
+      {
+        "name": "BankAccount",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\pages\\Settings\\BankAccountSettings.tsx",
+        "line": 5,
+        "exported": false
+      },
+      {
+        "name": "BankTransaction",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\pages\\BankReconciliation.tsx",
+        "line": 7,
+        "exported": false
+      },
+      {
+        "name": "BreakevenData",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\pages\\Reports\\BreakevenReport.tsx",
+        "line": 8,
+        "exported": false
+      },
+      {
+        "name": "BuyerDataFormProps",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\components\\BuyerDataForm.tsx",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "CachedUser",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\services\\auth-service.ts",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "CancelInvoiceModalProps",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\components\\CancelInvoiceModal.tsx",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "CartProps",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\components\\Cart.tsx",
+        "line": 5,
+        "exported": false
+      },
+      {
+        "name": "CashCloseModalProps",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\components\\CashCloseModal.tsx",
+        "line": 5,
+        "exported": false
+      },
+      {
+        "name": "CashCloseModalProps",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\components\\CashCloseModal.tsx",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "CashOpenModalProps",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\components\\CashOpenModal.tsx",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "CashOpenModalProps",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\components\\CashOpenModal.tsx",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "CashOperationsMenuProps",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\components\\CashOperationsMenu.tsx",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "CashOperationsMenuProps",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\components\\CashOperationsMenu.tsx",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "CashRegister",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\hooks\\useCashRegister.ts",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "CashRegister",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\hooks\\useCashRegister.ts",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "CashRegisterState",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\hooks\\useCashRegister.ts",
+        "line": 17,
+        "exported": false
+      },
+      {
+        "name": "CashRegisterState",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\services\\cash-register-service.ts",
+        "line": 5,
+        "exported": false
+      },
+      {
+        "name": "CashRegisterState",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\hooks\\useCashRegister.ts",
+        "line": 18,
+        "exported": false
+      },
+      {
+        "name": "CashReportModalProps",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\components\\CashReportModal.tsx",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "CashReportModalProps",
+        "kind": "interface",
+        "file": "bkp\\pdv-electron\\src\\components\\CashReportModal.tsx",
+        "line": 4,
+        "exported": false
+      },
+      {
+        "name": "Category",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\pages\\Inventory.tsx",
+        "line": 28,
+        "exported": false
+      },
+      {
+        "name": "Category",
+        "kind": "interface",
+        "file": "erp-petshop\\src\\pages\\Settings\\ProductCategories.tsx",
+        "line": 7,
+        "exported": false
+      }
+    ],
+    "functions": [
+      {
+        "name": "AdminLayout",
+        "kind": "function",
+        "file": "erp-petshop\\src\\layouts\\AdminLayout.tsx",
+        "line": 20,
+        "exported": true
+      },
+      {
+        "name": "App",
+        "kind": "function",
+        "file": "bkp\\pdv-electron\\src\\App.tsx",
+        "line": 23,
+        "exported": true
+      },
+      {
+        "name": "AuditLogs",
+        "kind": "function",
+        "file": "erp-petshop\\src\\pages\\Settings\\AuditLogs.tsx",
+        "line": 21,
+        "exported": true
+      },
+      {
+        "name": "authFetch",
+        "kind": "function",
+        "file": "erp-petshop\\src\\services\\api.ts",
+        "line": 48,
+        "exported": true
+      },
+      {
+        "name": "AuthProvider",
+        "kind": "function",
+        "file": "erp-petshop\\src\\contexts\\AuthContext.tsx",
+        "line": 21,
+        "exported": true
+      },
+      {
+        "name": "AuthProvider",
+        "kind": "function",
+        "file": "bkp\\pdv-electron\\src\\contexts\\AuthContext.tsx",
+        "line": 30,
+        "exported": true
+      },
+      {
+        "name": "BusinessSettingsDashboard",
+        "kind": "function",
+        "file": "erp-petshop\\src\\pages\\Settings\\BusinessSettingsDashboard.tsx",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "calculateAppointmentDuration",
+        "kind": "function",
+        "file": "backend\\src\\services\\durationCalculator.ts",
+        "line": 36,
+        "exported": true
+      },
+      {
+        "name": "canAccessPath",
+        "kind": "function",
+        "file": "erp-petshop\\src\\components\\RoleProtectedRoute.tsx",
+        "line": 45,
+        "exported": true
+      },
+      {
+        "name": "closeDatabase",
+        "kind": "function",
+        "file": "bkp\\pdv-electron\\src\\services\\database.ts",
+        "line": 273,
+        "exported": true
+      },
+      {
+        "name": "ConfirmationModal",
+        "kind": "function",
+        "file": "erp-petshop\\src\\components\\ConfirmationModal.tsx",
+        "line": 15,
+        "exported": true
+      },
+      {
+        "name": "CustomerSearch",
+        "kind": "function",
+        "file": "erp-petshop\\src\\components\\CustomerSearch.tsx",
+        "line": 18,
+        "exported": true
+      },
+      {
+        "name": "DailySalesReport",
+        "kind": "function",
+        "file": "erp-petshop\\src\\pages\\Reports\\DailySalesReport.tsx",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "formatCNPJ",
+        "kind": "function",
+        "file": "backend\\src\\utils\\validators.js",
+        "line": 26,
+        "exported": true
+      },
+      {
+        "name": "formatCPF",
+        "kind": "function",
+        "file": "erp-petshop\\src\\utils\\validators.ts",
+        "line": 17,
+        "exported": true
+      },
+      {
+        "name": "formatCPF",
+        "kind": "function",
+        "file": "backend\\src\\utils\\validators.js",
+        "line": 17,
+        "exported": true
+      },
+      {
+        "name": "getDatabase",
+        "kind": "function",
+        "file": "bkp\\pdv-electron\\src\\services\\database.ts",
+        "line": 266,
+        "exported": true
+      },
+      {
+        "name": "Header",
+        "kind": "function",
+        "file": "erp-petshop\\src\\components\\Header.tsx",
+        "line": 19,
+        "exported": true
+      },
+      {
+        "name": "initDatabase",
+        "kind": "function",
+        "file": "bkp\\pdv-electron\\src\\services\\database.ts",
+        "line": 11,
+        "exported": true
+      },
+      {
+        "name": "InvoiceSettings",
+        "kind": "function",
+        "file": "erp-petshop\\src\\pages\\Settings\\InvoiceSettings.tsx",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "isValidCPF",
+        "kind": "function",
+        "file": "erp-petshop\\src\\utils\\validators.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "isValidCPF",
+        "kind": "function",
+        "file": "backend\\src\\utils\\validators.js",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "NFCeCertificate",
+        "kind": "function",
+        "file": "erp-petshop\\src\\pages\\Settings\\NFCeCertificate.tsx",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "NFCeEmissionData",
+        "kind": "function",
+        "file": "erp-petshop\\src\\pages\\Settings\\NFCeEmissionData.tsx",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "NFeCertificate",
+        "kind": "function",
+        "file": "erp-petshop\\src\\pages\\Settings\\NFeCertificate.tsx",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "NFeEmissionData",
+        "kind": "function",
+        "file": "erp-petshop\\src\\pages\\Settings\\NFeEmissionData.tsx",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "OpenPackageModal",
+        "kind": "function",
+        "file": "erp-petshop\\src\\components\\OpenPackageModal.tsx",
+        "line": 19,
+        "exported": true
+      },
+      {
+        "name": "ProductPerformanceReport",
+        "kind": "function",
+        "file": "erp-petshop\\src\\pages\\Reports\\ProductPerformanceReport.tsx",
+        "line": 7,
+        "exported": true
+      },
+      {
+        "name": "QuickCustomerModal",
+        "kind": "function",
+        "file": "erp-petshop\\src\\components\\QuickCustomerModal.tsx",
+        "line": 12,
+        "exported": true
+      },
+      {
+        "name": "QuickCustomerModal",
+        "kind": "function",
+        "file": "bkp\\pdv-electron\\src\\components\\QuickCustomerModal.tsx",
+        "line": 29,
+        "exported": true
+      },
+      {
+        "name": "RoleProtectedRoute",
+        "kind": "function",
+        "file": "erp-petshop\\src\\components\\RoleProtectedRoute.tsx",
+        "line": 19,
+        "exported": true
+      },
+      {
+        "name": "saveToIndexedDB",
+        "kind": "function",
+        "file": "bkp\\pdv-electron\\src\\services\\database.ts",
+        "line": 192,
+        "exported": true
+      },
+      {
+        "name": "Sidebar",
+        "kind": "function",
+        "file": "erp-petshop\\src\\components\\Sidebar.tsx",
+        "line": 55,
+        "exported": true
+      },
+      {
+        "name": "useAuth",
+        "kind": "function",
+        "file": "bkp\\pdv-electron\\src\\contexts\\AuthContext.tsx",
+        "line": 22,
+        "exported": true
+      },
+      {
+        "name": "useHardware",
+        "kind": "function",
+        "file": "erp-petshop\\src\\hooks\\useHardware.ts",
+        "line": 81,
+        "exported": true
+      },
+      {
+        "name": "AppContent",
+        "kind": "function",
+        "file": "bkp\\pdv-electron\\src\\App.tsx",
+        "line": 6,
+        "exported": false
+      },
+      {
+        "name": "broadcast",
+        "kind": "function",
+        "file": "hardware-service\\src\\index.js",
+        "line": 163,
+        "exported": false
+      },
+      {
+        "name": "checkBalances",
+        "kind": "function",
+        "file": "backend\\inspect_balances.js",
+        "line": 12,
+        "exported": false
+      },
+      {
+        "name": "checkConnection",
+        "kind": "function",
+        "file": "bkp\\pdv-electron\\electron\\main.cjs",
+        "line": 49,
+        "exported": false
+      },
+      {
+        "name": "checkSaleItems",
+        "kind": "function",
+        "file": "backend\\check_costs.js",
+        "line": 3,
+        "exported": false
+      },
+      {
+        "name": "createWindow",
+        "kind": "function",
+        "file": "bkp\\pdv-electron\\electron\\main.cjs",
+        "line": 8,
+        "exported": false
+      },
+      {
+        "name": "getReasonLabel",
+        "kind": "function",
+        "file": "backend\\src\\controllers\\discountReport.controller.js",
+        "line": 225,
+        "exported": false
+      },
+      {
+        "name": "handleClickOutside",
+        "kind": "function",
+        "file": "erp-petshop\\src\\pages\\StockMovements.tsx",
+        "line": 70,
+        "exported": false
+      },
+      {
+        "name": "initDevices",
+        "kind": "function",
+        "file": "hardware-service\\src\\index.js",
+        "line": 65,
+        "exported": false
+      },
+      {
+        "name": "initSchema",
+        "kind": "function",
+        "file": "bkp\\pdv-electron\\src\\services\\database.ts",
+        "line": 40,
+        "exported": false,
+        "description": "Create database schema"
+      },
+      {
+        "name": "killPort",
+        "kind": "function",
+        "file": "hardware.js",
+        "line": 22,
+        "exported": false
+      },
+      {
+        "name": "killPort",
+        "kind": "function",
+        "file": "dev.js",
+        "line": 24,
+        "exported": false
+      },
+      {
+        "name": "loadFromIndexedDB",
+        "kind": "function",
+        "file": "bkp\\pdv-electron\\src\\services\\database.ts",
+        "line": 231,
+        "exported": false,
+        "description": "Load database from IndexedDB"
+      },
+      {
+        "name": "log",
+        "kind": "function",
+        "file": "hardware.js",
+        "line": 11,
+        "exported": false
+      },
+      {
+        "name": "log",
+        "kind": "function",
+        "file": "dev.js",
+        "line": 12,
+        "exported": false
+      }
+    ],
+    "types": [
+      {
+        "name": "accounts_payable",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 46,
+        "exported": true
+      },
+      {
+        "name": "accounts_payable",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 24,
+        "exported": true
+      },
+      {
+        "name": "Accounts_payableScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 124,
+        "exported": true
+      },
+      {
+        "name": "accounts_receivable",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 51,
+        "exported": true
+      },
+      {
+        "name": "accounts_receivable",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 29,
+        "exported": true
+      },
+      {
+        "name": "Accounts_receivableScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 147,
+        "exported": true
+      },
+      {
+        "name": "audit_logs",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 56,
+        "exported": true
+      },
+      {
+        "name": "audit_logs",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 34,
+        "exported": true
+      },
+      {
+        "name": "Audit_logsScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 162,
+        "exported": true
+      },
+      {
+        "name": "bank_accounts",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 61,
+        "exported": true
+      },
+      {
+        "name": "bank_accounts",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 39,
+        "exported": true
+      },
+      {
+        "name": "Bank_accountsScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 183,
+        "exported": true
+      },
+      {
+        "name": "bank_reconciliations",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 66,
+        "exported": true
+      },
+      {
+        "name": "bank_reconciliations",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 44,
+        "exported": true
+      },
+      {
+        "name": "Bank_reconciliationsScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 200,
+        "exported": true
+      },
+      {
+        "name": "BreedSize",
+        "kind": "type",
+        "file": "backend\\src\\services\\durationCalculator.ts",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "cash_movements",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 71,
+        "exported": true
+      },
+      {
+        "name": "cash_movements",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 49,
+        "exported": true
+      },
+      {
+        "name": "Cash_movementsScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 213,
+        "exported": true
+      },
+      {
+        "name": "cash_registers",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 76,
+        "exported": true
+      },
+      {
+        "name": "cash_registers",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 54,
+        "exported": true
+      },
+      {
+        "name": "Cash_registersScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 231,
+        "exported": true
+      },
+      {
+        "name": "chart_of_accounts",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 81,
+        "exported": true
+      },
+      {
+        "name": "chart_of_accounts",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 59,
+        "exported": true
+      },
+      {
+        "name": "Chart_of_accountsScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 246,
+        "exported": true
+      },
+      {
+        "name": "CoatType",
+        "kind": "type",
+        "file": "backend\\src\\services\\durationCalculator.ts",
+        "line": 2,
+        "exported": true
+      },
+      {
+        "name": "company_settings",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 86,
+        "exported": true
+      },
+      {
+        "name": "company_settings",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 64,
+        "exported": true
+      },
+      {
+        "name": "Company_settingsScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 277,
+        "exported": true
+      },
+      {
+        "name": "cost_centers",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 91,
+        "exported": true
+      },
+      {
+        "name": "cost_centers",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 69,
+        "exported": true
+      },
+      {
+        "name": "Cost_centersScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 289,
+        "exported": true
+      },
+      {
+        "name": "customers",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 97,
+        "exported": true
+      },
+      {
+        "name": "customers",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 75,
+        "exported": true
+      },
+      {
+        "name": "CustomersScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 317,
+        "exported": true
+      },
+      {
+        "name": "digital_certificates",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 102,
+        "exported": true
+      },
+      {
+        "name": "digital_certificates",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 80,
+        "exported": true
+      },
+      {
+        "name": "Digital_certificatesScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 334,
+        "exported": true
+      },
+      {
+        "name": "expense_categories",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 107,
+        "exported": true
+      },
+      {
+        "name": "expense_categories",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 85,
+        "exported": true
+      },
+      {
+        "name": "Expense_categoriesScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 346,
+        "exported": true
+      },
+      {
+        "name": "financial_transactions",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 113,
+        "exported": true
+      },
+      {
+        "name": "financial_transactions",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 91,
+        "exported": true
+      },
+      {
+        "name": "Financial_transactionsScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 386,
+        "exported": true
+      },
+      {
+        "name": "invoice_series",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 118,
+        "exported": true
+      },
+      {
+        "name": "invoice_series",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 96,
+        "exported": true
+      },
+      {
+        "name": "Invoice_seriesScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 400,
+        "exported": true
+      },
+      {
+        "name": "invoices",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\client.ts",
+        "line": 124,
+        "exported": true
+      },
+      {
+        "name": "invoices",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\browser.ts",
+        "line": 102,
+        "exported": true
+      },
+      {
+        "name": "InvoicesScalarFieldEnum",
+        "kind": "type",
+        "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+        "line": 435,
+        "exported": true
+      }
+    ],
+    "enums": []
+  },
+  "publicAPI": [
+    {
+      "name": "accounts_payable",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\client.ts",
+      "line": 46,
+      "exported": true
+    },
+    {
+      "name": "accounts_payable",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\browser.ts",
+      "line": 24,
+      "exported": true
+    },
+    {
+      "name": "Accounts_payableScalarFieldEnum",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+      "line": 124,
+      "exported": true
+    },
+    {
+      "name": "accounts_receivable",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\client.ts",
+      "line": 51,
+      "exported": true
+    },
+    {
+      "name": "accounts_receivable",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\browser.ts",
+      "line": 29,
+      "exported": true
+    },
+    {
+      "name": "Accounts_receivableScalarFieldEnum",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+      "line": 147,
+      "exported": true
+    },
+    {
+      "name": "AdminLayout",
+      "kind": "function",
+      "file": "erp-petshop\\src\\layouts\\AdminLayout.tsx",
+      "line": 20,
+      "exported": true
+    },
+    {
+      "name": "App",
+      "kind": "function",
+      "file": "bkp\\pdv-electron\\src\\App.tsx",
+      "line": 23,
+      "exported": true
+    },
+    {
+      "name": "Appointment",
+      "kind": "interface",
+      "file": "erp-petshop\\src\\services\\appointmentService.ts",
+      "line": 3,
+      "exported": true
+    },
+    {
+      "name": "audit_logs",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\client.ts",
+      "line": 56,
+      "exported": true
+    },
+    {
+      "name": "audit_logs",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\browser.ts",
+      "line": 34,
+      "exported": true
+    },
+    {
+      "name": "Audit_logsScalarFieldEnum",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+      "line": 162,
+      "exported": true
+    },
+    {
+      "name": "AuditLogs",
+      "kind": "function",
+      "file": "erp-petshop\\src\\pages\\Settings\\AuditLogs.tsx",
+      "line": 21,
+      "exported": true
+    },
+    {
+      "name": "authFetch",
+      "kind": "function",
+      "file": "erp-petshop\\src\\services\\api.ts",
+      "line": 48,
+      "exported": true
+    },
+    {
+      "name": "AuthProvider",
+      "kind": "function",
+      "file": "erp-petshop\\src\\contexts\\AuthContext.tsx",
+      "line": 21,
+      "exported": true
+    },
+    {
+      "name": "AuthProvider",
+      "kind": "function",
+      "file": "bkp\\pdv-electron\\src\\contexts\\AuthContext.tsx",
+      "line": 30,
+      "exported": true
+    },
+    {
+      "name": "bank_accounts",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\client.ts",
+      "line": 61,
+      "exported": true
+    },
+    {
+      "name": "bank_accounts",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\browser.ts",
+      "line": 39,
+      "exported": true
+    },
+    {
+      "name": "Bank_accountsScalarFieldEnum",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+      "line": 183,
+      "exported": true
+    },
+    {
+      "name": "bank_reconciliations",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\client.ts",
+      "line": 66,
+      "exported": true
+    },
+    {
+      "name": "bank_reconciliations",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\browser.ts",
+      "line": 44,
+      "exported": true
+    },
+    {
+      "name": "Bank_reconciliationsScalarFieldEnum",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+      "line": 200,
+      "exported": true
+    },
+    {
+      "name": "BreedSize",
+      "kind": "type",
+      "file": "backend\\src\\services\\durationCalculator.ts",
+      "line": 3,
+      "exported": true
+    },
+    {
+      "name": "BusinessSettingsDashboard",
+      "kind": "function",
+      "file": "erp-petshop\\src\\pages\\Settings\\BusinessSettingsDashboard.tsx",
+      "line": 5,
+      "exported": true
+    },
+    {
+      "name": "calculateAppointmentDuration",
+      "kind": "function",
+      "file": "backend\\src\\services\\durationCalculator.ts",
+      "line": 36,
+      "exported": true
+    },
+    {
+      "name": "canAccessPath",
+      "kind": "function",
+      "file": "erp-petshop\\src\\components\\RoleProtectedRoute.tsx",
+      "line": 45,
+      "exported": true
+    },
+    {
+      "name": "CartItem",
+      "kind": "interface",
+      "file": "erp-petshop\\src\\types\\index.ts",
+      "line": 13,
+      "exported": true
+    },
+    {
+      "name": "CartItem",
+      "kind": "interface",
+      "file": "bkp\\pdv-electron\\src\\types\\index.ts",
+      "line": 12,
+      "exported": true
+    },
+    {
+      "name": "cash_movements",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\client.ts",
+      "line": 71,
+      "exported": true
+    },
+    {
+      "name": "cash_movements",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\browser.ts",
+      "line": 49,
+      "exported": true
+    },
+    {
+      "name": "Cash_movementsScalarFieldEnum",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+      "line": 213,
+      "exported": true
+    },
+    {
+      "name": "cash_registers",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\client.ts",
+      "line": 76,
+      "exported": true
+    },
+    {
+      "name": "cash_registers",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\browser.ts",
+      "line": 54,
+      "exported": true
+    },
+    {
+      "name": "Cash_registersScalarFieldEnum",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+      "line": 231,
+      "exported": true
+    },
+    {
+      "name": "CashCloseData",
+      "kind": "interface",
+      "file": "erp-petshop\\src\\hooks\\useHardware.ts",
+      "line": 47,
+      "exported": true
+    },
+    {
+      "name": "CashMovement",
+      "kind": "interface",
+      "file": "bkp\\pdv-electron\\src\\types\\index.ts",
+      "line": 55,
+      "exported": true
+    },
+    {
+      "name": "CashRegister",
+      "kind": "interface",
+      "file": "bkp\\pdv-electron\\src\\types\\index.ts",
+      "line": 42,
+      "exported": true
+    },
+    {
+      "name": "chart_of_accounts",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\client.ts",
+      "line": 81,
+      "exported": true
+    },
+    {
+      "name": "chart_of_accounts",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\browser.ts",
+      "line": 59,
+      "exported": true
+    },
+    {
+      "name": "Chart_of_accountsScalarFieldEnum",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+      "line": 246,
+      "exported": true
+    },
+    {
+      "name": "closeDatabase",
+      "kind": "function",
+      "file": "bkp\\pdv-electron\\src\\services\\database.ts",
+      "line": 273,
+      "exported": true
+    },
+    {
+      "name": "CoatType",
+      "kind": "type",
+      "file": "backend\\src\\services\\durationCalculator.ts",
+      "line": 2,
+      "exported": true
+    },
+    {
+      "name": "Commission",
+      "kind": "interface",
+      "file": "erp-petshop\\src\\services\\commissionService.ts",
+      "line": 3,
+      "exported": true
+    },
+    {
+      "name": "CommissionFilters",
+      "kind": "interface",
+      "file": "erp-petshop\\src\\services\\commissionService.ts",
+      "line": 16,
+      "exported": true
+    },
+    {
+      "name": "company_settings",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\client.ts",
+      "line": 86,
+      "exported": true
+    },
+    {
+      "name": "company_settings",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\browser.ts",
+      "line": 64,
+      "exported": true
+    },
+    {
+      "name": "Company_settingsScalarFieldEnum",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\internal\\prismaNamespaceBrowser.ts",
+      "line": 277,
+      "exported": true
+    },
+    {
+      "name": "ConfirmationModal",
+      "kind": "function",
+      "file": "erp-petshop\\src\\components\\ConfirmationModal.tsx",
+      "line": 15,
+      "exported": true
+    },
+    {
+      "name": "cost_centers",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\client.ts",
+      "line": 91,
+      "exported": true
+    },
+    {
+      "name": "cost_centers",
+      "kind": "type",
+      "file": "backend\\src\\generated\\prisma\\browser.ts",
+      "line": 69,
+      "exported": true
+    }
+  ],
+  "dependencies": {
+    "mostImported": [
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\erp-petshop\\src\\services\\api.ts",
+        "importedBy": 47
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\backend\\src\\db.js",
+        "importedBy": 34
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\erp-petshop\\src\\components\\Toast.tsx",
+        "importedBy": 18
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\erp-petshop\\src\\services\\managementService.ts",
+        "importedBy": 9
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\bkp\\pdv-electron\\src\\services\\api.ts",
+        "importedBy": 7
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\bkp\\pdv-electron\\src\\services\\database.ts",
+        "importedBy": 7
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\erp-petshop\\src\\contexts\\AuthContext.tsx",
+        "importedBy": 6
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\erp-petshop\\src\\utils\\masks.ts",
+        "importedBy": 6
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\backend\\src\\middleware\\auth.middleware.js",
+        "importedBy": 5
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\erp-petshop\\src\\types\\index.ts",
+        "importedBy": 4
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\erp-petshop\\src\\services\\appointmentService.ts",
+        "importedBy": 4
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\erp-petshop\\src\\utils\\format.ts",
+        "importedBy": 3
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\bkp\\pdv-electron\\src\\services\\sale-service.ts",
+        "importedBy": 2
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\bkp\\pdv-electron\\src\\services\\customer-service.ts",
+        "importedBy": 2
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\bkp\\pdv-electron\\src\\types/index.ts",
+        "importedBy": 2
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\erp-petshop\\src\\hooks\\useHardware.ts",
+        "importedBy": 2
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\erp-petshop\\src\\components\\BuyerDataForm.tsx",
+        "importedBy": 2
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\bkp\\pdv-electron\\src\\contexts\\AuthContext.tsx",
+        "importedBy": 2
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\erp-petshop\\src\\services\\commissionService.ts",
+        "importedBy": 2
+      },
+      {
+        "file": "C:\\Users\\iruka\\OneDrive\\Desenvolvimento\\ERP Pet Shop\\backend\\src\\controllers\\product.controller.js",
+        "importedBy": 2
+      }
+    ]
+  },
+  "stats": {
+    "totalSymbols": 362,
+    "exportedSymbols": 176,
+    "analysisTimeMs": 1852
+  }
+}
