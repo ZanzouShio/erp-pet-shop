@@ -1,107 +1,314 @@
 ---
 name: Performance Optimizer
-description: Identify performance bottlenecks
-status: unfilled
+description: Identify and fix performance bottlenecks in ERP Pet Shop
+status: filled
 generated: 2026-01-17
 ---
 
 # Performance Optimizer Agent Playbook
 
-## Mission
-Describe how the performance optimizer agent supports the team and when to engage it.
+## 🎯 Mission
 
-## Responsibilities
-- Identify performance bottlenecks
-- Optimize code for speed and efficiency
-- Implement caching strategies
-- Monitor and improve resource usage
+O Performance Optimizer é responsável por identificar gargalos de performance, otimizar tempo de resposta da API, carregamento do frontend e comunicação com o Hardware Service.
 
-## Best Practices
-- Measure before optimizing
-- Focus on actual bottlenecks
-- Don't sacrifice readability unnecessarily
+---
 
-## Key Project Resources
-- Documentation index: [docs/README.md](../docs/README.md)
-- Agent handbook: [agents/README.md](./README.md)
-- Agent knowledge base: [AGENTS.md](../../AGENTS.md)
-- Contributor guide: [CONTRIBUTING.md](../../CONTRIBUTING.md)
+## 📊 Métricas Atuais
 
-## Repository Starting Points
-- `backend/` — TODO: Describe the purpose of this directory.
-- `backups/` — TODO: Describe the purpose of this directory.
-- `bkp/` — TODO: Describe the purpose of this directory.
-- `docs/` — TODO: Describe the purpose of this directory.
-- `erp-petshop/` — TODO: Describe the purpose of this directory.
-- `hardware-service/` — TODO: Describe the purpose of this directory.
-- `migrations/` — TODO: Describe the purpose of this directory.
-- `old/` — TODO: Describe the purpose of this directory.
+### Targets
 
-## Key Files
-**Entry Points:**
-- [`..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\types\index.ts`](..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\types\index.ts)
-- [`..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\types\index.ts`](..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\types\index.ts)
-- [`..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\main.tsx`](..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\main.tsx)
-- [`..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\main.tsx`](..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\main.tsx)
-- [`..\..\..\AppData\Local\Programs\Antigravity\hardware-service\src\index.js`](..\..\..\AppData\Local\Programs\Antigravity\hardware-service\src\index.js)
-- [`..\..\..\AppData\Local\Programs\Antigravity\backend\src\server.js`](..\..\..\AppData\Local\Programs\Antigravity\backend\src\server.js)
-- [`..\..\..\AppData\Local\Programs\Antigravity\backend\src\app.js`](..\..\..\AppData\Local\Programs\Antigravity\backend\src\app.js)
+| Métrica | Target | Status |
+|---------|--------|--------|
+| API Response (p95) | < 200ms | ✅ |
+| Page Load | < 2s | ✅ |
+| Hardware Service | < 100ms | ✅ |
+| Time to Interactive | < 3s | ⚠️ Verificar |
 
-**Pattern Implementations:**
-- Controller: [`UploadController`](backend\src\controllers\upload.controller.js), [`SuppliersController`](backend\src\controllers\suppliers.controller.js), [`PetSpeciesController`](backend\src\controllers\petSpecies.controller.js), [`PaymentRateController`](backend\src\controllers\paymentRate.controller.js), [`PaymentConfigurationController`](backend\src\controllers\paymentConfiguration.controller.js), [`CustomersController`](backend\src\controllers\customers.controller.js), [`BankReconciliationController`](backend\src\controllers\bankReconciliation.controller.js), [`BankAccountController`](backend\src\controllers\bankAccount.controller.js), [`AccountsReceivableController`](backend\src\controllers\accountsReceivable.controller.js)
+### Como Medir
 
-## Architecture Context
+```bash
+# Backend - tempo de resposta
+# Adicionar middleware de logging
 
-### Utils
-Shared utilities and helpers
-- **Directories**: `erp-petshop\src\utils`, `backend\src\generated\prisma`, `backend\src\utils`
-- **Symbols**: 5 total
-- **Key exports**: [`isValidCPF`](erp-petshop\src\utils\validators.ts#L1), [`formatCPF`](erp-petshop\src\utils\validators.ts#L17), [`isValidCPF`](backend\src\utils\validators.js#L1), [`formatCPF`](backend\src\utils\validators.js#L17), [`formatCNPJ`](backend\src\utils\validators.js#L26)
+# Frontend - DevTools
+# Performance tab → Lighthouse
 
-### Services
-Business logic and orchestration
-- **Directories**: `erp-petshop\src\services`, `backend\src\services`, `bkp\pdv-electron\src\services`, `erp-petshop\src\components\management`, `hardware-service\src`, `hardware-service\src\devices`, `backend\src\routes`, `backend\src\controllers`
-- **Symbols**: 44 total
-- **Key exports**: [`Groomer`](erp-petshop\src\services\managementService.ts#L3), [`GroomingService`](erp-petshop\src\services\managementService.ts#L13), [`GroomingResource`](erp-petshop\src\services\managementService.ts#L22), [`ServiceMatrixEntry`](erp-petshop\src\services\managementService.ts#L29), [`Commission`](erp-petshop\src\services\commissionService.ts#L3), [`CommissionFilters`](erp-petshop\src\services\commissionService.ts#L16), [`Appointment`](erp-petshop\src\services\appointmentService.ts#L3), [`authFetch`](erp-petshop\src\services\api.ts#L48), [`SeniorityLevel`](backend\src\services\durationCalculator.ts#L1), [`CoatType`](backend\src\services\durationCalculator.ts#L2), [`BreedSize`](backend\src\services\durationCalculator.ts#L3), [`calculateAppointmentDuration`](backend\src\services\durationCalculator.ts#L36), [`initDatabase`](bkp\pdv-electron\src\services\database.ts#L11), [`saveToIndexedDB`](bkp\pdv-electron\src\services\database.ts#L192), [`getDatabase`](bkp\pdv-electron\src\services\database.ts#L266), [`closeDatabase`](bkp\pdv-electron\src\services\database.ts#L273)
+# Hardware Service
+# Medir roundtrip de WebSocket
+```
 
-### Repositories
-Data access and persistence
-- **Directories**: `erp-petshop\src\data`, `erp-petshop\src\components`, `erp-petshop\src\pages\Settings`
-- **Symbols**: 3 total
-- **Key exports**: [`NFeEmissionData`](erp-petshop\src\pages\Settings\NFeEmissionData.tsx#L5), [`NFCeEmissionData`](erp-petshop\src\pages\Settings\NFCeEmissionData.tsx#L5)
+---
 
-### Components
-UI components and views
-- **Directories**: `erp-petshop\src\pages`, `erp-petshop\src\components`, `erp-petshop\src\pages\Suppliers`, `erp-petshop\src\pages\Settings`, `erp-petshop\src\pages\Reports`, `erp-petshop\src\pages\Financial`, `erp-petshop\src\pages\Customers`, `erp-petshop\src\components\management`, `bkp\pdv-electron\src\pages`, `bkp\pdv-electron\src\components`
-- **Symbols**: 123 total
-- **Key exports**: [`Sidebar`](erp-petshop\src\components\Sidebar.tsx#L55), [`QuickCustomerModal`](erp-petshop\src\components\QuickCustomerModal.tsx#L12), [`OpenPackageModal`](erp-petshop\src\components\OpenPackageModal.tsx#L19), [`Header`](erp-petshop\src\components\Header.tsx#L19), [`CustomerSearch`](erp-petshop\src\components\CustomerSearch.tsx#L18), [`ConfirmationModal`](erp-petshop\src\components\ConfirmationModal.tsx#L15), [`NFeCertificate`](erp-petshop\src\pages\Settings\NFeCertificate.tsx#L5), [`NFCeCertificate`](erp-petshop\src\pages\Settings\NFCeCertificate.tsx#L5), [`InvoiceSettings`](erp-petshop\src\pages\Settings\InvoiceSettings.tsx#L5), [`BusinessSettingsDashboard`](erp-petshop\src\pages\Settings\BusinessSettingsDashboard.tsx#L5), [`AuditLogs`](erp-petshop\src\pages\Settings\AuditLogs.tsx#L21), [`ProductPerformanceReport`](erp-petshop\src\pages\Reports\ProductPerformanceReport.tsx#L7), [`DailySalesReport`](erp-petshop\src\pages\Reports\DailySalesReport.tsx#L7), [`QuickCustomerModal`](bkp\pdv-electron\src\components\QuickCustomerModal.tsx#L29)
+## 🔍 Áreas de Otimização
 
-### Controllers
-Request handling and routing
-- **Directories**: `erp-petshop\src\components`, `backend\src\routes`, `backend\src\middleware`, `backend\src\controllers`
-- **Symbols**: 13 total
-- **Key exports**: [`RoleProtectedRoute`](erp-petshop\src\components\RoleProtectedRoute.tsx#L19), [`canAccessPath`](erp-petshop\src\components\RoleProtectedRoute.tsx#L45)
-## Key Symbols for This Agent
-- *No relevant symbols detected.*
+### 1. Backend (API)
 
-## Documentation Touchpoints
-- [Documentation Index](../docs/README.md)
-- [Project Overview](../docs/project-overview.md)
-- [Architecture Notes](../docs/architecture.md)
-- [Development Workflow](../docs/development-workflow.md)
-- [Testing Strategy](../docs/testing-strategy.md)
-- [Glossary & Domain Concepts](../docs/glossary.md)
-- [Data Flow & Integrations](../docs/data-flow.md)
-- [Security & Compliance Notes](../docs/security.md)
-- [Tooling & Productivity Guide](../docs/tooling.md)
+#### Queries N+1
 
-## Collaboration Checklist
+**Problema:**
+```javascript
+// ❌ N+1 queries
+const sales = await prisma.sale.findMany();
+for (const sale of sales) {
+  sale.items = await prisma.saleItem.findMany({ where: { sale_id: sale.id } });
+}
+```
 
-1. Confirm assumptions with issue reporters or maintainers.
-2. Review open pull requests affecting this area.
-3. Update the relevant doc section listed above.
-4. Capture learnings back in [docs/README.md](../docs/README.md).
+**Solução:**
+```javascript
+// ✅ Include relacionamentos
+const sales = await prisma.sale.findMany({
+  include: {
+    items: {
+      include: {
+        product: true
+      }
+    },
+    customer: true
+  }
+});
+```
 
-## Hand-off Notes
+#### Índices do Banco
 
-Summarize outcomes, remaining risks, and suggested follow-up actions after the agent completes its work.
+```sql
+-- Índices recomendados
+CREATE INDEX idx_sales_date ON sales(created_at);
+CREATE INDEX idx_sales_customer ON sales(customer_id);
+CREATE INDEX idx_products_sku ON products(sku);
+CREATE INDEX idx_products_barcode ON products(barcode);
+CREATE INDEX idx_inventory_product ON inventory_movements(product_id);
+```
+
+#### Paginação
+
+```javascript
+// ✅ Sempre paginar listas grandes
+const products = await prisma.product.findMany({
+  skip: (page - 1) * limit,
+  take: limit,
+  orderBy: { name: 'asc' }
+});
+```
+
+---
+
+### 2. Frontend (React)
+
+#### Lazy Loading
+
+```typescript
+// ✅ Carregar páginas sob demanda
+const POS = lazy(() => import('./pages/POS'));
+const Reports = lazy(() => import('./pages/Reports'));
+const Settings = lazy(() => import('./pages/Settings'));
+
+// No Router
+<Suspense fallback={<Loading />}>
+  <Routes>
+    <Route path="/pos" element={<POS />} />
+  </Routes>
+</Suspense>
+```
+
+#### Memoização
+
+```typescript
+// ✅ Evitar re-renders desnecessários
+const ProductCard = memo(({ product, onSelect }) => {
+  return (
+    <div onClick={() => onSelect(product)}>
+      {product.name} - R$ {product.price}
+    </div>
+  );
+});
+
+// ✅ useMemo para cálculos pesados
+const totalCart = useMemo(() => {
+  return cartItems.reduce((sum, item) => sum + item.total, 0);
+}, [cartItems]);
+
+// ✅ useCallback para funções passadas como props
+const handleAddToCart = useCallback((product) => {
+  setCart(prev => [...prev, product]);
+}, []);
+```
+
+#### Debounce em Buscas
+
+```typescript
+// ✅ Debounce para evitar requisições excessivas
+const debouncedSearch = useMemo(
+  () => debounce((query) => searchProducts(query), 300),
+  []
+);
+
+const handleSearchChange = (e) => {
+  setQuery(e.target.value);
+  debouncedSearch(e.target.value);
+};
+```
+
+---
+
+### 3. Hardware Service
+
+#### Conexão WebSocket
+
+```typescript
+// ✅ Reconexão automática
+const useHardware = () => {
+  const wsRef = useRef<WebSocket | null>(null);
+  
+  const connect = useCallback(() => {
+    wsRef.current = new WebSocket('ws://localhost:3002');
+    
+    wsRef.current.onclose = () => {
+      // Reconectar após 3 segundos
+      setTimeout(connect, 3000);
+    };
+  }, []);
+  
+  useEffect(() => {
+    connect();
+    return () => wsRef.current?.close();
+  }, [connect]);
+};
+```
+
+#### Timeout em Comandos
+
+```typescript
+// ✅ Timeout para evitar travamento
+const sendCommand = (action: string, data?: any) => {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error('Timeout'));
+    }, 5000);
+    
+    ws.send(JSON.stringify({ action, data }));
+    
+    ws.onmessage = (event) => {
+      clearTimeout(timeout);
+      resolve(JSON.parse(event.data));
+    };
+  });
+};
+```
+
+---
+
+## 🛠️ Ferramentas de Profiling
+
+### Backend
+
+```javascript
+// Middleware de timing
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (duration > 200) {
+      console.warn(`Slow request: ${req.method} ${req.url} - ${duration}ms`);
+    }
+  });
+  next();
+});
+```
+
+### Frontend
+
+```typescript
+// React DevTools Profiler
+// Chrome DevTools → Performance tab
+
+// Medir tempo de componente
+console.time('ProductList render');
+// ... render
+console.timeEnd('ProductList render');
+```
+
+### Prisma
+
+```bash
+# Ver queries geradas
+DEBUG="prisma:query" npm run dev
+```
+
+---
+
+## 📋 Checklist de Otimização
+
+### Antes de Otimizar
+
+- [ ] Medir performance atual
+- [ ] Identificar gargalo real (não assumir)
+- [ ] Definir meta de melhoria
+
+### Durante
+
+- [ ] Fazer uma mudança por vez
+- [ ] Medir após cada mudança
+- [ ] Manter código legível
+
+### Depois
+
+- [ ] Documentar melhorias
+- [ ] Adicionar métricas de monitoramento
+- [ ] Criar alerta para regressões
+
+---
+
+## 🚨 Red Flags de Performance
+
+| Sintoma | Possível Causa | Solução |
+|---------|----------------|---------|
+| API lenta em listagens | N+1 queries | Include/Join |
+| API lenta em buscas | Falta de índice | Adicionar índice |
+| Frontend lento inicial | Bundle grande | Code splitting |
+| Re-renders excessivos | Props instáveis | Memoização |
+| WebSocket lento | Rede/Firewall | Verificar conexão |
+| Impressão demorada | Buffer cheio | Limpar buffer |
+
+---
+
+## 📈 Otimizações Prioritárias
+
+### Alta Prioridade
+
+| Área | Ação | Impacto |
+|------|------|---------|
+| PDV - Busca de produto | Índice em barcode/sku | Alto |
+| Listagem de vendas | Include items/customer | Alto |
+| Dashboard | Cache de totais | Médio |
+
+### Média Prioridade
+
+| Área | Ação | Impacto |
+|------|------|---------|
+| Relatórios | Paginação | Médio |
+| Estoque | Índice em produto | Médio |
+| Login | JWT validation cache | Baixo |
+
+---
+
+## 📖 Documentação de Referência
+
+- [Architecture](../docs/architecture.md)
+- [React Performance](https://react.dev/learn/render-and-commit)
+- [Prisma Performance](https://www.prisma.io/docs/concepts/components/prisma-client/query-optimization)
+
+---
+
+## 🤝 Colaboração
+
+| Quando | Colaborar com |
+|--------|---------------|
+| Otimização de queries | Database Specialist |
+| Refatoração | Refactoring Specialist |
+| Frontend | Frontend Specialist |
+| Arquitetura | Architect Specialist |
+
+---
+
+*Última atualização: Janeiro 2026*

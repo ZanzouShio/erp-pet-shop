@@ -1,109 +1,352 @@
 ---
 name: Test Writer
-description: Write comprehensive unit and integration tests
-status: unfilled
+description: Write comprehensive unit and integration tests for ERP Pet Shop
+status: filled
 generated: 2026-01-17
 ---
 
 # Test Writer Agent Playbook
 
-## Mission
-Describe how the test writer agent supports the team and when to engage it.
+## 🎯 Mission
 
-## Responsibilities
-- Write comprehensive unit and integration tests
-- Ensure good test coverage across the codebase
-- Create test utilities and fixtures
-- Maintain and update existing tests
+O Test Writer é responsável por garantir a qualidade do código através de testes automatizados. Este agente deve criar testes que validam o comportamento correto do sistema, previnem regressões e documentam o uso esperado das funcionalidades.
 
-## Best Practices
-- Write tests that are clear and maintainable
-- Test both happy path and edge cases
-- Use descriptive test names
+---
 
-## Key Project Resources
-- Documentation index: [docs/README.md](../docs/README.md)
-- Agent handbook: [agents/README.md](./README.md)
-- Agent knowledge base: [AGENTS.md](../../AGENTS.md)
-- Contributor guide: [CONTRIBUTING.md](../../CONTRIBUTING.md)
+## 🧪 Estratégia de Testes
 
-## Repository Starting Points
-- `backend/` — TODO: Describe the purpose of this directory.
-- `backups/` — TODO: Describe the purpose of this directory.
-- `bkp/` — TODO: Describe the purpose of this directory.
-- `docs/` — TODO: Describe the purpose of this directory.
-- `erp-petshop/` — TODO: Describe the purpose of this directory.
-- `hardware-service/` — TODO: Describe the purpose of this directory.
-- `migrations/` — TODO: Describe the purpose of this directory.
-- `old/` — TODO: Describe the purpose of this directory.
+### Pirâmide de Testes
 
-## Key Files
-**Entry Points:**
-- [`..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\types\index.ts`](..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\types\index.ts)
-- [`..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\types\index.ts`](..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\types\index.ts)
-- [`..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\main.tsx`](..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\main.tsx)
-- [`..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\main.tsx`](..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\main.tsx)
-- [`..\..\..\AppData\Local\Programs\Antigravity\hardware-service\src\index.js`](..\..\..\AppData\Local\Programs\Antigravity\hardware-service\src\index.js)
-- [`..\..\..\AppData\Local\Programs\Antigravity\backend\src\server.js`](..\..\..\AppData\Local\Programs\Antigravity\backend\src\server.js)
-- [`..\..\..\AppData\Local\Programs\Antigravity\backend\src\app.js`](..\..\..\AppData\Local\Programs\Antigravity\backend\src\app.js)
+```
+                 ╱╲
+                ╱  ╲
+               ╱ E2E╲         (poucos - críticos)
+              ╱──────╲
+             ╱        ╲
+            ╱Integration╲     (médio - fluxos)
+           ╱────────────╲
+          ╱              ╲
+         ╱     Unit       ╲   (muitos - funções)
+        ╱──────────────────╲
+```
 
-**Pattern Implementations:**
-- Controller: [`UploadController`](backend\src\controllers\upload.controller.js), [`SuppliersController`](backend\src\controllers\suppliers.controller.js), [`PetSpeciesController`](backend\src\controllers\petSpecies.controller.js), [`PaymentRateController`](backend\src\controllers\paymentRate.controller.js), [`PaymentConfigurationController`](backend\src\controllers\paymentConfiguration.controller.js), [`CustomersController`](backend\src\controllers\customers.controller.js), [`BankReconciliationController`](backend\src\controllers\bankReconciliation.controller.js), [`BankAccountController`](backend\src\controllers\bankAccount.controller.js), [`AccountsReceivableController`](backend\src\controllers\accountsReceivable.controller.js)
+| Tipo | Quantidade | Foco | Ferramentas |
+|------|------------|------|-------------|
+| **Unit** | Muitos | Funções isoladas, utils, helpers | Jest, Vitest |
+| **Integration** | Médio | Fluxos de dados, API endpoints | Supertest, Prisma mock |
+| **E2E** | Poucos | Fluxos críticos do usuário | Playwright, Cypress |
 
-## Architecture Context
+---
 
-### Utils
-Shared utilities and helpers
-- **Directories**: `erp-petshop\src\utils`, `backend\src\generated\prisma`, `backend\src\utils`
-- **Symbols**: 5 total
-- **Key exports**: [`isValidCPF`](erp-petshop\src\utils\validators.ts#L1), [`formatCPF`](erp-petshop\src\utils\validators.ts#L17), [`isValidCPF`](backend\src\utils\validators.js#L1), [`formatCPF`](backend\src\utils\validators.js#L17), [`formatCNPJ`](backend\src\utils\validators.js#L26)
+## 📁 Estrutura de Arquivos de Teste
 
-### Services
-Business logic and orchestration
-- **Directories**: `erp-petshop\src\services`, `backend\src\services`, `bkp\pdv-electron\src\services`, `erp-petshop\src\components\management`, `hardware-service\src`, `hardware-service\src\devices`, `backend\src\routes`, `backend\src\controllers`
-- **Symbols**: 44 total
-- **Key exports**: [`Groomer`](erp-petshop\src\services\managementService.ts#L3), [`GroomingService`](erp-petshop\src\services\managementService.ts#L13), [`GroomingResource`](erp-petshop\src\services\managementService.ts#L22), [`ServiceMatrixEntry`](erp-petshop\src\services\managementService.ts#L29), [`Commission`](erp-petshop\src\services\commissionService.ts#L3), [`CommissionFilters`](erp-petshop\src\services\commissionService.ts#L16), [`Appointment`](erp-petshop\src\services\appointmentService.ts#L3), [`authFetch`](erp-petshop\src\services\api.ts#L48), [`SeniorityLevel`](backend\src\services\durationCalculator.ts#L1), [`CoatType`](backend\src\services\durationCalculator.ts#L2), [`BreedSize`](backend\src\services\durationCalculator.ts#L3), [`calculateAppointmentDuration`](backend\src\services\durationCalculator.ts#L36), [`initDatabase`](bkp\pdv-electron\src\services\database.ts#L11), [`saveToIndexedDB`](bkp\pdv-electron\src\services\database.ts#L192), [`getDatabase`](bkp\pdv-electron\src\services\database.ts#L266), [`closeDatabase`](bkp\pdv-electron\src\services\database.ts#L273)
+### Backend
 
-### Repositories
-Data access and persistence
-- **Directories**: `erp-petshop\src\data`, `erp-petshop\src\components`, `erp-petshop\src\pages\Settings`
-- **Symbols**: 3 total
-- **Key exports**: [`NFeEmissionData`](erp-petshop\src\pages\Settings\NFeEmissionData.tsx#L5), [`NFCeEmissionData`](erp-petshop\src\pages\Settings\NFCeEmissionData.tsx#L5)
+```
+backend/
+├── src/
+│   ├── controllers/
+│   │   ├── sale.controller.js
+│   │   └── __tests__/
+│   │       └── sale.controller.test.js
+│   ├── utils/
+│   │   ├── validators.js
+│   │   └── __tests__/
+│   │       └── validators.test.js
+│   └── services/
+│       └── __tests__/
+└── jest.config.js
+```
 
-### Components
-UI components and views
-- **Directories**: `erp-petshop\src\pages`, `erp-petshop\src\components`, `erp-petshop\src\pages\Suppliers`, `erp-petshop\src\pages\Settings`, `erp-petshop\src\pages\Reports`, `erp-petshop\src\pages\Financial`, `erp-petshop\src\pages\Customers`, `erp-petshop\src\components\management`, `bkp\pdv-electron\src\pages`, `bkp\pdv-electron\src\components`
-- **Symbols**: 123 total
-- **Key exports**: [`Sidebar`](erp-petshop\src\components\Sidebar.tsx#L55), [`QuickCustomerModal`](erp-petshop\src\components\QuickCustomerModal.tsx#L12), [`OpenPackageModal`](erp-petshop\src\components\OpenPackageModal.tsx#L19), [`Header`](erp-petshop\src\components\Header.tsx#L19), [`CustomerSearch`](erp-petshop\src\components\CustomerSearch.tsx#L18), [`ConfirmationModal`](erp-petshop\src\components\ConfirmationModal.tsx#L15), [`NFeCertificate`](erp-petshop\src\pages\Settings\NFeCertificate.tsx#L5), [`NFCeCertificate`](erp-petshop\src\pages\Settings\NFCeCertificate.tsx#L5), [`InvoiceSettings`](erp-petshop\src\pages\Settings\InvoiceSettings.tsx#L5), [`BusinessSettingsDashboard`](erp-petshop\src\pages\Settings\BusinessSettingsDashboard.tsx#L5), [`AuditLogs`](erp-petshop\src\pages\Settings\AuditLogs.tsx#L21), [`ProductPerformanceReport`](erp-petshop\src\pages\Reports\ProductPerformanceReport.tsx#L7), [`DailySalesReport`](erp-petshop\src\pages\Reports\DailySalesReport.tsx#L7), [`QuickCustomerModal`](bkp\pdv-electron\src\components\QuickCustomerModal.tsx#L29)
+### Frontend
 
-### Controllers
-Request handling and routing
-- **Directories**: `erp-petshop\src\components`, `backend\src\routes`, `backend\src\middleware`, `backend\src\controllers`
-- **Symbols**: 13 total
-- **Key exports**: [`RoleProtectedRoute`](erp-petshop\src\components\RoleProtectedRoute.tsx#L19), [`canAccessPath`](erp-petshop\src\components\RoleProtectedRoute.tsx#L45)
-## Key Symbols for This Agent
-- [`testProductCodes`](test_product_codes.js#L3) (function)
-- [`seedSpecies`](backend\seed_species.js#L3) (function)
-- [`PetSpeciesController`](backend\src\controllers\petSpecies.controller.js#L3) (class)
+```
+erp-petshop/
+├── src/
+│   ├── components/
+│   │   ├── CustomerSearch.tsx
+│   │   └── __tests__/
+│   │       └── CustomerSearch.test.tsx
+│   ├── hooks/
+│   │   ├── useCashRegister.ts
+│   │   └── __tests__/
+│   │       └── useCashRegister.test.ts
+│   └── utils/
+│       └── __tests__/
+└── vitest.config.ts
+```
 
-## Documentation Touchpoints
-- [Documentation Index](../docs/README.md)
-- [Project Overview](../docs/project-overview.md)
-- [Architecture Notes](../docs/architecture.md)
-- [Development Workflow](../docs/development-workflow.md)
-- [Testing Strategy](../docs/testing-strategy.md)
-- [Glossary & Domain Concepts](../docs/glossary.md)
-- [Data Flow & Integrations](../docs/data-flow.md)
-- [Security & Compliance Notes](../docs/security.md)
-- [Tooling & Productivity Guide](../docs/tooling.md)
+---
 
-## Collaboration Checklist
+## ✅ Convenções de Nomenclatura
 
-1. Confirm assumptions with issue reporters or maintainers.
-2. Review open pull requests affecting this area.
-3. Update the relevant doc section listed above.
-4. Capture learnings back in [docs/README.md](../docs/README.md).
+### Arquivos de Teste
 
-## Hand-off Notes
+```
+[nome-do-arquivo].test.ts    # Para unit tests
+[nome-do-arquivo].spec.ts    # Para integration tests
+[fluxo].e2e.ts               # Para E2E tests
+```
 
-Summarize outcomes, remaining risks, and suggested follow-up actions after the agent completes its work.
+### Describe/It
+
+```javascript
+describe('SaleController', () => {
+  describe('createSale', () => {
+    it('should create a sale with valid data', async () => {
+      // ...
+    });
+    
+    it('should reject sale with empty cart', async () => {
+      // ...
+    });
+    
+    it('should update stock after sale', async () => {
+      // ...
+    });
+  });
+});
+```
+
+---
+
+## 🔨 Templates de Testes
+
+### Unit Test - Utils
+
+```typescript
+// backend/src/utils/__tests__/validators.test.js
+const { isValidCPF, formatCPF, formatCNPJ } = require('../validators');
+
+describe('Validators', () => {
+  describe('isValidCPF', () => {
+    it('should return true for valid CPF', () => {
+      expect(isValidCPF('123.456.789-09')).toBe(true);
+    });
+
+    it('should return false for invalid CPF', () => {
+      expect(isValidCPF('111.111.111-11')).toBe(false);
+    });
+
+    it('should return false for empty string', () => {
+      expect(isValidCPF('')).toBe(false);
+    });
+  });
+
+  describe('formatCPF', () => {
+    it('should format CPF with dots and dash', () => {
+      expect(formatCPF('12345678909')).toBe('123.456.789-09');
+    });
+  });
+});
+```
+
+### Integration Test - API
+
+```javascript
+// backend/src/controllers/__tests__/sale.controller.test.js
+const request = require('supertest');
+const app = require('../../app');
+const { prisma } = require('../../generated/prisma');
+
+describe('POST /api/sales', () => {
+  let authToken;
+  
+  beforeAll(async () => {
+    // Login para obter token
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'test@test.com', password: 'test123' });
+    authToken = res.body.token;
+  });
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  it('should create a sale successfully', async () => {
+    const saleData = {
+      items: [
+        { product_id: 1, quantity: 2, unit_price: 10.00 }
+      ],
+      payment_method: 'DINHEIRO',
+      total: 20.00
+    };
+
+    const res = await request(app)
+      .post('/api/sales')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send(saleData);
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.id).toBeDefined();
+  });
+
+  it('should fail without authentication', async () => {
+    const res = await request(app)
+      .post('/api/sales')
+      .send({ items: [] });
+
+    expect(res.status).toBe(401);
+  });
+});
+```
+
+### Component Test - React
+
+```typescript
+// erp-petshop/src/components/__tests__/CustomerSearch.test.tsx
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { CustomerSearch } from '../CustomerSearch';
+import { vi } from 'vitest';
+
+describe('CustomerSearch', () => {
+  const mockOnSelect = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should render search input', () => {
+    render(<CustomerSearch onSelect={mockOnSelect} />);
+    expect(screen.getByPlaceholderText(/buscar cliente/i)).toBeInTheDocument();
+  });
+
+  it('should call onSelect when customer is selected', async () => {
+    render(<CustomerSearch onSelect={mockOnSelect} />);
+    
+    const input = screen.getByPlaceholderText(/buscar cliente/i);
+    fireEvent.change(input, { target: { value: 'João' } });
+    
+    await waitFor(() => {
+      const option = screen.getByText(/João Silva/);
+      fireEvent.click(option);
+    });
+
+    expect(mockOnSelect).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'João Silva' })
+    );
+  });
+});
+```
+
+---
+
+## 🎯 Áreas Prioritárias para Testes
+
+### Alta Prioridade (Crítico)
+
+| Área | Arquivo | Razão |
+|------|---------|-------|
+| **Vendas** | `sale.controller.js` | Core do negócio |
+| **Caixa** | `cashRegister.controller.js` | Movimentações financeiras |
+| **Estoque** | `inventory.controller.js` | Controle de produtos |
+| **Auth** | `auth.controller.js` | Segurança |
+
+### Média Prioridade
+
+| Área | Arquivo | Razão |
+|------|---------|-------|
+| **Clientes** | `customers.controller.js` | Dados sensíveis |
+| **Produtos** | `product.controller.js` | Catálogo |
+| **Validators** | `validators.js` | Funções utilitárias |
+
+### Baixa Prioridade
+
+| Área | Arquivo | Razão |
+|------|---------|-------|
+| **Relatórios** | `reports.controller.js` | Leitura apenas |
+| **Configurações** | `settings.controller.js` | Baixo uso |
+
+---
+
+## 🔧 Configuração
+
+### Jest (Backend)
+
+```javascript
+// backend/jest.config.js
+module.exports = {
+  testEnvironment: 'node',
+  testMatch: ['**/__tests__/**/*.test.js'],
+  collectCoverageFrom: [
+    'src/**/*.js',
+    '!src/generated/**',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 70,
+      functions: 70,
+      lines: 70,
+    },
+  },
+};
+```
+
+### Vitest (Frontend)
+
+```typescript
+// erp-petshop/vitest.config.ts
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.ts'],
+  },
+});
+```
+
+---
+
+## 📋 Checklist de Testes
+
+Ao criar um novo teste:
+
+- [ ] Nome descritivo que explica o comportamento
+- [ ] Testa o "caminho feliz" (happy path)
+- [ ] Testa casos de erro/edge cases
+- [ ] Usa mocks apropriadamente
+- [ ] Limpa dados de teste após execução
+- [ ] Não depende de ordem de execução
+- [ ] Roda rapidamente (< 1s para unit)
+
+---
+
+## 🚫 Anti-padrões a Evitar
+
+| Anti-padrão | Problema | Solução |
+|-------------|----------|---------|
+| Testes dependentes | Falham aleatoriamente | Cada teste isolado |
+| Dados hardcoded | Difícil manutenção | Usar factories |
+| Testar implementação | Quebram com refactor | Testar comportamento |
+| Ignorar async | Testes falsamente passam | Usar await/done |
+| Mock excessivo | Testes não refletem realidade | Mock apenas externos |
+
+---
+
+## 📖 Documentação de Referência
+
+- [Estratégia de Testes](../docs/testing-strategy.md)
+- [Jest Documentation](https://jestjs.io/)
+- [Vitest Documentation](https://vitest.dev/)
+- [Testing Library](https://testing-library.com/)
+
+---
+
+## 🤝 Colaboração
+
+| Quando | Colaborar com |
+|--------|---------------|
+| Nova feature | Feature Developer |
+| Bug fix | Bug Fixer |
+| Refactoring | Refactoring Specialist |
+| Performance | Performance Optimizer |
+
+---
+
+*Última atualização: Janeiro 2026*

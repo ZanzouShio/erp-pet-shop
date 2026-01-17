@@ -1,114 +1,99 @@
 ---
 name: Mobile Specialist
-description: Develop native and cross-platform mobile applications
-status: unfilled
+description: Mobile development guidance (not applicable to this project)
+status: not-applicable
 generated: 2026-01-17
 ---
 
 # Mobile Specialist Agent Playbook
 
-## Mission
-Describe how the mobile specialist agent supports the team and when to engage it.
+## ⚠️ Status: Não Aplicável
 
-## Responsibilities
-- Develop native and cross-platform mobile applications
-- Optimize mobile app performance and battery usage
-- Implement mobile-specific UI/UX patterns
-- Handle app store deployment and updates
-- Integrate push notifications and offline capabilities
+Este projeto **não possui módulo mobile nativo**. O ERP Pet Shop é uma aplicação web responsiva acessada via navegador.
 
-## Best Practices
-- Test on real devices, not just simulators
-- Optimize for battery life and data usage
-- Follow platform-specific design guidelines
-- Implement proper offline-first strategies
-- Plan for app store review requirements early
+---
 
-## Key Project Resources
-- Documentation index: [docs/README.md](../docs/README.md)
-- Agent handbook: [agents/README.md](./README.md)
-- Agent knowledge base: [AGENTS.md](../../AGENTS.md)
-- Contributor guide: [CONTRIBUTING.md](../../CONTRIBUTING.md)
+## 📱 Situação Atual
 
-## Repository Starting Points
-- `backend/` — TODO: Describe the purpose of this directory.
-- `backups/` — TODO: Describe the purpose of this directory.
-- `bkp/` — TODO: Describe the purpose of this directory.
-- `docs/` — TODO: Describe the purpose of this directory.
-- `erp-petshop/` — TODO: Describe the purpose of this directory.
-- `hardware-service/` — TODO: Describe the purpose of this directory.
-- `migrations/` — TODO: Describe the purpose of this directory.
-- `old/` — TODO: Describe the purpose of this directory.
+### O que existe:
 
-## Key Files
-**Entry Points:**
-- [`..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\types\index.ts`](..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\types\index.ts)
-- [`..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\types\index.ts`](..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\types\index.ts)
-- [`..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\main.tsx`](..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\main.tsx)
-- [`..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\main.tsx`](..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\main.tsx)
-- [`..\..\..\AppData\Local\Programs\Antigravity\hardware-service\src\index.js`](..\..\..\AppData\Local\Programs\Antigravity\hardware-service\src\index.js)
-- [`..\..\..\AppData\Local\Programs\Antigravity\backend\src\server.js`](..\..\..\AppData\Local\Programs\Antigravity\backend\src\server.js)
-- [`..\..\..\AppData\Local\Programs\Antigravity\backend\src\app.js`](..\..\..\AppData\Local\Programs\Antigravity\backend\src\app.js)
+- **PWA Potencial:** O frontend React/Vite pode ser configurado como Progressive Web App
+- **Responsividade:** A interface usa TailwindCSS e é adaptável para telas menores
+- **Acesso via navegador:** Usuários podem acessar pelo navegador do celular
 
-**Pattern Implementations:**
-- Controller: [`UploadController`](backend\src\controllers\upload.controller.js), [`SuppliersController`](backend\src\controllers\suppliers.controller.js), [`PetSpeciesController`](backend\src\controllers\petSpecies.controller.js), [`PaymentRateController`](backend\src\controllers\paymentRate.controller.js), [`PaymentConfigurationController`](backend\src\controllers\paymentConfiguration.controller.js), [`CustomersController`](backend\src\controllers\customers.controller.js), [`BankReconciliationController`](backend\src\controllers\bankReconciliation.controller.js), [`BankAccountController`](backend\src\controllers\bankAccount.controller.js), [`AccountsReceivableController`](backend\src\controllers\accountsReceivable.controller.js)
+### O que NÃO existe:
 
-## Architecture Context
+- ❌ Aplicativo nativo iOS
+- ❌ Aplicativo nativo Android
+- ❌ React Native
+- ❌ Flutter
+- ❌ Ionic/Capacitor
 
-### Utils
-Shared utilities and helpers
-- **Directories**: `erp-petshop\src\utils`, `backend\src\generated\prisma`, `backend\src\utils`
-- **Symbols**: 5 total
-- **Key exports**: [`isValidCPF`](erp-petshop\src\utils\validators.ts#L1), [`formatCPF`](erp-petshop\src\utils\validators.ts#L17), [`isValidCPF`](backend\src\utils\validators.js#L1), [`formatCPF`](backend\src\utils\validators.js#L17), [`formatCNPJ`](backend\src\utils\validators.js#L26)
+---
 
-### Services
-Business logic and orchestration
-- **Directories**: `erp-petshop\src\services`, `backend\src\services`, `bkp\pdv-electron\src\services`, `erp-petshop\src\components\management`, `hardware-service\src`, `hardware-service\src\devices`, `backend\src\routes`, `backend\src\controllers`
-- **Symbols**: 44 total
-- **Key exports**: [`Groomer`](erp-petshop\src\services\managementService.ts#L3), [`GroomingService`](erp-petshop\src\services\managementService.ts#L13), [`GroomingResource`](erp-petshop\src\services\managementService.ts#L22), [`ServiceMatrixEntry`](erp-petshop\src\services\managementService.ts#L29), [`Commission`](erp-petshop\src\services\commissionService.ts#L3), [`CommissionFilters`](erp-petshop\src\services\commissionService.ts#L16), [`Appointment`](erp-petshop\src\services\appointmentService.ts#L3), [`authFetch`](erp-petshop\src\services\api.ts#L48), [`SeniorityLevel`](backend\src\services\durationCalculator.ts#L1), [`CoatType`](backend\src\services\durationCalculator.ts#L2), [`BreedSize`](backend\src\services\durationCalculator.ts#L3), [`calculateAppointmentDuration`](backend\src\services\durationCalculator.ts#L36), [`initDatabase`](bkp\pdv-electron\src\services\database.ts#L11), [`saveToIndexedDB`](bkp\pdv-electron\src\services\database.ts#L192), [`getDatabase`](bkp\pdv-electron\src\services\database.ts#L266), [`closeDatabase`](bkp\pdv-electron\src\services\database.ts#L273)
+## 🎯 Possível Evolução Futura
 
-### Repositories
-Data access and persistence
-- **Directories**: `erp-petshop\src\data`, `erp-petshop\src\components`, `erp-petshop\src\pages\Settings`
-- **Symbols**: 3 total
-- **Key exports**: [`NFeEmissionData`](erp-petshop\src\pages\Settings\NFeEmissionData.tsx#L5), [`NFCeEmissionData`](erp-petshop\src\pages\Settings\NFCeEmissionData.tsx#L5)
+Se no futuro for necessário um app mobile, considerar:
 
-### Components
-UI components and views
-- **Directories**: `erp-petshop\src\pages`, `erp-petshop\src\components`, `erp-petshop\src\pages\Suppliers`, `erp-petshop\src\pages\Settings`, `erp-petshop\src\pages\Reports`, `erp-petshop\src\pages\Financial`, `erp-petshop\src\pages\Customers`, `erp-petshop\src\components\management`, `bkp\pdv-electron\src\pages`, `bkp\pdv-electron\src\components`
-- **Symbols**: 123 total
-- **Key exports**: [`Sidebar`](erp-petshop\src\components\Sidebar.tsx#L55), [`QuickCustomerModal`](erp-petshop\src\components\QuickCustomerModal.tsx#L12), [`OpenPackageModal`](erp-petshop\src\components\OpenPackageModal.tsx#L19), [`Header`](erp-petshop\src\components\Header.tsx#L19), [`CustomerSearch`](erp-petshop\src\components\CustomerSearch.tsx#L18), [`ConfirmationModal`](erp-petshop\src\components\ConfirmationModal.tsx#L15), [`NFeCertificate`](erp-petshop\src\pages\Settings\NFeCertificate.tsx#L5), [`NFCeCertificate`](erp-petshop\src\pages\Settings\NFCeCertificate.tsx#L5), [`InvoiceSettings`](erp-petshop\src\pages\Settings\InvoiceSettings.tsx#L5), [`BusinessSettingsDashboard`](erp-petshop\src\pages\Settings\BusinessSettingsDashboard.tsx#L5), [`AuditLogs`](erp-petshop\src\pages\Settings\AuditLogs.tsx#L21), [`ProductPerformanceReport`](erp-petshop\src\pages\Reports\ProductPerformanceReport.tsx#L7), [`DailySalesReport`](erp-petshop\src\pages\Reports\DailySalesReport.tsx#L7), [`QuickCustomerModal`](bkp\pdv-electron\src\components\QuickCustomerModal.tsx#L29)
+### Opção 1: PWA (Recomendado)
 
-### Controllers
-Request handling and routing
-- **Directories**: `erp-petshop\src\components`, `backend\src\routes`, `backend\src\middleware`, `backend\src\controllers`
-- **Symbols**: 13 total
-- **Key exports**: [`RoleProtectedRoute`](erp-petshop\src\components\RoleProtectedRoute.tsx#L19), [`canAccessPath`](erp-petshop\src\components\RoleProtectedRoute.tsx#L45)
-## Key Symbols for This Agent
-- [`Product`](erp-petshop\src\types\index.ts#L1) (interface)
-- [`CartItem`](erp-petshop\src\types\index.ts#L13) (interface)
-- [`Sale`](erp-petshop\src\types\index.ts#L19) (interface)
-- [`Customer`](erp-petshop\src\types\index.ts#L32) (interface)
-- [`Groomer`](erp-petshop\src\services\managementService.ts#L3) (interface)
+**Vantagens:**
+- Menor custo de desenvolvimento
+- Reutiliza código existente
+- Funciona em iOS e Android
+- Atualizações instantâneas
 
-## Documentation Touchpoints
-- [Documentation Index](../docs/README.md)
+**Implementação:**
+```typescript
+// vite.config.ts
+import { VitePWA } from 'vite-plugin-pwa';
+
+export default defineConfig({
+  plugins: [
+    VitePWA({
+      registerType: 'autoUpdate',
+      manifest: {
+        name: 'ERP Pet Shop',
+        short_name: 'PetShop',
+        theme_color: '#4F46E5',
+        icons: [/* ... */]
+      }
+    })
+  ]
+});
+```
+
+### Opção 2: React Native (Se necessário nativo)
+
+**Quando considerar:**
+- Acesso a hardware específico (NFC, Bluetooth Low Energy)
+- Performance crítica em animações
+- Publicação nas lojas obrigatória
+
+---
+
+## 📋 Hardware Service e Mobile
+
+O **Hardware Service** (impressora, balança, gaveta) funciona apenas em máquinas Windows onde está instalado. Dispositivos móveis **não podem se conectar** ao Hardware Service.
+
+**Solução possível:** Se um tablet for usado como PDV:
+1. Instalar Hardware Service no servidor/computador central
+2. Configurar WebSocket para aceitar conexões da rede local
+3. Tablet se conecta via rede ao Hardware Service do servidor
+
+---
+
+## 📖 Documentação Relacionada
+
+Se este agente for ativado no futuro:
+
 - [Project Overview](../docs/project-overview.md)
-- [Architecture Notes](../docs/architecture.md)
-- [Development Workflow](../docs/development-workflow.md)
-- [Testing Strategy](../docs/testing-strategy.md)
-- [Glossary & Domain Concepts](../docs/glossary.md)
-- [Data Flow & Integrations](../docs/data-flow.md)
-- [Security & Compliance Notes](../docs/security.md)
-- [Tooling & Productivity Guide](../docs/tooling.md)
+- [Architecture](../docs/architecture.md)
+- [React Native Docs](https://reactnative.dev/)
+- [PWA Guide](https://web.dev/progressive-web-apps/)
 
-## Collaboration Checklist
+---
 
-1. Confirm assumptions with issue reporters or maintainers.
-2. Review open pull requests affecting this area.
-3. Update the relevant doc section listed above.
-4. Capture learnings back in [docs/README.md](../docs/README.md).
+*Este playbook será atualizado se/quando o projeto incluir desenvolvimento mobile.*
 
-## Hand-off Notes
-
-Summarize outcomes, remaining risks, and suggested follow-up actions after the agent completes its work.
+*Última atualização: Janeiro 2026*

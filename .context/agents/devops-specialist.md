@@ -1,114 +1,374 @@
 ---
-name: Devops Specialist
-description: Design and maintain CI/CD pipelines
-status: unfilled
+name: DevOps Specialist
+description: Infrastructure, CI/CD, and deployment for ERP Pet Shop
+status: filled
 generated: 2026-01-17
 ---
 
-# Devops Specialist Agent Playbook
+# DevOps Specialist Agent Playbook
 
-## Mission
-Describe how the devops specialist agent supports the team and when to engage it.
+## 🎯 Mission
 
-## Responsibilities
-- Design and maintain CI/CD pipelines
-- Implement infrastructure as code
-- Configure monitoring and alerting systems
-- Manage container orchestration and deployments
-- Optimize cloud resources and cost efficiency
+O DevOps Specialist é responsável pela infraestrutura, containerização, pipelines de CI/CD e deploy do ERP Pet Shop. Garante que o sistema seja fácil de implantar, monitorar e escalar.
 
-## Best Practices
-- Automate everything that can be automated
-- Implement infrastructure as code for reproducibility
-- Monitor system health proactively
-- Design for failure and implement proper fallbacks
-- Keep security and compliance in every deployment
+---
 
-## Key Project Resources
-- Documentation index: [docs/README.md](../docs/README.md)
-- Agent handbook: [agents/README.md](./README.md)
-- Agent knowledge base: [AGENTS.md](../../AGENTS.md)
-- Contributor guide: [CONTRIBUTING.md](../../CONTRIBUTING.md)
+## 🏗️ Infraestrutura Atual
 
-## Repository Starting Points
-- `backend/` — TODO: Describe the purpose of this directory.
-- `backups/` — TODO: Describe the purpose of this directory.
-- `bkp/` — TODO: Describe the purpose of this directory.
-- `docs/` — TODO: Describe the purpose of this directory.
-- `erp-petshop/` — TODO: Describe the purpose of this directory.
-- `hardware-service/` — TODO: Describe the purpose of this directory.
-- `migrations/` — TODO: Describe the purpose of this directory.
-- `old/` — TODO: Describe the purpose of this directory.
+### Arquitetura de Deploy
 
-## Key Files
-**Entry Points:**
-- [`..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\types\index.ts`](..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\types\index.ts)
-- [`..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\types\index.ts`](..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\types\index.ts)
-- [`..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\main.tsx`](..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\main.tsx)
-- [`..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\main.tsx`](..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\main.tsx)
-- [`..\..\..\AppData\Local\Programs\Antigravity\hardware-service\src\index.js`](..\..\..\AppData\Local\Programs\Antigravity\hardware-service\src\index.js)
-- [`..\..\..\AppData\Local\Programs\Antigravity\backend\src\server.js`](..\..\..\AppData\Local\Programs\Antigravity\backend\src\server.js)
-- [`..\..\..\AppData\Local\Programs\Antigravity\backend\src\app.js`](..\..\..\AppData\Local\Programs\Antigravity\backend\src\app.js)
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        AMBIENTE DE PRODUÇÃO (Planejado)                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────────────────┐  │
+│  │    Nginx     │    │   Backend    │    │      PostgreSQL          │  │
+│  │   (Reverse   │───►│   Node.js    │───►│   (Docker/Cloud)        │  │
+│  │    Proxy)    │    │   :3001      │    │                          │  │
+│  └──────────────┘    └──────────────┘    └──────────────────────────┘  │
+│         │                                                               │
+│         ▼                                                               │
+│  ┌──────────────┐                                                       │
+│  │   Frontend   │                                                       │
+│  │   (Static)   │                                                       │
+│  │   React/Vite │                                                       │
+│  └──────────────┘                                                       │
+│                                                                          │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │   Hardware Service (Instalado localmente em cada PDV)            │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
-**Pattern Implementations:**
-- Controller: [`UploadController`](backend\src\controllers\upload.controller.js), [`SuppliersController`](backend\src\controllers\suppliers.controller.js), [`PetSpeciesController`](backend\src\controllers\petSpecies.controller.js), [`PaymentRateController`](backend\src\controllers\paymentRate.controller.js), [`PaymentConfigurationController`](backend\src\controllers\paymentConfiguration.controller.js), [`CustomersController`](backend\src\controllers\customers.controller.js), [`BankReconciliationController`](backend\src\controllers\bankReconciliation.controller.js), [`BankAccountController`](backend\src\controllers\bankAccount.controller.js), [`AccountsReceivableController`](backend\src\controllers\accountsReceivable.controller.js)
+### Stack de Infraestrutura
 
-## Architecture Context
+| Componente | Tecnologia | Status |
+|------------|------------|--------|
+| Containers | Docker | ✅ Implementado |
+| Orquestração | docker-compose | ✅ Implementado |
+| Banco de Dados | PostgreSQL 15 | ✅ Implementado |
+| Reverse Proxy | Nginx | Planejado |
+| CI/CD | GitHub Actions | Planejado |
+| Monitoramento | PM2 / Winston | Planejado |
 
-### Utils
-Shared utilities and helpers
-- **Directories**: `erp-petshop\src\utils`, `backend\src\generated\prisma`, `backend\src\utils`
-- **Symbols**: 5 total
-- **Key exports**: [`isValidCPF`](erp-petshop\src\utils\validators.ts#L1), [`formatCPF`](erp-petshop\src\utils\validators.ts#L17), [`isValidCPF`](backend\src\utils\validators.js#L1), [`formatCPF`](backend\src\utils\validators.js#L17), [`formatCNPJ`](backend\src\utils\validators.js#L26)
+---
 
-### Services
-Business logic and orchestration
-- **Directories**: `erp-petshop\src\services`, `backend\src\services`, `bkp\pdv-electron\src\services`, `erp-petshop\src\components\management`, `hardware-service\src`, `hardware-service\src\devices`, `backend\src\routes`, `backend\src\controllers`
-- **Symbols**: 44 total
-- **Key exports**: [`Groomer`](erp-petshop\src\services\managementService.ts#L3), [`GroomingService`](erp-petshop\src\services\managementService.ts#L13), [`GroomingResource`](erp-petshop\src\services\managementService.ts#L22), [`ServiceMatrixEntry`](erp-petshop\src\services\managementService.ts#L29), [`Commission`](erp-petshop\src\services\commissionService.ts#L3), [`CommissionFilters`](erp-petshop\src\services\commissionService.ts#L16), [`Appointment`](erp-petshop\src\services\appointmentService.ts#L3), [`authFetch`](erp-petshop\src\services\api.ts#L48), [`SeniorityLevel`](backend\src\services\durationCalculator.ts#L1), [`CoatType`](backend\src\services\durationCalculator.ts#L2), [`BreedSize`](backend\src\services\durationCalculator.ts#L3), [`calculateAppointmentDuration`](backend\src\services\durationCalculator.ts#L36), [`initDatabase`](bkp\pdv-electron\src\services\database.ts#L11), [`saveToIndexedDB`](bkp\pdv-electron\src\services\database.ts#L192), [`getDatabase`](bkp\pdv-electron\src\services\database.ts#L266), [`closeDatabase`](bkp\pdv-electron\src\services\database.ts#L273)
+## 🐳 Docker
 
-### Repositories
-Data access and persistence
-- **Directories**: `erp-petshop\src\data`, `erp-petshop\src\components`, `erp-petshop\src\pages\Settings`
-- **Symbols**: 3 total
-- **Key exports**: [`NFeEmissionData`](erp-petshop\src\pages\Settings\NFeEmissionData.tsx#L5), [`NFCeEmissionData`](erp-petshop\src\pages\Settings\NFCeEmissionData.tsx#L5)
+### docker-compose.yml
 
-### Components
-UI components and views
-- **Directories**: `erp-petshop\src\pages`, `erp-petshop\src\components`, `erp-petshop\src\pages\Suppliers`, `erp-petshop\src\pages\Settings`, `erp-petshop\src\pages\Reports`, `erp-petshop\src\pages\Financial`, `erp-petshop\src\pages\Customers`, `erp-petshop\src\components\management`, `bkp\pdv-electron\src\pages`, `bkp\pdv-electron\src\components`
-- **Symbols**: 123 total
-- **Key exports**: [`Sidebar`](erp-petshop\src\components\Sidebar.tsx#L55), [`QuickCustomerModal`](erp-petshop\src\components\QuickCustomerModal.tsx#L12), [`OpenPackageModal`](erp-petshop\src\components\OpenPackageModal.tsx#L19), [`Header`](erp-petshop\src\components\Header.tsx#L19), [`CustomerSearch`](erp-petshop\src\components\CustomerSearch.tsx#L18), [`ConfirmationModal`](erp-petshop\src\components\ConfirmationModal.tsx#L15), [`NFeCertificate`](erp-petshop\src\pages\Settings\NFeCertificate.tsx#L5), [`NFCeCertificate`](erp-petshop\src\pages\Settings\NFCeCertificate.tsx#L5), [`InvoiceSettings`](erp-petshop\src\pages\Settings\InvoiceSettings.tsx#L5), [`BusinessSettingsDashboard`](erp-petshop\src\pages\Settings\BusinessSettingsDashboard.tsx#L5), [`AuditLogs`](erp-petshop\src\pages\Settings\AuditLogs.tsx#L21), [`ProductPerformanceReport`](erp-petshop\src\pages\Reports\ProductPerformanceReport.tsx#L7), [`DailySalesReport`](erp-petshop\src\pages\Reports\DailySalesReport.tsx#L7), [`QuickCustomerModal`](bkp\pdv-electron\src\components\QuickCustomerModal.tsx#L29)
+```yaml
+version: '3.8'
 
-### Controllers
-Request handling and routing
-- **Directories**: `erp-petshop\src\components`, `backend\src\routes`, `backend\src\middleware`, `backend\src\controllers`
-- **Symbols**: 13 total
-- **Key exports**: [`RoleProtectedRoute`](erp-petshop\src\components\RoleProtectedRoute.tsx#L19), [`canAccessPath`](erp-petshop\src\components\RoleProtectedRoute.tsx#L45)
-## Key Symbols for This Agent
-- [`Product`](erp-petshop\src\types\index.ts#L1) (interface)
-- [`CartItem`](erp-petshop\src\types\index.ts#L13) (interface)
-- [`Sale`](erp-petshop\src\types\index.ts#L19) (interface)
-- [`Customer`](erp-petshop\src\types\index.ts#L32) (interface)
-- [`Groomer`](erp-petshop\src\services\managementService.ts#L3) (interface)
+services:
+  postgres:
+    image: postgres:15
+    container_name: erp-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
-## Documentation Touchpoints
-- [Documentation Index](../docs/README.md)
-- [Project Overview](../docs/project-overview.md)
-- [Architecture Notes](../docs/architecture.md)
-- [Development Workflow](../docs/development-workflow.md)
-- [Testing Strategy](../docs/testing-strategy.md)
-- [Glossary & Domain Concepts](../docs/glossary.md)
-- [Data Flow & Integrations](../docs/data-flow.md)
-- [Security & Compliance Notes](../docs/security.md)
-- [Tooling & Productivity Guide](../docs/tooling.md)
+  backend:
+    build: ./backend
+    container_name: erp-backend
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASS}@postgres:5432/${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - postgres
 
-## Collaboration Checklist
+  frontend:
+    build: ./erp-petshop
+    container_name: erp-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
 
-1. Confirm assumptions with issue reporters or maintainers.
-2. Review open pull requests affecting this area.
-3. Update the relevant doc section listed above.
-4. Capture learnings back in [docs/README.md](../docs/README.md).
+volumes:
+  postgres_data:
+```
 
-## Hand-off Notes
+### Comandos Docker
 
-Summarize outcomes, remaining risks, and suggested follow-up actions after the agent completes its work.
+```bash
+# Subir ambiente
+docker-compose up -d
+
+# Ver logs
+docker-compose logs -f backend
+
+# Rebuild após mudanças
+docker-compose build --no-cache backend
+docker-compose up -d backend
+
+# Parar tudo
+docker-compose down
+
+# Limpar volumes (CUIDADO - apaga dados!)
+docker-compose down -v
+```
+
+---
+
+## 🔄 CI/CD Pipeline (Planejado)
+
+### GitHub Actions
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: |
+          cd backend && npm ci
+          cd ../erp-petshop && npm ci
+          
+      - name: Run tests
+        run: |
+          cd backend && npm test
+          cd ../erp-petshop && npm test
+          
+      - name: Build
+        run: |
+          cd erp-petshop && npm run build
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to production
+        run: |
+          # SSH para servidor e deploy
+          echo "Deploy..."
+```
+
+---
+
+## 📦 Scripts de Deploy
+
+### Script de Desenvolvimento
+
+```powershell
+# restart_dev.bat (já existe)
+# Reinicia ambiente de desenvolvimento
+```
+
+### Script de Produção (a criar)
+
+```bash
+#!/bin/bash
+# deploy.sh
+
+set -e
+
+echo "🚀 Iniciando deploy..."
+
+# Pull latest
+git pull origin main
+
+# Build
+cd erp-petshop
+npm ci
+npm run build
+
+# Restart backend
+cd ../backend
+npm ci
+npx prisma migrate deploy
+pm2 restart erp-backend
+
+echo "✅ Deploy concluído!"
+```
+
+---
+
+## 🔧 Variáveis de Ambiente
+
+### Desenvolvimento (.env)
+
+```env
+# Banco de Dados
+DB_USER=postgres
+DB_PASS=postgres
+DB_NAME=erp_petshop
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/erp_petshop
+
+# Backend
+PORT=3001
+JWT_SECRET=development-secret-change-in-production
+
+# Frontend
+VITE_API_URL=http://localhost:3001
+```
+
+### Produção (Secrets)
+
+| Variável | Onde Configurar |
+|----------|-----------------|
+| DATABASE_URL | GitHub Secrets / Servidor |
+| JWT_SECRET | GitHub Secrets / Servidor |
+| CERTIFICATE_PASSWORD | Servidor apenas |
+
+---
+
+## 🖥️ Hardware Service - Instalação
+
+### Instalação Manual (Windows)
+
+```powershell
+# 1. Copiar pasta hardware-service para C:\ERP\hardware-service
+
+# 2. Instalar dependências
+cd C:\ERP\hardware-service
+npm install
+
+# 3. Configurar .env
+copy .env.example .env
+# Editar conforme necessário
+
+# 4. Rodar como serviço (usando PM2)
+npm install -g pm2
+pm2 start src/index.js --name "hardware-service"
+pm2 save
+pm2 startup
+```
+
+### Instalador Automático (Planejado)
+
+```
+# Criar instalador com Electron Builder ou NSIS
+hardware-service-setup.exe
+```
+
+---
+
+## 📊 Monitoramento (Planejado)
+
+### PM2 - Process Manager
+
+```bash
+# Instalar
+npm install -g pm2
+
+# Iniciar backend
+pm2 start backend/src/server.js --name erp-backend
+
+# Monitorar
+pm2 status
+pm2 logs erp-backend
+pm2 monit
+```
+
+### Health Checks
+
+```javascript
+// backend/src/routes/health.routes.js
+router.get('/health', async (req, res) => {
+  const dbOk = await prisma.$queryRaw`SELECT 1`;
+  res.json({
+    status: 'ok',
+    timestamp: new Date(),
+    uptime: process.uptime(),
+    database: dbOk ? 'connected' : 'disconnected'
+  });
+});
+```
+
+---
+
+## 💾 Backup
+
+### Backup PostgreSQL
+
+```bash
+# Backup manual
+docker exec erp-postgres pg_dump -U postgres erp_petshop > backup.sql
+
+# Restore
+docker exec -i erp-postgres psql -U postgres erp_petshop < backup.sql
+```
+
+### Backup Automático (Cron)
+
+```bash
+# Adicionar ao crontab
+0 3 * * * /path/to/backup.sh >> /var/log/backup.log 2>&1
+```
+
+---
+
+## ✅ Checklist de Deploy
+
+### Pré-Deploy
+
+- [ ] Testes passando
+- [ ] Build sem erros
+- [ ] Migrations revisadas
+- [ ] Variáveis de ambiente configuradas
+- [ ] Backup do banco feito
+
+### Durante
+
+- [ ] Aplicar migrations
+- [ ] Restart serviços
+- [ ] Verificar logs
+
+### Pós-Deploy
+
+- [ ] Testar funcionalidades críticas
+- [ ] Verificar erros nos logs
+- [ ] Confirmar métricas normais
+
+---
+
+## 📖 Documentação de Referência
+
+- [Tooling](../docs/tooling.md)
+- [Docker Documentation](https://docs.docker.com/)
+- [PM2 Documentation](https://pm2.keymetrics.io/)
+- [GitHub Actions](https://docs.github.com/en/actions)
+
+---
+
+## 🤝 Colaboração
+
+| Quando | Colaborar com |
+|--------|---------------|
+| Mudanças de infraestrutura | Architect Specialist |
+| Problemas de segurança | Security Auditor |
+| Performance | Performance Optimizer |
+| Banco de dados | Database Specialist |
+
+---
+
+*Última atualização: Janeiro 2026*

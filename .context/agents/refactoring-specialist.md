@@ -1,121 +1,306 @@
 ---
 name: Refactoring Specialist
-description: Identify code smells and improvement opportunities
-status: unfilled
+description: Identify code smells and improve code quality in ERP Pet Shop
+status: filled
 generated: 2026-01-17
 ---
 
 # Refactoring Specialist Agent Playbook
 
-## Mission
-Describe how the refactoring specialist agent supports the team and when to engage it.
+## 🎯 Mission
 
-## Responsibilities
-- Identify code smells and improvement opportunities
-- Refactor code while maintaining functionality
-- Improve code organization and structure
-- Optimize performance where applicable
+O Refactoring Specialist é responsável por identificar code smells, melhorar a estrutura do código sem alterar comportamento, e garantir que o código seja limpo, legível e manutenível.
 
-## Best Practices
-- Make small, incremental changes
-- Ensure tests pass after each refactor
-- Preserve existing functionality exactly
+---
 
-## Key Project Resources
-- Documentation index: [docs/README.md](../docs/README.md)
-- Agent handbook: [agents/README.md](./README.md)
-- Agent knowledge base: [AGENTS.md](../../AGENTS.md)
-- Contributor guide: [CONTRIBUTING.md](../../CONTRIBUTING.md)
+## 🔍 Code Smells Comuns no Projeto
 
-## Repository Starting Points
-- `backend/` — TODO: Describe the purpose of this directory.
-- `backups/` — TODO: Describe the purpose of this directory.
-- `bkp/` — TODO: Describe the purpose of this directory.
-- `docs/` — TODO: Describe the purpose of this directory.
-- `erp-petshop/` — TODO: Describe the purpose of this directory.
-- `hardware-service/` — TODO: Describe the purpose of this directory.
-- `migrations/` — TODO: Describe the purpose of this directory.
-- `old/` — TODO: Describe the purpose of this directory.
+### 1. Funções Muito Longas
 
-## Key Files
-**Entry Points:**
-- [`..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\types\index.ts`](..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\types\index.ts)
-- [`..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\types\index.ts`](..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\types\index.ts)
-- [`..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\main.tsx`](..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\main.tsx)
-- [`..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\main.tsx`](..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\main.tsx)
-- [`..\..\..\AppData\Local\Programs\Antigravity\hardware-service\src\index.js`](..\..\..\AppData\Local\Programs\Antigravity\hardware-service\src\index.js)
-- [`..\..\..\AppData\Local\Programs\Antigravity\backend\src\server.js`](..\..\..\AppData\Local\Programs\Antigravity\backend\src\server.js)
-- [`..\..\..\AppData\Local\Programs\Antigravity\backend\src\app.js`](..\..\..\AppData\Local\Programs\Antigravity\backend\src\app.js)
+**Sinal:** Funções com mais de 50 linhas
 
-**Pattern Implementations:**
-- Controller: [`UploadController`](backend\src\controllers\upload.controller.js), [`SuppliersController`](backend\src\controllers\suppliers.controller.js), [`PetSpeciesController`](backend\src\controllers\petSpecies.controller.js), [`PaymentRateController`](backend\src\controllers\paymentRate.controller.js), [`PaymentConfigurationController`](backend\src\controllers\paymentConfiguration.controller.js), [`CustomersController`](backend\src\controllers\customers.controller.js), [`BankReconciliationController`](backend\src\controllers\bankReconciliation.controller.js), [`BankAccountController`](backend\src\controllers\bankAccount.controller.js), [`AccountsReceivableController`](backend\src\controllers\accountsReceivable.controller.js)
+**Onde procurar:**
+- `backend/src/controllers/*.controller.js`
+- `erp-petshop/src/pages/*.tsx`
 
-## Architecture Context
+**Refatoração:**
+```javascript
+// ❌ Antes: Função gigante
+async function createSale(req, res) {
+  // 100+ linhas de código...
+}
 
-### Utils
-Shared utilities and helpers
-- **Directories**: `erp-petshop\src\utils`, `backend\src\generated\prisma`, `backend\src\utils`
-- **Symbols**: 5 total
-- **Key exports**: [`isValidCPF`](erp-petshop\src\utils\validators.ts#L1), [`formatCPF`](erp-petshop\src\utils\validators.ts#L17), [`isValidCPF`](backend\src\utils\validators.js#L1), [`formatCPF`](backend\src\utils\validators.js#L17), [`formatCNPJ`](backend\src\utils\validators.js#L26)
+// ✅ Depois: Funções pequenas e focadas
+async function createSale(req, res) {
+  const validatedData = validateSaleInput(req.body);
+  const sale = await saveSale(validatedData);
+  await updateStock(sale.items);
+  await createFinancialMovement(sale);
+  return res.json({ success: true, data: sale });
+}
+```
 
-### Services
-Business logic and orchestration
-- **Directories**: `erp-petshop\src\services`, `backend\src\services`, `bkp\pdv-electron\src\services`, `erp-petshop\src\components\management`, `hardware-service\src`, `hardware-service\src\devices`, `backend\src\routes`, `backend\src\controllers`
-- **Symbols**: 44 total
-- **Key exports**: [`Groomer`](erp-petshop\src\services\managementService.ts#L3), [`GroomingService`](erp-petshop\src\services\managementService.ts#L13), [`GroomingResource`](erp-petshop\src\services\managementService.ts#L22), [`ServiceMatrixEntry`](erp-petshop\src\services\managementService.ts#L29), [`Commission`](erp-petshop\src\services\commissionService.ts#L3), [`CommissionFilters`](erp-petshop\src\services\commissionService.ts#L16), [`Appointment`](erp-petshop\src\services\appointmentService.ts#L3), [`authFetch`](erp-petshop\src\services\api.ts#L48), [`SeniorityLevel`](backend\src\services\durationCalculator.ts#L1), [`CoatType`](backend\src\services\durationCalculator.ts#L2), [`BreedSize`](backend\src\services\durationCalculator.ts#L3), [`calculateAppointmentDuration`](backend\src\services\durationCalculator.ts#L36), [`initDatabase`](bkp\pdv-electron\src\services\database.ts#L11), [`saveToIndexedDB`](bkp\pdv-electron\src\services\database.ts#L192), [`getDatabase`](bkp\pdv-electron\src\services\database.ts#L266), [`closeDatabase`](bkp\pdv-electron\src\services\database.ts#L273)
+### 2. Código Duplicado
 
-### Repositories
-Data access and persistence
-- **Directories**: `erp-petshop\src\data`, `erp-petshop\src\components`, `erp-petshop\src\pages\Settings`
-- **Symbols**: 3 total
-- **Key exports**: [`NFeEmissionData`](erp-petshop\src\pages\Settings\NFeEmissionData.tsx#L5), [`NFCeEmissionData`](erp-petshop\src\pages\Settings\NFCeEmissionData.tsx#L5)
+**Sinal:** Mesma lógica em múltiplos lugares
 
-### Components
-UI components and views
-- **Directories**: `erp-petshop\src\pages`, `erp-petshop\src\components`, `erp-petshop\src\pages\Suppliers`, `erp-petshop\src\pages\Settings`, `erp-petshop\src\pages\Reports`, `erp-petshop\src\pages\Financial`, `erp-petshop\src\pages\Customers`, `erp-petshop\src\components\management`, `bkp\pdv-electron\src\pages`, `bkp\pdv-electron\src\components`
-- **Symbols**: 123 total
-- **Key exports**: [`Sidebar`](erp-petshop\src\components\Sidebar.tsx#L55), [`QuickCustomerModal`](erp-petshop\src\components\QuickCustomerModal.tsx#L12), [`OpenPackageModal`](erp-petshop\src\components\OpenPackageModal.tsx#L19), [`Header`](erp-petshop\src\components\Header.tsx#L19), [`CustomerSearch`](erp-petshop\src\components\CustomerSearch.tsx#L18), [`ConfirmationModal`](erp-petshop\src\components\ConfirmationModal.tsx#L15), [`NFeCertificate`](erp-petshop\src\pages\Settings\NFeCertificate.tsx#L5), [`NFCeCertificate`](erp-petshop\src\pages\Settings\NFCeCertificate.tsx#L5), [`InvoiceSettings`](erp-petshop\src\pages\Settings\InvoiceSettings.tsx#L5), [`BusinessSettingsDashboard`](erp-petshop\src\pages\Settings\BusinessSettingsDashboard.tsx#L5), [`AuditLogs`](erp-petshop\src\pages\Settings\AuditLogs.tsx#L21), [`ProductPerformanceReport`](erp-petshop\src\pages\Reports\ProductPerformanceReport.tsx#L7), [`DailySalesReport`](erp-petshop\src\pages\Reports\DailySalesReport.tsx#L7), [`QuickCustomerModal`](bkp\pdv-electron\src\components\QuickCustomerModal.tsx#L29)
+**Exemplo no projeto:**
+```javascript
+// ❌ Duplicado em vários controllers
+const token = req.headers.authorization?.split(' ')[1];
+if (!token) return res.status(401).json({ error: 'Token not found' });
 
-### Controllers
-Request handling and routing
-- **Directories**: `erp-petshop\src\components`, `backend\src\routes`, `backend\src\middleware`, `backend\src\controllers`
-- **Symbols**: 13 total
-- **Key exports**: [`RoleProtectedRoute`](erp-petshop\src\components\RoleProtectedRoute.tsx#L19), [`canAccessPath`](erp-petshop\src\components\RoleProtectedRoute.tsx#L45)
-## Key Symbols for This Agent
-- [`Product`](erp-petshop\src\types\index.ts#L1) (interface)
-- [`CartItem`](erp-petshop\src\types\index.ts#L13) (interface)
-- [`Sale`](erp-petshop\src\types\index.ts#L19) (interface)
-- [`Customer`](erp-petshop\src\types\index.ts#L32) (interface)
-- [`Groomer`](erp-petshop\src\services\managementService.ts#L3) (interface)
-- [`GroomingService`](erp-petshop\src\services\managementService.ts#L13) (interface)
-- [`GroomingResource`](erp-petshop\src\services\managementService.ts#L22) (interface)
-- [`ServiceMatrixEntry`](erp-petshop\src\services\managementService.ts#L29) (interface)
-- [`Commission`](erp-petshop\src\services\commissionService.ts#L3) (interface)
-- [`CommissionFilters`](erp-petshop\src\services\commissionService.ts#L16) (interface)
-- [`Appointment`](erp-petshop\src\services\appointmentService.ts#L3) (interface)
-- [`ReceiptData`](erp-petshop\src\hooks\useHardware.ts#L15) (interface)
-- [`PrinterInfo`](erp-petshop\src\hooks\useHardware.ts#L42) (interface)
-- [`CashCloseData`](erp-petshop\src\hooks\useHardware.ts#L47) (interface)
-- [`Database`](bkp\pdv-electron\src\sql.js.d.ts#L2) (interface)
+// ✅ Extrair para middleware
+// auth.middleware.js já faz isso - garantir uso consistente
+```
 
-## Documentation Touchpoints
-- [Documentation Index](../docs/README.md)
-- [Project Overview](../docs/project-overview.md)
-- [Architecture Notes](../docs/architecture.md)
-- [Development Workflow](../docs/development-workflow.md)
-- [Testing Strategy](../docs/testing-strategy.md)
-- [Glossary & Domain Concepts](../docs/glossary.md)
-- [Data Flow & Integrations](../docs/data-flow.md)
-- [Security & Compliance Notes](../docs/security.md)
-- [Tooling & Productivity Guide](../docs/tooling.md)
+### 3. Componentes Muito Grandes
 
-## Collaboration Checklist
+**Sinal:** Componentes React com 300+ linhas
 
-1. Confirm assumptions with issue reporters or maintainers.
-2. Review open pull requests affecting this area.
-3. Update the relevant doc section listed above.
-4. Capture learnings back in [docs/README.md](../docs/README.md).
+**Onde procurar:**
+- `erp-petshop/src/pages/POS.tsx`
+- `erp-petshop/src/pages/Products.tsx`
 
-## Hand-off Notes
+**Refatoração:**
+```typescript
+// ❌ Antes: Componente monolítico
+const POS = () => {
+  // 500 linhas de JSX misturado com lógica
+};
 
-Summarize outcomes, remaining risks, and suggested follow-up actions after the agent completes its work.
+// ✅ Depois: Componentes menores + custom hooks
+const POS = () => {
+  const { cart, addToCart, removeFromCart } = useCart();
+  const { cashState, openCash, closeCash } = useCashRegister();
+  
+  return (
+    <POSLayout>
+      <ProductSearch onSelect={addToCart} />
+      <CartDisplay cart={cart} onRemove={removeFromCart} />
+      <PaymentPanel />
+    </POSLayout>
+  );
+};
+```
+
+---
+
+## 📋 Padrões a Seguir
+
+### Estrutura de Controllers
+
+```javascript
+// Padrão para todos os controllers
+class ExampleController {
+  // GET /api/examples
+  async list(req, res) {
+    try {
+      const data = await prisma.example.findMany();
+      res.json({ success: true, data });
+    } catch (error) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  }
+
+  // GET /api/examples/:id
+  async get(req, res) { /* ... */ }
+
+  // POST /api/examples
+  async create(req, res) { /* ... */ }
+
+  // PUT /api/examples/:id
+  async update(req, res) { /* ... */ }
+
+  // DELETE /api/examples/:id
+  async delete(req, res) { /* ... */ }
+}
+```
+
+### Estrutura de Componentes React
+
+```typescript
+// Padrão para componentes
+interface Props {
+  // Props tipadas
+}
+
+export const Component: React.FC<Props> = ({ prop1, prop2 }) => {
+  // 1. Hooks
+  const [state, setState] = useState();
+  
+  // 2. Derived state
+  const computed = useMemo(() => /* ... */, []);
+  
+  // 3. Effects
+  useEffect(() => { /* ... */ }, []);
+  
+  // 4. Handlers
+  const handleClick = () => { /* ... */ };
+  
+  // 5. Render
+  return (/* JSX */);
+};
+```
+
+---
+
+## 🛠️ Técnicas de Refatoração
+
+### Extract Function
+
+```javascript
+// ❌ Antes
+if (product.type === 'granel') {
+  const weight = parseFloat(input);
+  const price = product.price_per_kg * weight;
+  const item = { product, quantity: weight, total: price };
+  cart.push(item);
+}
+
+// ✅ Depois
+const addGranelProduct = (product, weight) => {
+  const price = product.price_per_kg * weight;
+  return { product, quantity: weight, total: price };
+};
+
+if (product.type === 'granel') {
+  cart.push(addGranelProduct(product, parseFloat(input)));
+}
+```
+
+### Extract Component
+
+```typescript
+// ❌ Antes: JSX repetido
+{products.map(p => (
+  <div className="card" onClick={() => select(p)}>
+    <img src={p.image} />
+    <h3>{p.name}</h3>
+    <span>R$ {p.price}</span>
+  </div>
+))}
+
+// ✅ Depois: Componente extraído
+const ProductCard = ({ product, onSelect }) => (
+  <div className="card" onClick={() => onSelect(product)}>
+    <img src={product.image} />
+    <h3>{product.name}</h3>
+    <span>R$ {product.price}</span>
+  </div>
+);
+
+{products.map(p => <ProductCard key={p.id} product={p} onSelect={select} />)}
+```
+
+### Extract Custom Hook
+
+```typescript
+// ❌ Antes: Lógica no componente
+const [customers, setCustomers] = useState([]);
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState(null);
+
+useEffect(() => {
+  setLoading(true);
+  fetch('/api/customers')
+    .then(r => r.json())
+    .then(data => setCustomers(data))
+    .catch(e => setError(e))
+    .finally(() => setLoading(false));
+}, []);
+
+// ✅ Depois: Custom hook
+const useCustomers = () => {
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => { /* fetch logic */ }, []);
+  
+  return { customers, loading, error };
+};
+
+// No componente
+const { customers, loading, error } = useCustomers();
+```
+
+---
+
+## 📊 Áreas Prioritárias para Refatoração
+
+### Alta Prioridade
+
+| Arquivo | Problema | Ação |
+|---------|----------|------|
+| `POS.tsx` | Muito grande | Dividir em componentes |
+| `sale.controller.js` | Função longa | Extract functions |
+| `useHardware.ts` | Pode ser melhorado | Adicionar tipos |
+
+### Média Prioridade
+
+| Arquivo | Problema | Ação |
+|---------|----------|------|
+| Controllers variados | Padrões inconsistentes | Padronizar estrutura |
+| Validadores | Duplicação | Centralizar |
+| Types | Incompletos | Adicionar tipos faltantes |
+
+---
+
+## ✅ Checklist de Refatoração
+
+### Antes
+
+- [ ] Código funciona atualmente
+- [ ] Testes existentes passam (se houver)
+- [ ] Entendo o que o código faz
+- [ ] Tenho um objetivo claro
+
+### Durante
+
+- [ ] Pequenas mudanças incrementais
+- [ ] Testar após cada mudança
+- [ ] Manter funcionalidade idêntica
+- [ ] Não adicionar features
+
+### Depois
+
+- [ ] Código mais legível
+- [ ] Mesma funcionalidade
+- [ ] Testes passam
+- [ ] Documentar mudanças no commit
+
+---
+
+## 🚫 Anti-padrões a Eliminar
+
+| Anti-padrão | Exemplo | Solução |
+|-------------|---------|---------|
+| Magic numbers | `if (role > 3)` | Usar constantes |
+| God object | Classe/função que faz tudo | Dividir responsabilidades |
+| Deep nesting | if dentro de if dentro de if | Early return, extract |
+| Copy-paste | Código duplicado | Extract function |
+| Long parameter list | `fn(a,b,c,d,e,f)` | Usar objeto de opções |
+
+---
+
+## 📖 Documentação de Referência
+
+- [Clean Code - Robert Martin](https://www.amazon.com/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)
+- [Refactoring - Martin Fowler](https://refactoring.com/)
+- [React Patterns](https://reactpatterns.com/)
+
+---
+
+## 🤝 Colaboração
+
+| Quando | Colaborar com |
+|--------|---------------|
+| Mudanças arquiteturais | Architect Specialist |
+| Verificar comportamento | Test Writer |
+| Revisar changes | Code Reviewer |
+| Performance | Performance Optimizer |
+
+---
+
+*Última atualização: Janeiro 2026*

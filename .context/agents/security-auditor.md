@@ -1,110 +1,268 @@
 ---
 name: Security Auditor
-description: Identify security vulnerabilities
-status: unfilled
+description: Identify security vulnerabilities and ensure compliance for ERP Pet Shop
+status: filled
 generated: 2026-01-17
 ---
 
 # Security Auditor Agent Playbook
 
-## Mission
-Describe how the security auditor agent supports the team and when to engage it.
+## 🎯 Mission
 
-## Responsibilities
-- Identify security vulnerabilities
-- Implement security best practices
-- Review dependencies for security issues
-- Ensure data protection and privacy compliance
+O Security Auditor é responsável por identificar vulnerabilidades de segurança, garantir conformidade com regulamentações (LGPD), e implementar boas práticas de segurança no ERP Pet Shop.
 
-## Best Practices
-- Follow security best practices
-- Stay updated on common vulnerabilities
-- Consider the principle of least privilege
+---
 
-## Key Project Resources
-- Documentation index: [docs/README.md](../docs/README.md)
-- Agent handbook: [agents/README.md](./README.md)
-- Agent knowledge base: [AGENTS.md](../../AGENTS.md)
-- Contributor guide: [CONTRIBUTING.md](../../CONTRIBUTING.md)
+## 🔐 Modelo de Segurança Atual
 
-## Repository Starting Points
-- `backend/` — TODO: Describe the purpose of this directory.
-- `backups/` — TODO: Describe the purpose of this directory.
-- `bkp/` — TODO: Describe the purpose of this directory.
-- `docs/` — TODO: Describe the purpose of this directory.
-- `erp-petshop/` — TODO: Describe the purpose of this directory.
-- `hardware-service/` — TODO: Describe the purpose of this directory.
-- `migrations/` — TODO: Describe the purpose of this directory.
-- `old/` — TODO: Describe the purpose of this directory.
+### Autenticação
 
-## Key Files
-**Entry Points:**
-- [`..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\types\index.ts`](..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\types\index.ts)
-- [`..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\types\index.ts`](..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\types\index.ts)
-- [`..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\main.tsx`](..\..\..\AppData\Local\Programs\Antigravity\erp-petshop\src\main.tsx)
-- [`..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\main.tsx`](..\..\..\AppData\Local\Programs\Antigravity\bkp\pdv-electron\src\main.tsx)
-- [`..\..\..\AppData\Local\Programs\Antigravity\hardware-service\src\index.js`](..\..\..\AppData\Local\Programs\Antigravity\hardware-service\src\index.js)
-- [`..\..\..\AppData\Local\Programs\Antigravity\backend\src\server.js`](..\..\..\AppData\Local\Programs\Antigravity\backend\src\server.js)
-- [`..\..\..\AppData\Local\Programs\Antigravity\backend\src\app.js`](..\..\..\AppData\Local\Programs\Antigravity\backend\src\app.js)
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Login     │────►│   Backend   │────►│   Gerar     │
+│  (email,    │     │  Valida     │     │   JWT       │
+│   senha)    │     │  bcrypt     │     │  (24h exp)  │
+└─────────────┘     └─────────────┘     └─────────────┘
+```
 
-**Pattern Implementations:**
-- Controller: [`UploadController`](backend\src\controllers\upload.controller.js), [`SuppliersController`](backend\src\controllers\suppliers.controller.js), [`PetSpeciesController`](backend\src\controllers\petSpecies.controller.js), [`PaymentRateController`](backend\src\controllers\paymentRate.controller.js), [`PaymentConfigurationController`](backend\src\controllers\paymentConfiguration.controller.js), [`CustomersController`](backend\src\controllers\customers.controller.js), [`BankReconciliationController`](backend\src\controllers\bankReconciliation.controller.js), [`BankAccountController`](backend\src\controllers\bankAccount.controller.js), [`AccountsReceivableController`](backend\src\controllers\accountsReceivable.controller.js)
+**Arquivos relevantes:**
+- `backend/src/controllers/auth.controller.js`
+- `backend/src/middleware/auth.middleware.js`
+- `erp-petshop/src/contexts/AuthContext.tsx`
 
-## Architecture Context
+### Autorização (RBAC)
 
-### Utils
-Shared utilities and helpers
-- **Directories**: `erp-petshop\src\utils`, `backend\src\generated\prisma`, `backend\src\utils`
-- **Symbols**: 5 total
-- **Key exports**: [`isValidCPF`](erp-petshop\src\utils\validators.ts#L1), [`formatCPF`](erp-petshop\src\utils\validators.ts#L17), [`isValidCPF`](backend\src\utils\validators.js#L1), [`formatCPF`](backend\src\utils\validators.js#L17), [`formatCNPJ`](backend\src\utils\validators.js#L26)
+| Perfil | Nível | Acesso |
+|--------|-------|--------|
+| `admin` | 5 | Acesso total |
+| `gerente` | 4 | Relatórios, cadastros, vendas |
+| `financeiro` | 3 | Contas, conciliação |
+| `estoquista` | 2 | Estoque, produtos |
+| `caixa` | 1 | PDV apenas |
 
-### Services
-Business logic and orchestration
-- **Directories**: `erp-petshop\src\services`, `backend\src\services`, `bkp\pdv-electron\src\services`, `erp-petshop\src\components\management`, `hardware-service\src`, `hardware-service\src\devices`, `backend\src\routes`, `backend\src\controllers`
-- **Symbols**: 44 total
-- **Key exports**: [`Groomer`](erp-petshop\src\services\managementService.ts#L3), [`GroomingService`](erp-petshop\src\services\managementService.ts#L13), [`GroomingResource`](erp-petshop\src\services\managementService.ts#L22), [`ServiceMatrixEntry`](erp-petshop\src\services\managementService.ts#L29), [`Commission`](erp-petshop\src\services\commissionService.ts#L3), [`CommissionFilters`](erp-petshop\src\services\commissionService.ts#L16), [`Appointment`](erp-petshop\src\services\appointmentService.ts#L3), [`authFetch`](erp-petshop\src\services\api.ts#L48), [`SeniorityLevel`](backend\src\services\durationCalculator.ts#L1), [`CoatType`](backend\src\services\durationCalculator.ts#L2), [`BreedSize`](backend\src\services\durationCalculator.ts#L3), [`calculateAppointmentDuration`](backend\src\services\durationCalculator.ts#L36), [`initDatabase`](bkp\pdv-electron\src\services\database.ts#L11), [`saveToIndexedDB`](bkp\pdv-electron\src\services\database.ts#L192), [`getDatabase`](bkp\pdv-electron\src\services\database.ts#L266), [`closeDatabase`](bkp\pdv-electron\src\services\database.ts#L273)
+---
 
-### Repositories
-Data access and persistence
-- **Directories**: `erp-petshop\src\data`, `erp-petshop\src\components`, `erp-petshop\src\pages\Settings`
-- **Symbols**: 3 total
-- **Key exports**: [`NFeEmissionData`](erp-petshop\src\pages\Settings\NFeEmissionData.tsx#L5), [`NFCeEmissionData`](erp-petshop\src\pages\Settings\NFCeEmissionData.tsx#L5)
+## 🔍 Checklist de Auditoria
 
-### Components
-UI components and views
-- **Directories**: `erp-petshop\src\pages`, `erp-petshop\src\components`, `erp-petshop\src\pages\Suppliers`, `erp-petshop\src\pages\Settings`, `erp-petshop\src\pages\Reports`, `erp-petshop\src\pages\Financial`, `erp-petshop\src\pages\Customers`, `erp-petshop\src\components\management`, `bkp\pdv-electron\src\pages`, `bkp\pdv-electron\src\components`
-- **Symbols**: 123 total
-- **Key exports**: [`Sidebar`](erp-petshop\src\components\Sidebar.tsx#L55), [`QuickCustomerModal`](erp-petshop\src\components\QuickCustomerModal.tsx#L12), [`OpenPackageModal`](erp-petshop\src\components\OpenPackageModal.tsx#L19), [`Header`](erp-petshop\src\components\Header.tsx#L19), [`CustomerSearch`](erp-petshop\src\components\CustomerSearch.tsx#L18), [`ConfirmationModal`](erp-petshop\src\components\ConfirmationModal.tsx#L15), [`NFeCertificate`](erp-petshop\src\pages\Settings\NFeCertificate.tsx#L5), [`NFCeCertificate`](erp-petshop\src\pages\Settings\NFCeCertificate.tsx#L5), [`InvoiceSettings`](erp-petshop\src\pages\Settings\InvoiceSettings.tsx#L5), [`BusinessSettingsDashboard`](erp-petshop\src\pages\Settings\BusinessSettingsDashboard.tsx#L5), [`AuditLogs`](erp-petshop\src\pages\Settings\AuditLogs.tsx#L21), [`ProductPerformanceReport`](erp-petshop\src\pages\Reports\ProductPerformanceReport.tsx#L7), [`DailySalesReport`](erp-petshop\src\pages\Reports\DailySalesReport.tsx#L7), [`QuickCustomerModal`](bkp\pdv-electron\src\components\QuickCustomerModal.tsx#L29)
+### 1. Autenticação
 
-### Controllers
-Request handling and routing
-- **Directories**: `erp-petshop\src\components`, `backend\src\routes`, `backend\src\middleware`, `backend\src\controllers`
-- **Symbols**: 13 total
-- **Key exports**: [`RoleProtectedRoute`](erp-petshop\src\components\RoleProtectedRoute.tsx#L19), [`canAccessPath`](erp-petshop\src\components\RoleProtectedRoute.tsx#L45)
-## Key Symbols for This Agent
-- [`authFetch`](erp-petshop\src\services\api.ts#L48) (function)
-- [`AuthProvider`](erp-petshop\src\contexts\AuthContext.tsx#L21) (function)
-- [`useAuth`](bkp\pdv-electron\src\contexts\AuthContext.tsx#L22) (function)
-- [`AuthProvider`](bkp\pdv-electron\src\contexts\AuthContext.tsx#L30) (function)
+- [ ] Senhas com hash bcrypt (salt rounds >= 10)
+- [ ] JWT com secret robusto (256 bits)
+- [ ] Expiração de token configurada (24h)
+- [ ] Rate limiting em login (prevenir brute force)
+- [ ] Logout invalida token no cliente
 
-## Documentation Touchpoints
-- [Documentation Index](../docs/README.md)
-- [Project Overview](../docs/project-overview.md)
-- [Architecture Notes](../docs/architecture.md)
-- [Development Workflow](../docs/development-workflow.md)
-- [Testing Strategy](../docs/testing-strategy.md)
-- [Glossary & Domain Concepts](../docs/glossary.md)
-- [Data Flow & Integrations](../docs/data-flow.md)
-- [Security & Compliance Notes](../docs/security.md)
-- [Tooling & Productivity Guide](../docs/tooling.md)
+### 2. Autorização
 
-## Collaboration Checklist
+- [ ] Verificação de role em todas as rotas protegidas
+- [ ] Middleware `checkRole()` aplicado corretamente
+- [ ] Usuário não pode escalar próprias permissões
+- [ ] Rotas de admin isoladas
 
-1. Confirm assumptions with issue reporters or maintainers.
-2. Review open pull requests affecting this area.
-3. Update the relevant doc section listed above.
-4. Capture learnings back in [docs/README.md](../docs/README.md).
+### 3. Validação de Inputs
 
-## Hand-off Notes
+- [ ] Prisma ORM previne SQL injection
+- [ ] Validação de tipos no frontend e backend
+- [ ] Sanitização de dados sensíveis (CPF, CNPJ)
+- [ ] Limite de tamanho em uploads
 
-Summarize outcomes, remaining risks, and suggested follow-up actions after the agent completes its work.
+### 4. Proteção de Dados
+
+- [ ] Senhas nunca retornadas na API
+- [ ] Dados sensíveis não logados
+- [ ] HTTPS em produção
+- [ ] Certificados em variáveis de ambiente
+
+### 5. Hardware Service
+
+- [ ] Validação de origem (ALLOWED_ORIGINS)
+- [ ] API key opcional configurada
+- [ ] Apenas localhost aceito
+- [ ] Comandos validados antes de execução
+
+---
+
+## 🛡️ Vulnerabilidades Comuns
+
+### OWASP Top 10 - Aplicabilidade
+
+| Vulnerabilidade | Risco no Projeto | Mitigação |
+|-----------------|------------------|-----------|
+| **Injection** | Médio | Prisma ORM, queries parametrizadas |
+| **Broken Auth** | Alto | JWT, bcrypt, rate limiting |
+| **Sensitive Data** | Alto | HTTPS, não logar senhas |
+| **XXE** | Baixo | Não processamos XML externo |
+| **Broken Access** | Alto | RBAC, middleware checkRole |
+| **Security Misconfig** | Médio | Variáveis de ambiente |
+| **XSS** | Médio | React escapa por padrão |
+| **Insecure Deserial** | Baixo | JSON.parse com try/catch |
+| **Vulnerable Components** | Médio | npm audit regular |
+| **Insufficient Logging** | Médio | audit_logs implementado |
+
+---
+
+## 📋 Áreas Críticas para Auditoria
+
+### Alta Prioridade
+
+| Área | Arquivo | Risco |
+|------|---------|-------|
+| **Login** | `auth.controller.js` | Acesso não autorizado |
+| **Vendas** | `sale.controller.js` | Fraude financeira |
+| **Caixa** | `cashRegister.controller.js` | Desvio de dinheiro |
+| **Usuários** | `user.controller.js` | Escalação de privilégios |
+
+### Média Prioridade
+
+| Área | Arquivo | Risco |
+|------|---------|-------|
+| **Clientes** | `customers.controller.js` | Vazamento de dados (LGPD) |
+| **Relatórios** | Exportação de dados | Dados sensíveis expostos |
+| **Hardware Service** | `index.js` | Acesso não autorizado |
+
+---
+
+## 🔧 Implementações de Segurança
+
+### Rate Limiting (a implementar)
+
+```javascript
+// backend/src/middleware/rateLimit.js
+const rateLimit = require('express-rate-limit');
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5, // 5 tentativas
+  message: { error: 'Muitas tentativas. Tente novamente em 15 minutos.' }
+});
+
+// Aplicar em /api/auth/login
+app.use('/api/auth/login', loginLimiter);
+```
+
+### Validação de Input
+
+```javascript
+// Sempre validar antes de processar
+const validateSaleInput = (req, res, next) => {
+  const { items, total, payment_method } = req.body;
+  
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'Items inválidos' });
+  }
+  
+  if (typeof total !== 'number' || total <= 0) {
+    return res.status(400).json({ error: 'Total inválido' });
+  }
+  
+  const validMethods = ['DINHEIRO', 'CARTAO_DEBITO', 'CARTAO_CREDITO', 'PIX'];
+  if (!validMethods.includes(payment_method)) {
+    return res.status(400).json({ error: 'Método de pagamento inválido' });
+  }
+  
+  next();
+};
+```
+
+### Proteção de Dados Sensíveis
+
+```javascript
+// Nunca retornar senha na API
+const sanitizeUser = (user) => {
+  const { password, ...safeUser } = user;
+  return safeUser;
+};
+
+// Não logar dados sensíveis
+const sanitizeLog = (data) => {
+  const { password, token, certificate, ...safeData } = data;
+  return safeData;
+};
+```
+
+---
+
+## 📊 Auditoria de Logs
+
+### Eventos Auditados
+
+| Evento | Dados Registrados |
+|--------|-------------------|
+| Login bem-sucedido | user_id, IP, timestamp |
+| Login falho | email, IP, timestamp |
+| Exclusão de item | user_id, item, motivo |
+| Cancelamento venda | user_id, venda_id, motivo |
+| Alteração de preço | user_id, produto_id, valor_anterior, valor_novo |
+| Sangria/Suprimento | user_id, valor, motivo |
+
+### Tabela audit_logs
+
+```sql
+SELECT * FROM audit_logs 
+WHERE action = 'LOGIN_FAILED' 
+AND created_at > NOW() - INTERVAL '1 hour'
+ORDER BY created_at DESC;
+```
+
+---
+
+## 🔒 LGPD - Conformidade
+
+### Dados Pessoais Armazenados
+
+| Dado | Tabela | Finalidade | Base Legal |
+|------|--------|------------|------------|
+| CPF | customers | NF-e, Fidelidade | Obrigação legal |
+| Nome | customers | Identificação | Contrato |
+| Telefone | customers | Contato | Consentimento |
+| Email | customers | Contato | Consentimento |
+| Endereço | customers | Entrega | Contrato |
+
+### Direitos do Titular
+
+- [ ] Acesso aos dados (a implementar)
+- [ ] Correção de dados (disponível via cadastro)
+- [ ] Exclusão de dados (a implementar)
+- [ ] Portabilidade (a implementar)
+
+---
+
+## 🚨 Resposta a Incidentes
+
+### Procedimento
+
+1. **Detectar** - Identificar o incidente
+2. **Conter** - Isolar sistemas afetados
+3. **Erradicar** - Remover causa raiz
+4. **Recuperar** - Restaurar serviços
+5. **Documentar** - Registrar lições aprendidas
+
+### Contatos
+
+| Papel | Responsável |
+|-------|-------------|
+| Responsável Técnico | [A definir] |
+| DPO (LGPD) | [A definir] |
+
+---
+
+## 📖 Documentação de Referência
+
+- [Segurança do Sistema](../docs/security.md)
+- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+- [LGPD](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)
+
+---
+
+## 🤝 Colaboração
+
+| Quando | Colaborar com |
+|--------|---------------|
+| Implementar correção | Backend Specialist |
+| Revisar código | Code Reviewer |
+| Arquitetura | Architect Specialist |
+| Deploy seguro | DevOps Specialist |
+
+---
+
+*Última atualização: Janeiro 2026*
