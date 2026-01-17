@@ -214,6 +214,101 @@ docker-compose down -v
 
 ---
 
+## 🔌 Hardware Service
+
+### Descrição
+
+O Hardware Service é um módulo desktop que permite a aplicação web se comunicar com periféricos físicos via WebSocket.
+
+### Localização
+
+```
+hardware-service/
+├── src/
+│   ├── index.js           # WebSocket server
+│   └── devices/
+│       ├── printer.js     # Impressora térmica (ESC/POS)
+│       ├── scale.js       # Balança Toledo (serial)
+│       ├── drawer.js      # Gaveta de dinheiro
+│       └── scanner.js     # Leitor código de barras
+├── .env                   # Configuração dos periféricos
+└── package.json
+```
+
+### Dependências
+
+```json
+{
+  "dependencies": {
+    "ws": "^8.x",                    // WebSocket server
+    "node-thermal-printer": "^4.x", // Impressão ESC/POS
+    "serialport": "^12.x",          // Comunicação serial
+    "dotenv": "^16.x"               // Variáveis de ambiente
+  }
+}
+```
+
+### Scripts
+
+```bash
+# Iniciar em produção
+npm start
+
+# Iniciar em desenvolvimento (auto-reload)
+npm run dev
+```
+
+### Configuração (.env)
+
+```bash
+# Servidor
+PORT=3002
+DEBUG=true
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+
+# Impressora
+PRINTER_ENABLED=true
+PRINTER_TYPE=brother
+PRINTER_INTERFACE=//./USB001  # ou nome da impressora Windows
+PRINTER_WIDTH=40
+
+# Balança
+SCALE_ENABLED=false
+SCALE_PORT=COM3
+SCALE_BAUDRATE=9600
+
+# Gaveta
+DRAWER_ENABLED=false
+DRAWER_PORT=COM4
+DRAWER_BAUDRATE=9600
+
+# Scanner (sempre habilitado via teclado)
+SCANNER_ENABLED=true
+```
+
+### Comandos WebSocket
+
+| Comando | Descrição |
+|---------|-----------|
+| `{action: "printReceipt", data: {...}}` | Imprime cupom de venda |
+| `{action: "printCashClose", data: {...}}` | Imprime fechamento de caixa |
+| `{action: "openDrawer"}` | Abre gaveta de dinheiro |
+| `{action: "readWeight"}` | Solicita peso da balança |
+| `{action: "getStatus"}` | Retorna status dos dispositivos |
+| `{action: "listPrinters"}` | Lista impressoras disponíveis |
+
+### Eventos WebSocket
+
+| Evento | Descrição |
+|--------|-----------|
+| `{type: "connected", devices: [...]}` | Conexão estabelecida |
+| `{type: "barcode", data: "123456"}` | Código de barras lido |
+| `{type: "weight", data: 1.250}` | Peso da balança |
+| `{type: "receiptPrinted", success: true}` | Confirmação de impressão |
+| `{type: "error", message: "..."}` | Erro no comando |
+
+---
+
 ## 🌐 Portas e URLs
 
 ### Desenvolvimento

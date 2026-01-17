@@ -180,12 +180,15 @@ Object-Relational Mapping. Técnica que mapeia objetos para tabelas de banco de 
 **React Query**
 Biblioteca para gerenciamento de estado assíncrono e cache de dados.
 
-### S
+### H
 
-**SQLite**
-Banco de dados relacional leve usado no modo offline do PDV.
+**Hardware Service**
+Módulo desktop que roda localmente (ws://localhost:3002) para comunicação com periféricos físicos como impressoras térmicas, balanças e gavetas de dinheiro via WebSocket.
 
 ### W
+
+**WebSocket**
+Protocolo de comunicação bidirecional que permite conexões persistentes entre cliente e servidor. Usado pelo Hardware Service para receber comandos e enviar eventos em tempo real.
 
 **Webhook**
 Callback HTTP que notifica o sistema quando um evento externo ocorre (ex: pagamento PIX confirmado).

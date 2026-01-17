@@ -159,6 +159,62 @@ prisma.users.findUnique({ where: { id: userId } })
 
 ---
 
+## 🔌 Segurança do Hardware Service
+
+### Visão Geral
+
+O Hardware Service roda localmente na máquina PDV e aceita conexões WebSocket apenas de origens confiáveis.
+
+### Controles Implementados
+
+| Controle | Descrição |
+|----------|-----------|
+| **Allowed Origins** | Lista de origens permitidas (localhost, servidor) |
+| **API Key** | Chave opcional para autenticação de conexões |
+| **Porta Local** | Escuta apenas em localhost:3002 |
+| **Sem Acesso Externo** | Não exposto na rede |
+
+### Configuração
+
+```env
+# hardware-service/.env
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+HARDWARE_API_KEY=sua-chave-secreta-aqui  # Opcional
+```
+
+### Validação de Conexão
+
+```javascript
+// O Hardware Service valida origem e API key
+function validateConnection(request) {
+    const origin = request.headers.origin;
+    const clientKey = request.headers['x-api-key'];
+    
+    // Verifica se origem está na lista permitida
+    if (!ALLOWED_ORIGINS.includes(origin)) {
+        return { valid: false, reason: 'Invalid origin' };
+    }
+    
+    // Verifica API key se configurada
+    if (API_KEY && clientKey !== API_KEY) {
+        return { valid: false, reason: 'Invalid API key' };
+    }
+    
+    return { valid: true };
+}
+```
+
+### Riscos e Mitigações
+
+| Risco | Mitigação |
+|-------|-----------|
+| Acesso não autorizado | Validação de origem + API key |
+| Execução remota | Apenas localhost aceito |
+| Comandos maliciosos | Validação de comandos conhecidos |
+| Interceptação | Comunicação local apenas |
+
+---
+
 ## 💾 Backup e Recuperação
 
 ### Backup Automático

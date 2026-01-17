@@ -31,7 +31,7 @@ Este documento descreve como os dados fluem através do sistema ERP Pet Shop, de
 
 ---
 
-### 2. Fluxo de Venda (Online)
+### 2. Fluxo de Venda
 
 ```
                                     ┌──────────────────┐
@@ -55,16 +55,51 @@ Este documento descreve como os dados fluem através do sistema ERP Pet Shop, de
 │  4. Backend valida e persiste                             │
 │  5. Baixa automática do estoque                           │
 │  6. Registra movimento de caixa                           │
-│  7. Emite NFC-e (se configurado)                          │
-│  8. Imprime cupom                                         │
+│  7. Envia comando ao Hardware Service (impressão)         │
+│  8. Hardware Service imprime cupom                        │
+│  9. Abre gaveta (se dinheiro)                             │
 └───────────────────────────────────────────────────────────┘
 ```
 
 **Arquivos envolvidos:**
 - `erp-petshop/src/pages/POS.tsx`
 - `erp-petshop/src/hooks/useCashRegister.ts`
+- `erp-petshop/src/hooks/useHardware.ts` (WebSocket client)
 - `backend/src/controllers/sale.controller.js`
-- `backend/src/controllers/inventory.controller.js`
+- `hardware-service/src/index.js`
+
+---
+
+### 2.1 Fluxo Hardware Service
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    COMUNICAÇÃO COM HARDWARE SERVICE                      │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌──────────────┐   WebSocket   ┌───────────────┐   Serial/USB  ┌─────┐│
+│  │  Frontend    │◄────────────►│  Hardware     │◄─────────────►│ HW  ││
+│  │  (Browser)   │               │  Service      │               │     ││
+│  └──────────────┘               │  :3002        │               └─────┘│
+│                                 └───────────────┘                       │
+│                                                                          │
+│  Comandos (Frontend → Hardware Service):                                │
+│  ───────────────────────────────────────                                │
+│  • {action: "printReceipt", data: {...}}  → Imprime cupom               │
+│  • {action: "printCashClose", data: {...}} → Imprime fechamento         │
+│  • {action: "openDrawer"}                  → Abre gaveta                │
+│  • {action: "readWeight"}                  → Lê peso da balança         │
+│  • {action: "getStatus"}                   → Status dos dispositivos    │
+│                                                                          │
+│  Eventos (Hardware Service → Frontend):                                 │
+│  ──────────────────────────────────────                                 │
+│  • {type: "barcode", data: "7891234567890"} ← Scanner leu código        │
+│  • {type: "weight", data: 1.250}            ← Balança enviou peso       │
+│  • {type: "receiptPrinted", success: true}  ← Impressão concluída       │
+│  • {type: "connected", devices: [...]}      ← Conexão estabelecida      │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
