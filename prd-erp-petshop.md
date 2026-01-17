@@ -1,19 +1,26 @@
 # Documento de Requisitos de Produto (PRD)
 ## Sistema ERP para Pet Shop e Casa de Rações
 
-**Versão:** 1.0  
-**Data:** 23 de Novembro de 2025  
+**Versão:** 1.1  
+**Data:** 17 de Janeiro de 2026  
 **Status:** Em Desenvolvimento
+
+### Changelog
+
+| Versão | Data | Alterações |
+|--------|------|------------|
+| 1.1 | 17/01/2026 | Arquitetura atualizada: removido modo offline (Electron/SQLite), adicionado Hardware Service como módulo desktop para integração com periféricos via WebSocket |
+| 1.0 | 23/11/2025 | Versão inicial do PRD |
 
 ---
 
 ## 1. Visão Geral do Produto
 
 ### 1.1 Objetivo
-Desenvolver um sistema ERP completo e integrado para gestão de Pet Shop e Casa de Rações, oferecendo controle total sobre operações financeiras, estoque, vendas e emissão de documentos fiscais, com capacidade de funcionamento offline no ponto de venda.
+Desenvolver um sistema ERP completo e integrado para gestão de Pet Shop e Casa de Rações, oferecendo controle total sobre operações financeiras, estoque, vendas e emissão de documentos fiscais, com integração de periféricos via módulo desktop complementar (Hardware Service).
 
 ### 1.2 Problema a Resolver
-Empresas do segmento pet precisam de uma solução centralizada que unifique gestão financeira, controle de estoque (incluindo produtos perecíveis), emissão de notas fiscais e operação de PDV, com a capacidade de funcionar mesmo sem conexão com a internet.
+Empresas do segmento pet precisam de uma solução centralizada que unifique gestão financeira, controle de estoque (incluindo produtos perecíveis), emissão de notas fiscais e operação de PDV, com capacidade de integração com periféricos como impressoras térmicas, balanças e gavetas de dinheiro.
 
 ### 1.3 Público-Alvo
 - Proprietário da empresa (uso pessoal)
@@ -44,13 +51,13 @@ Empresas do segmento pet precisam de uma solução centralizada que unifique ges
 - Zustand ou React Context para gerenciamento de estado
 - React Query para cache e sincronização de dados
 
-**Frontend Desktop (PDV)**
-- Electron
-- React 18+
-- Vite
-- TypeScript
-- SQLite (banco local para modo offline)
-- Node.js integrado para acesso a periféricos
+**Hardware Service (Módulo Desktop Complementar)**
+- Node.js standalone (serviço local)
+- WebSocket server para comunicação com aplicação web
+- Protocolo ESC/POS para impressoras térmicas
+- Comunicação serial para balanças e gavetas
+- Instalável em Windows (executável ou serviço)
+- Porta padrão: ws://localhost:3002
 
 **Backend**
 - Node.js com Express ou Fastify
@@ -68,22 +75,33 @@ Empresas do segmento pet precisam de uma solução centralizada que unifique ges
 
 ### 2.2 Arquitetura do Sistema
 
-**Modo Online**
+**Arquitetura Principal**
 ```
 [Frontend Web] <--> [API REST/WebSocket] <--> [PostgreSQL]
-                                          <--> [Redis Cache]
-                                          <--> [Sistema Fiscal]
-                                          <--> [Gateway PIX]
-                                          <--> [Stone API]
+       |                                  <--> [Redis Cache]
+       |                                  <--> [Sistema Fiscal]
+       |                                  <--> [Gateway PIX]
+       v
+[Hardware Service]  (módulo desktop local)
+       |
+       +-- [Impressora Térmica] (ESC/POS)
+       +-- [Balança Digital] (Serial)
+       +-- [Gaveta de Dinheiro] (Serial/ESC)
+       +-- [Leitor de Código de Barras] (USB HID)
 ```
 
-**Modo Offline (PDV)**
+**Comunicação Hardware Service**
 ```
-[Electron App] <--> [SQLite Local] 
-     |
-     v (quando online)
-[Sincronização] <--> [API Backend] <--> [PostgreSQL]
+[Browser/PDV Web] <-- WebSocket --> [Hardware Service ws://localhost:3002]
+                                           |
+                                           +-> Impressora (node-thermal-printer)
+                                           +-> Balança (serialport)
+                                           +-> Gaveta (serialport)
+                                           +-> Scanner (stdin/keyboard)
 ```
+
+> **Nota:** O sistema requer conexão com internet para operação completa.
+> O Hardware Service roda localmente apenas para comunicação com periféricos.
 
 ---
 
@@ -360,51 +378,70 @@ Empresas do segmento pet precisam de uma solução centralizada que unifique ges
 3. Operador registra manualmente no PDV o valor e código de autorização
 4. Sistema salva comprovante para posterior conciliação
 
-### 3.6.3 Modo Offline
-- Funcionamento completo sem internet
-- Banco de dados local (SQLite)
-- Sincronização automática ao retornar online
-- Fila de documentos fiscais pendentes
-- Indicador visual de status de conexão
-- Log de sincronização
+### 3.6.3 Hardware Service (Módulo Desktop)
 
-### 3.6.4 Integração com Periféricos
+O PDV web se comunica com periféricos através do **Hardware Service**, um módulo desktop que roda em `ws://localhost:3002`.
+
+**Arquitetura:**
+```
+[PDV Web] <-- WebSocket --> [Hardware Service] --> [Periféricos]
+```
+
+**Instalação:**
+- O Hardware Service é instalado uma vez por máquina PDV
+- Roda como processo em background ou serviço Windows
+- Não requer configuração especial do usuário
+
+**Status de Conexão:**
+- A aplicação web verifica a conexão com Hardware Service ao carregar
+- Indicador visual: 🟢 Conectado / 🔴 Desconectado
+- Periféricos ficam indisponíveis se Hardware Service não estiver rodando
+
+### 3.6.4 Integração com Periféricos via Hardware Service
+
+> **Importante:** Todos os periféricos são acessados através do Hardware Service.
+> A aplicação web envia comandos via WebSocket e recebe eventos em tempo real.
 
 #### 3.6.4.1 Balança Digital
-- **Modelo:** Balança Comercial Digital Prix Fit 3 (Pholex)
-- Protocolo de comunicação: Serial/USB
-- Captura automática de peso
-- Tara automática
-- Cálculo automático de valor (preço/kg × peso)
-- Impressão de etiqueta com código de barras
+- **Modelo suportado:** Balança Toledo (protocolo serial)
+- Comunicação: Porta serial configurável
+- **Eventos WebSocket:**
+  - `{type: "weight", data: 1.250}` - Peso lido automaticamente
+- **Comandos:**  
+  - `{action: "readWeight"}` - Solicita leitura de peso
 
 #### 3.6.4.2 Impressora Térmica
-- **Modelo:** Impressora Prix
-- Protocolo ESC/POS
-- Impressão de cupom não fiscal
-- Impressão de comprovantes
-- Impressão de etiquetas de produtos
-- Abertura automática de gaveta
+- **Modelos suportados:** Epson, Brother, Elgin, Daruma (ESC/POS)
+- **Larguras:** 58mm (32 caracteres) ou 80mm (48 caracteres)
+- **Comandos WebSocket:**
+  - `{action: "printReceipt", data: {...}}` - Imprime cupom de venda
+  - `{action: "printCashClose", data: {...}}` - Imprime fechamento de caixa
+  - `{action: "listPrinters"}` - Lista impressoras disponíveis
+- **Funcionalidades:**
+  - Impressão de cupom não fiscal com cabeçalho da empresa
+  - Impressão de fechamento de caixa
+  - Impressão de saldo cashback do cliente
+  - Normalização automática de acentos
 
 #### 3.6.4.3 Leitor de Código de Barras
-- Suporte a leitores USB HID (plug and play)
-- Leitura de EAN-13, EAN-8, Code 128
-- Emulação de teclado
-- Configuração de prefixo/sufixo
+- Modo: USB HID (emulação de teclado)
+- Leitura: EAN-13, EAN-8, Code 128
+- **Eventos WebSocket:**
+  - `{type: "barcode", data: "7891234567890"}` - Código lido
+- Funciona automaticamente sem configuração adicional
 
 #### 3.6.4.4 Gaveta de Dinheiro
-- Abertura automática após venda
-- Abertura manual (sangria/suprimento)
-- Conexão via impressora (kick drawer)
-- Log de aberturas
+- Conexão: Porta serial (RJ11 via impressora ou direta)
+- Comando: ESC/POS kick drawer
+- **Comandos WebSocket:**
+  - `{action: "openDrawer"}` - Abre a gaveta
+- Abertura automática: configurável após venda em dinheiro
+- Log de aberturas manuais
 
-#### 3.6.4.5 Display para Cliente
-- Monitor secundário ou display dedicado
-- Exibição de produtos adicionados
-- Valores parciais e totais
-- Forma de pagamento selecionada
-- Mensagens personalizadas (obrigado, volte sempre)
-- Rotação de propaganda (produtos, promoções)
+#### 3.6.4.5 Display para Cliente (Planejado)
+- Monitor secundário com exibição da venda
+- Valores em tempo real
+- Mensagens de agradecimento
 
 ### 3.6.5 Operações de Caixa
 - Abertura de caixa (informar saldo inicial)
@@ -627,7 +664,7 @@ Empresas do segmento pet precisam de uma solução centralizada que unifique ges
 ### 5.1 Performance
 - Tempo de resposta da API: máximo 200ms (p95)
 - Tempo de carregamento de telas: máximo 2 segundos
-- Sincronização PDV offline: máximo 5 minutos após reconexão
+- Comunicação Hardware Service: máximo 100ms por comando
 - Suporte a 500+ produtos cadastrados sem degradação
 - Suporte a até 10 PDVs simultâneos
 - Processamento de ~200 vendas/dia sem lentidão
@@ -675,80 +712,57 @@ Empresas do segmento pet precisam de uma solução centralizada que unifique ges
 - Alertas automáticos para falhas críticas (e-mail/SMS)
 
 ### 5.5 Compatibilidade
-- **Navegadores (Gerencial Online):** Chrome 100+, Firefox 100+, Edge 100+
-- **Sistema Operacional (PDV Electron):** Windows 10/11
+- **Navegadores (Sistema Web):** Chrome 100+, Firefox 100+, Edge 100+
+- **Sistema Operacional (Hardware Service):** Windows 10/11
 - **Resolução mínima:** 1366x768
+- **Hardware Service:**
+  - Node.js 18+ instalado
+  - Porta 3002 disponível para WebSocket
 - **Periféricos compatíveis:**
-  - Balança: Prix Fit 3 (Pholex) via Serial/USB
-  - Impressora: Prix (ESC/POS)
-  - Leitor: qualquer USB HID
-  - Gaveta: via impressora (RJ11/12)
+  - Balança: Toledo (protocolo serial)
+  - Impressora: Epson, Brother, Elgin, Daruma (ESC/POS 58mm/80mm)
+  - Leitor: qualquer USB HID (emulação de teclado)
+  - Gaveta: via porta serial ou impressora (ESC/POS kick drawer)
 
 ---
 
 ## 6. Fluxos Principais
 
-### 6.1 Fluxo de Venda no PDV (Online)
+### 6.1 Fluxo de Venda no PDV
+
 1. Operador faz login no PDV
 2. Sistema valida credenciais e permissões
-3. Abre um novo pedido de venda
-4. Adiciona produtos:
+3. Sistema verifica conexão com Hardware Service (periféricos)
+4. Abre um novo pedido de venda
+5. Adiciona produtos:
    - Via busca por nome
-   - Via código de barras (leitor)
-   - Via balança (produtos a granel)
+   - Via código de barras (leitor via Hardware Service)
+   - Via balança (peso recebido via WebSocket)
    - Via tela touchscreen (categorias)
-5. Para produtos a granel:
+6. Para produtos a granel:
    - Operador coloca produto na balança
-   - Balança envia peso automaticamente
+   - Hardware Service envia peso via WebSocket `{type: "weight", data: X}`
    - Sistema calcula valor (preço/kg × peso)
-   - Imprime etiqueta com código de barras
-6. Aplica descontos se necessário (requer justificativa)
-7. Identifica cliente (opcional, obrigatório para NF-e e programa de fidelidade)
-8. Cliente acumula pontos de fidelidade (se cadastrado)
-9. Seleciona forma(s) de pagamento:
-   - **Dinheiro:** informa valor recebido, calcula troco
-   - **PIX:** gera QR Code, aguarda confirmação (webhook)
-   - **Cartão:** registra dados manualmente da maquininha
-10. Se exclusão de item: sistema registra quem, quando e por quê
-11. Confirma venda
-12. Sistema emite NFC-e automaticamente
-13. Imprime comprovante (cliente) e cupom interno
-14. Atualiza estoque automaticamente (baixa produtos)
-15. Registra movimento financeiro (conta a receber ou entrada em caixa)
-16. Abre gaveta de dinheiro (se pagamento em espécie)
-17. Exibe mensagem de agradecimento no display do cliente
+7. Aplica descontos se necessário (requer justificativa)
+8. Identifica cliente (opcional, obrigatório para NF-e e programa de fidelidade)
+9. Cliente acumula pontos/cashback (se cadastrado)
+10. Seleciona forma(s) de pagamento:
+    - **Dinheiro:** informa valor recebido, calcula troco
+    - **PIX:** gera QR Code, aguarda confirmação (webhook)
+    - **Cartão:** registra dados manualmente da maquininha
+11. Se exclusão de item: sistema registra quem, quando e por quê
+12. Confirma venda
+13. Sistema emite NFC-e automaticamente (quando implementado)
+14. Envia comando de impressão via Hardware Service:
+    - `{action: "printReceipt", data: {...}}`
+15. Atualiza estoque automaticamente (baixa produtos)
+16. Registra movimento financeiro (conta a receber ou entrada em caixa)
+17. Abre gaveta de dinheiro (se pagamento em espécie):
+    - `{action: "openDrawer"}`
+18. Exibe mensagem de agradecimento
 
-### 6.2 Fluxo de Venda no PDV (Offline)
-1. Operador faz login no PDV (credenciais em cache local)
-2. Sistema detecta ausência de conexão com servidor
-3. Habilita modo offline (indicador visual vermelho/amarelo)
-4. Carrega dados locais do SQLite:
-   - Produtos e preços
-   - Clientes básicos
-   - Configurações do PDV
-5. Abre novo pedido de venda
-6. Adiciona produtos (dados locais)
-7. Aplica descontos (registra localmente)
-8. Identifica cliente (se estiver no cache local)
-9. Seleciona forma de pagamento:
-   - ⚠️ PIX online não disponível
-   - Dinheiro, cartão (registro manual) funcionam
-10. Confirma venda (salva localmente no SQLite)
-11. Emite cupom não fiscal (impressora local)
-12. Atualiza estoque local
-13. Adiciona venda à fila de sincronização
-14. **Quando conexão retornar:**
-15. Sistema detecta reconexão (indicador verde)
-16. Inicia sincronização automática em background
-17. Envia vendas pendentes para servidor central
-18. Emite NFC-e retroativas (se obrigatório)
-19. Atualiza servidor central:
-    - Estoque consolidado
-    - Movimentos financeiros
-    - Dados de clientes
-20. Marca vendas como sincronizadas
-21. Exibe relatório de sincronização (sucessos/falhas)
-22. Em caso de conflito: usa estratégia last-write-wins com log para revisão
+> **Importante:** O sistema requer conexão com a internet. 
+> Se o Hardware Service não estiver conectado, operações com periféricos ficam indisponíveis.
 
 ### 6.3 Fluxo de Entrada de Mercadoria por XML
 1. Usuário acessa "Estoque > Entrada de Produtos"
